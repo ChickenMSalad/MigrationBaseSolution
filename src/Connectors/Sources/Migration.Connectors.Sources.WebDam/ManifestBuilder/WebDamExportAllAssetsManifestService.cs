@@ -16,11 +16,11 @@ public sealed class WebDamExportAllAssetsManifestService : ISourceManifestServic
         "FolderPath"
     ];
 
-    private readonly WebDamExportService _exportService;
+    private readonly WebDamManifestExportServiceFactory _exportServiceFactory;
 
-    public WebDamExportAllAssetsManifestService(WebDamExportService exportService)
+    public WebDamExportAllAssetsManifestService(WebDamManifestExportServiceFactory exportServiceFactory)
     {
-        _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
+        _exportServiceFactory = exportServiceFactory ?? throw new ArgumentNullException(nameof(exportServiceFactory));
     }
 
     public string SourceType => "webdam";
@@ -48,10 +48,13 @@ public sealed class WebDamExportAllAssetsManifestService : ISourceManifestServic
         BuildSourceManifestRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Current WebDamExportService is configured from WebDamOptions/appsettings.
-        // CredentialSetId is accepted by the API now, but WebDam per-request credential selection
-        // should be added in the next connector-specific iteration.
-        var export = await _exportService.ExportAllAssetsAsync(cancellationToken).ConfigureAwait(false);
+        var exportService = await _exportServiceFactory
+            .CreateAsync(request.CredentialSetId, cancellationToken)
+            .ConfigureAwait(false);
+
+        var export = await exportService
+            .ExportAllAssetsAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         var csv = ManifestCsvWriter.WriteObjects(export.Assets, Columns);
         var fileName = $"webdam-manifest-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.csv";

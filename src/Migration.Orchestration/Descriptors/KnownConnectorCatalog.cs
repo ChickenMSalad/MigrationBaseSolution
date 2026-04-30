@@ -131,7 +131,7 @@ public sealed class KnownConnectorCatalog : IConnectorCatalog
                 new CredentialDescriptor { Name = "BaseUrl", DisplayName = "Base URL", ConfigurationKey = "WebDam:BaseUrl", Required = true, Secret = false },
                 new CredentialDescriptor { Name = "ClientId", DisplayName = "Client ID", ConfigurationKey = "WebDam:ClientId", Required = true, Secret = true },
                 new CredentialDescriptor { Name = "ClientSecret", DisplayName = "Client Secret", ConfigurationKey = "WebDam:ClientSecret", Required = true, Secret = true },
-                new CredentialDescriptor { Name = "RefreshToken", DisplayName = "Refresh Token", ConfigurationKey = "WebDam:RefreshToken", Required = true, Secret = true },
+                new CredentialDescriptor { Name = "RefreshToken", DisplayName = "Refresh Token", ConfigurationKey = "WebDam:RefreshToken", Required = false, Secret = true },
                 new CredentialDescriptor { Name = "AccessToken", DisplayName = "Access Token", ConfigurationKey = "WebDam:AccessToken", Required = false, Secret = true },
                 new CredentialDescriptor { Name = "Username", DisplayName = "Username", ConfigurationKey = "WebDam:Username", Required = false, Secret = true },
                 new CredentialDescriptor { Name = "Password", DisplayName = "Password", ConfigurationKey = "WebDam:Password", Required = false, Secret = true }

@@ -220,3 +220,149 @@
     white-space: normal;
   }
 }
+
+/* Credentials page alerts / responsive fixes */
+
+.credentialsPage .credentialsNotice {
+    padding: 0.85rem 1rem;
+    border-radius: 0.85rem;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.credentialsPage .credentialsNotice--success {
+    border: 1px solid #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.credentialsPage .credentialsNotice--error {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.credentialsPage .credentialsNotice--info {
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.credentialsPage .credentialsForm {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.credentialsPage .credentialsFormTopRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+    gap: 1rem;
+    align-items: end;
+    width: 100%;
+}
+
+    .credentialsPage .credentialsFormTopRow label,
+    .credentialsPage .credentialsJsonField {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        min-width: 0;
+    }
+
+        .credentialsPage .credentialsJsonField textarea {
+            width: 100%;
+            max-width: 100%;
+            min-height: 320px;
+            box-sizing: border-box;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            resize: vertical;
+        }
+
+.credentialsPage .credentialSchemaSummary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 1rem;
+    width: 100%;
+}
+
+    .credentialsPage .credentialSchemaSummary section,
+    .credentialsPage .credentialNotice {
+        min-width: 0;
+        padding: 1rem;
+        border: 1px solid var(--border, #d7deea);
+        border-radius: 0.9rem;
+        background: rgba(255, 255, 255, 0.55);
+    }
+
+    .credentialsPage .credentialSchemaSummary h3 {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .credentialsPage .credentialSchemaSummary p {
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .credentialsPage .credentialSchemaSummary ul {
+        margin: 0.5rem 0 0;
+        padding-left: 1.25rem;
+    }
+
+    .credentialsPage .credentialSchemaSummary li {
+        overflow-wrap: anywhere;
+    }
+
+    .credentialsPage .credentialSchemaSummary code,
+    .credentialsPage table code {
+        font-size: 0.85rem;
+        word-break: break-word;
+    }
+
+.credentialsPage .buttonRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+    .credentialsPage .buttonRow button {
+        white-space: nowrap;
+    }
+
+.credentialsPage .tableWrap {
+    margin-top: 1rem;
+}
+
+@media (max-width: 1200px) {
+    .credentialsPage .credentialSchemaSummary {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 800px) {
+    .credentialsPage .credentialsFormTopRow,
+    .credentialsPage .credentialSchemaSummary {
+        grid-template-columns: 1fr;
+    }
+
+    .credentialsPage .credentialsJsonField textarea {
+        min-height: 360px;
+    }
+}
+
+@media (max-width: 520px) {
+    .credentialsPage .buttonRow {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+        .credentialsPage .buttonRow button {
+            width: 100%;
+            white-space: normal;
+        }
+}

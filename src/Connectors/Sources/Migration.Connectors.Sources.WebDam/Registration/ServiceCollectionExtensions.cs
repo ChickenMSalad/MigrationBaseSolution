@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<WebDamExportService>();
         services.AddSingleton<IAssetSourceConnector, WebDamSourceConnector>();
         services.AddSingleton<ISourceManifestService, WebDamExportAllAssetsManifestService>();
+        services.AddSingleton<WebDamManifestExportServiceFactory>();
         return services;
     }
 }

@@ -5,6 +5,12 @@ import { LoadingError } from "../components/LoadingError";
 import type { ConnectorDescriptor, CredentialSetSummary } from "../types/api";
 
 type Role = "Source" | "Target" | "Manifest";
+type NoticeKind = "success" | "error" | "info";
+
+type PageNotice = {
+  kind: NoticeKind;
+  message: string;
+};
 
 type CredentialField = {
   key: string;
@@ -97,11 +103,24 @@ function isSecretLikeKey(key: string) {
   );
 }
 
+function isOptionalCredentialOverride(connector: ConnectorDescriptor | null, key: string) {
+  const connectorType = connectorValue(connector);
+  const normalizedKey = key.toLowerCase();
+
+  if (connectorType.toLowerCase() === "webdam") {
+    return normalizedKey === "accesstoken" || normalizedKey === "refreshtoken";
+  }
+
+  return false;
+}
+
 function normalizeCredentialFields(connector: ConnectorDescriptor | null): CredentialField[] {
   if (!connector) {
     return [];
   }
 
+  // Important: Credentials page should use connector.credentials only.
+  // connector.options belong to project/run/settings flows and are intentionally excluded here.
   return descriptorFields(connector.credentials)
     .map(field => {
       const key = getFieldKey(field);
@@ -110,11 +129,13 @@ function normalizeCredentialFields(connector: ConnectorDescriptor | null): Crede
         return null;
       }
 
+      const requiredFromSchema = Boolean(field.required ?? field.isRequired ?? false);
+
       return {
         key,
         label: (field.displayName || field.label || key).trim(),
         description: (field.description || field.helpText || undefined)?.trim(),
-        required: Boolean(field.required ?? field.isRequired ?? false),
+        required: isOptionalCredentialOverride(connector, key) ? false : requiredFromSchema,
         secret: Boolean(field.secret ?? field.isSecret ?? isSecretLikeKey(key)),
         configurationKey: field.configurationKey,
         defaultValue: field.defaultValue ?? field.sampleValue ?? field.exampleValue ?? field.example
@@ -150,14 +171,6 @@ function sampleValueForCredential(field: CredentialField): unknown {
     return "your-client-secret";
   }
 
-  if (key.includes("refresh")) {
-    return "your-refresh-token";
-  }
-
-  if (key.includes("token")) {
-    return "your-token";
-  }
-
   if (key.includes("password")) {
     return "your-password";
   }
@@ -172,6 +185,10 @@ function sampleValueForCredential(field: CredentialField): unknown {
 
   if (key.includes("connectionstring") || key.includes("connection_string")) {
     return "UseDevelopmentStorage=true";
+  }
+
+  if (key.includes("refresh") || key.includes("token")) {
+    return field.required ? "your-token" : "";
   }
 
   if (!field.required) {
@@ -206,13 +223,25 @@ function getConnectorOptions(connector: ConnectorDescriptor | null): DescriptorF
   return descriptorFields(connector?.options);
 }
 
+function isMissingRequiredValue(value: unknown) {
+  return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
+}
+
+function noticeClassName(kind: NoticeKind) {
+  return `credentialsNotice credentialsNotice--${kind}`;
+}
+
 export function Credentials() {
   const [credentials, setCredentials] = useState<CredentialSetSummary[]>([]);
   const [connectors, setConnectors] = useState<Array<{ role: Role; connector: ConnectorDescriptor }>>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testingCredentialId, setTestingCredentialId] = useState<string | null>(null);
+  const [deletingCredentialId, setDeletingCredentialId] = useState<string | null>(null);
+  const [pageNotice, setPageNotice] = useState<PageNotice | null>(null);
+  const [formNotice, setFormNotice] = useState<PageNotice | null>(null);
+  const [savedSetsNotice, setSavedSetsNotice] = useState<PageNotice | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("Local test credentials");
   const [selectedConnector, setSelectedConnector] = useState("");
   const [valuesJson, setValuesJson] = useState(emptyCredentialsJson);
@@ -267,6 +296,11 @@ export function Credentials() {
     [credentialFields]
   );
 
+  const optionalCredentialFields = useMemo(
+    () => credentialFields.filter(field => !field.required),
+    [credentialFields]
+  );
+
   const secretKeys = useMemo(
     () => inferSecretKeys(credentialFields),
     [credentialFields]
@@ -279,7 +313,9 @@ export function Credentials() {
 
   function selectConnector(value: string) {
     setSelectedConnector(value);
-    setMessage(null);
+    setPageNotice(null);
+    setFormNotice(null);
+    setSavedSetsNotice(null);
     setError(null);
 
     const [role, type] = value.split("|");
@@ -292,20 +328,22 @@ export function Credentials() {
 
   function resetValuesFromSchema() {
     setValuesJson(buildCredentialValuesJson(selected?.connector ?? null));
-    setMessage("Values JSON reset from selected connector credential schema.");
+    setFormNotice({ kind: "info", message: "Values JSON reset from selected connector credential schema." });
   }
 
   async function createCredential() {
     setError(null);
-    setMessage(null);
+    setPageNotice(null);
+    setFormNotice(null);
+    setSavedSetsNotice(null);
 
     if (!selected) {
-      setError("Select a connector first.");
+      setFormNotice({ kind: "error", message: "Select a connector before saving a credential set." });
       return;
     }
 
     if (credentialFields.length === 0) {
-      setError("This connector does not declare credential fields.");
+      setFormNotice({ kind: "error", message: "This connector does not declare credential fields." });
       return;
     }
 
@@ -314,19 +352,23 @@ export function Credentials() {
     try {
       values = JSON.parse(valuesJson);
     } catch (err) {
-      setError(`Credential values must be valid JSON: ${err instanceof Error ? err.message : String(err)}`);
+      setFormNotice({
+        kind: "error",
+        message: `Values JSON is invalid: ${err instanceof Error ? err.message : String(err)}`
+      });
       return;
     }
 
     const missingRequired = requiredCredentialFields.filter(field => {
       const value = values[field.key];
-      return value === undefined || value === null || value === "";
+      return isMissingRequiredValue(value);
     });
 
     if (missingRequired.length > 0) {
-      setError(
-        `Missing required credential value(s): ${missingRequired.map(field => field.key).join(", ")}`
-      );
+      setFormNotice({
+        kind: "error",
+        message: `Missing required credential value(s): ${missingRequired.map(field => field.key).join(", ")}. Optional fields may be left blank.`
+      });
       return;
     }
 
@@ -341,10 +383,13 @@ export function Credentials() {
         secretKeys
       });
 
-      setMessage(`Created credential set ${created.credentialSetId}.`);
+      setFormNotice({ kind: "success", message: `Created credential set ${created.credentialSetId}.` });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setFormNotice({
+        kind: "error",
+        message: `Failed to save credential set: ${err instanceof Error ? err.message : String(err)}`
+      });
     } finally {
       setSaving(false);
     }
@@ -352,26 +397,46 @@ export function Credentials() {
 
   async function testCredential(credentialSetId: string) {
     setError(null);
-    setMessage(null);
+    setPageNotice(null);
+    setFormNotice(null);
+    setSavedSetsNotice(null);
+    setTestingCredentialId(credentialSetId);
 
     try {
       const result = await api.testCredential(credentialSetId);
-      setMessage(`${result.success ? "Passed" : "Failed"}: ${result.message}`);
+
+      setSavedSetsNotice({
+        kind: result.success ? "success" : "error",
+        message: `${result.success ? "Credential test passed" : "Credential test failed"} for ${credentialSetId}: ${result.message}`
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setSavedSetsNotice({
+        kind: "error",
+        message: `Credential test failed for ${credentialSetId}: ${err instanceof Error ? err.message : String(err)}`
+      });
+    } finally {
+      setTestingCredentialId(null);
     }
   }
 
   async function deleteCredential(credentialSetId: string) {
     setError(null);
-    setMessage(null);
+    setPageNotice(null);
+    setFormNotice(null);
+    setSavedSetsNotice(null);
+    setDeletingCredentialId(credentialSetId);
 
     try {
       await api.deleteCredential(credentialSetId);
-      setMessage(`Deleted credential set ${credentialSetId}.`);
+      setSavedSetsNotice({ kind: "success", message: `Deleted credential set ${credentialSetId}.` });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setSavedSetsNotice({
+        kind: "error",
+        message: `Failed to delete credential set ${credentialSetId}: ${err instanceof Error ? err.message : String(err)}`
+      });
+    } finally {
+      setDeletingCredentialId(null);
     }
   }
 
@@ -389,9 +454,9 @@ export function Credentials() {
 
       {error && <LoadingError message={error} />}
 
-      {message && (
-        <div className="successBanner">
-          {message}
+      {pageNotice && (
+        <div className={noticeClassName(pageNotice.kind)}>
+          {pageNotice.message}
         </div>
       )}
 
@@ -417,6 +482,12 @@ export function Credentials() {
               </select>
             </label>
           </div>
+
+          {formNotice && (
+            <div className={noticeClassName(formNotice.kind)}>
+              {formNotice.message}
+            </div>
+          )}
 
           {credentialFields.length === 0 ? (
             <div className="credentialNotice">
@@ -446,6 +517,22 @@ export function Credentials() {
                   ) : (
                     <ul>
                       {requiredCredentialFields.map(field => (
+                        <li key={field.key}>
+                          <code>{field.key}</code>
+                          {field.description ? <> — {field.description}</> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+
+                <section>
+                  <h3>Optional credential values</h3>
+                  {optionalCredentialFields.length === 0 ? (
+                    <p className="muted">No optional credential values are declared.</p>
+                  ) : (
+                    <ul>
+                      {optionalCredentialFields.map(field => (
                         <li key={field.key}>
                           <code>{field.key}</code>
                           {field.description ? <> — {field.description}</> : null}
@@ -508,6 +595,12 @@ export function Credentials() {
       </Card>
 
       <Card title="Saved credential sets">
+        {savedSetsNotice && (
+          <div className={noticeClassName(savedSetsNotice.kind)}>
+            {savedSetsNotice.message}
+          </div>
+        )}
+
         {credentials.length === 0 ? (
           <EmptyState title="No credential sets saved yet" />
         ) : (
@@ -544,8 +637,20 @@ export function Credentials() {
                       )}
                     </td>
                     <td>
-                      <button type="button" onClick={() => void testCredential(item.credentialSetId)}>Test</button>{" "}
-                      <button type="button" onClick={() => void deleteCredential(item.credentialSetId)}>Delete</button>
+                      <button
+                        type="button"
+                        onClick={() => void testCredential(item.credentialSetId)}
+                        disabled={testingCredentialId === item.credentialSetId}
+                      >
+                        {testingCredentialId === item.credentialSetId ? "Testing..." : "Test"}
+                      </button>{" "}
+                      <button
+                        type="button"
+                        onClick={() => void deleteCredential(item.credentialSetId)}
+                        disabled={deletingCredentialId === item.credentialSetId}
+                      >
+                        {deletingCredentialId === item.credentialSetId ? "Deleting..." : "Delete"}
+                      </button>
                     </td>
                   </tr>
                 ))}
