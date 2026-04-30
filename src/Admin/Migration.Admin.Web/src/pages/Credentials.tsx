@@ -298,6 +298,7 @@ export function Credentials() {
   }
 
   async function createCredential() {
+    console.log("Save credential clicked");
     setError(null);
     setMessage(null);
 
@@ -474,22 +475,22 @@ try {
           )}
 
           <div className="buttonRow">
-            <button
-              className="primaryButton"
-              onClick={createCredential}
-              disabled={loading || !selected || credentialFields.length === 0}
-            >
-              Save credential set
-            </button>
+<button
+  type="button"
+  className="primaryButton"
+  onClick={() => void createCredential()}
+  disabled={loading}
+>
+  Save credential set
+</button>
 
-            <button
-              className="secondaryButton"
-              onClick={resetValuesFromSchema}
-              type="button"
-              disabled={!selected}
-            >
-              Reset JSON from credentials schema
-            </button>
+<button
+  type="button"
+  className="secondaryButton"
+  onClick={resetValuesFromSchema}
+>
+  Reset JSON from schema
+</button>
           </div>
         </div>
       </Card>
