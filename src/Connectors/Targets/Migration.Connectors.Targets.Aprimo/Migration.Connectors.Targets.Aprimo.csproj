@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Manifest.Sql\Migration.Manifest.Sql.csproj" />
+    <!--
+      NOTE: The reference below (Sources.Aem) is a known cross-connector coupling
+      introduced by Files/ExcelSplitter.cs (uses AemAsset). Track: move ExcelSplitter
+      to the AEM->Aprimo workflow project (or promote AemAsset to Migration.Domain).
+      Until then, leaving the reference keeps this project building, but new code
+      MUST NOT depend on the Aem source connector from this Aprimo target connector.
+    -->
+    <ProjectReference Include="..\..\Sources\Migration.Connectors.Sources.Aem\Migration.Connectors.Sources.Aem.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="CsvHelper" />
+    <PackageReference Include="EPPlus" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="SharpGLTF.Core" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Keep rule JSON payloads next to the compiled rule classes so they copy to output. -->
+    <None Update="Rules/**/*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Duplicate rule class files exist under both Rules/ and Models/Rules/ with
+      slightly different namespaces. The Rules/ folder is the canonical home
+      (namespace: Migration.Connectors.Targets.Aprimo.Rules); exclude the
+      duplicate copies under Models/Rules to eliminate dead code and ambiguity.
+    -->
+    <Compile Remove="Models/Rules/**/*.cs" />
+  </ItemGroup>
+</Project>

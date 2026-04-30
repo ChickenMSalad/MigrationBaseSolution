@@ -1,0 +1,64 @@
+{
+  "profileName": "webdam-to-bynder-ntara",
+  "sourceType": "WebDam",
+  "targetType": "Bynder",
+  "requiredTargetFields": [
+    "File Name",
+    "webdam_id"
+  ],
+  "fieldMappings": [
+    {
+      "source": "File Name",
+      "target": "File Name"
+    },
+    {
+      "source": "webdam_id",
+      "target": "webdam_id"
+    },
+    {
+      "source": "Brand",
+      "target": "Brand"
+    },
+    {
+      "source": "Caption_Description",
+      "target": "Caption_Description"
+    },
+    {
+      "source": "Category",
+      "target": "Category"
+    },
+    {
+      "source": "City",
+      "target": "City"
+    },
+    {
+      "source": "Country",
+      "target": "Country"
+    },
+    {
+      "source": "Date_Created",
+      "target": "Date_Created"
+    },
+    {
+      "source": "Keywords",
+      "target": "Tags",
+      "transform": "split:semicolon"
+    },
+    {
+      "source": "Photographer",
+      "target": "Photographer"
+    },
+    {
+      "source": "Province_State",
+      "target": "Province_State"
+    },
+    {
+      "source": "Rights_Usage_Terms",
+      "target": "Rights_Usage_Terms"
+    },
+    {
+      "source": "Year",
+      "target": "Year"
+    }
+  ]
+}

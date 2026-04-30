@@ -1,0 +1,19 @@
+{
+  "jobName": "webdam-to-bynder-local-proof",
+  "sourceType": "WebDam",
+  "targetType": "Bynder",
+  "manifestType": "csv",
+  "manifestPath": "C:/Workspace/MigrationBaseSolution/src/Migration.Hosts.GenericMigration.Console/Profiles/Manifests/webdam-to-bynder.sample.csv",
+  "mappingProfilePath": "C:/Workspace/MigrationBaseSolution/src/Migration.Hosts.GenericMigration.Console/Profiles/Mappings/webdam-to-bynder.generic.mapping.json",
+  "dryRun": true,
+  "parallelism": 1,
+  "settings": {
+    "SourceAssetIdColumn": "WebDamAssetId",
+    "SourcePathColumn": "WebDamPath",
+    "DefaultOutputPath": "C:/Migration/Runtime/output/webdam-to-bynder",
+    "BynderDuplicateLookupField": "OriginId",
+    "BynderOriginIdField": "OriginId",
+    "BynderBrandStoreId": "dummy-brand-store-id",
+    "WebDamDownloadMode": "metadata-only"
+  }
+}

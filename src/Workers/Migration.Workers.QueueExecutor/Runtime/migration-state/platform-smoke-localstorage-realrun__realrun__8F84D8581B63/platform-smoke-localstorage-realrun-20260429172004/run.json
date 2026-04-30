@@ -1,0 +1,15 @@
+{
+  "runId": "platform-smoke-localstorage-realrun-20260429172004",
+  "jobName": "platform-smoke-localstorage-realrun::realrun::8F84D8581B63",
+  "sourceType": "LocalStorage",
+  "targetType": "LocalStorage",
+  "dryRun": false,
+  "startedUtc": "2026-04-29T17:20:04.8229596+00:00",
+  "completedUtc": "2026-04-29T17:20:04.9552509+00:00",
+  "status": "Succeeded",
+  "totalWorkItems": 3,
+  "succeeded": 3,
+  "failed": 0,
+  "skipped": 0,
+  "validationFailed": 0
+}

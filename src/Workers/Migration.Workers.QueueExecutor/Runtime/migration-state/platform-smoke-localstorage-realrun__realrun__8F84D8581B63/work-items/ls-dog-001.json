@@ -1,0 +1,24 @@
+{
+  "runId": "platform-smoke-localstorage-realrun-20260429172004",
+  "jobName": "platform-smoke-localstorage-realrun::realrun::8F84D8581B63",
+  "workItemId": "ls-dog-001",
+  "status": "Succeeded",
+  "dryRun": false,
+  "startedUtc": null,
+  "completedUtc": "2026-04-29T17:20:04.8935251+00:00",
+  "updatedUtc": "2026-04-29T17:20:04.8934679+00:00",
+  "sourceAssetId": "ls-dog-001",
+  "targetAssetId": "local:C:\\Workspace\\MigrationBaseSolution\\samples\\localstorage\\target\\platform-smoke-output\\animals\\dogs\\ls-dog-001_dog-001.txt",
+  "message": "Copied binary to C:\\Workspace\\MigrationBaseSolution\\samples\\localstorage\\target\\platform-smoke-output\\animals\\dogs\\ls-dog-001_dog-001.txt; wrote metadata sidecar to C:\\Workspace\\MigrationBaseSolution\\samples\\localstorage\\target\\platform-smoke-output\\animals\\dogs\\ls-dog-001_metadata.json.",
+  "lastError": null,
+  "checksum": null,
+  "attemptCount": 1,
+  "properties": {
+    "OriginalJobName": "platform-smoke-localstorage-realrun",
+    "ManifestFingerprint": "8F84D8581B63",
+    "ExecutionMode": "Live",
+    "ManifestPath": "../../../profiles/manifests/localstorage-platform-smoke.csv",
+    "ManifestRowId": "ls-dog-001"
+  },
+  "isTerminalSuccess": true
+}

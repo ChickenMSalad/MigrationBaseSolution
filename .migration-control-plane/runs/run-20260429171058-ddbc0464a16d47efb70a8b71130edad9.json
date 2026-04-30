@@ -1,0 +1,29 @@
+{
+  "runId": "run-20260429171058-ddbc0464a16d47efb70a8b71130edad9",
+  "projectId": "project-20260429171033-213af74971874b7fb017ee1007142c6b",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "status": "Failed",
+  "dryRun": false,
+  "createdUtc": "2026-04-29T17:10:58.9029533+00:00",
+  "updatedUtc": "2026-04-29T17:11:01.3626345+00:00",
+  "startedUtc": "2026-04-29T17:11:01.2435622+00:00",
+  "completedUtc": "2026-04-29T17:11:01.362634+00:00",
+  "message": "No manifest provider registered for type \u0027Csv\u0027.",
+  "job": {
+    "jobName": "platform-smoke-localstorage-realrun",
+    "sourceType": "LocalStorage",
+    "targetType": "LocalStorage",
+    "manifestType": "Csv",
+    "mappingProfilePath": "../../../profiles/mappings/localstorage-platform-smoke.json",
+    "manifestPath": "../../../profiles/manifests/localstorage-platform-smoke.csv",
+    "connectionString": null,
+    "queryText": null,
+    "settings": {
+      "LocalStorageSourceRootDirectory": "../../../samples/localstorage/source",
+      "LocalStorageTargetRootDirectory": "../../../samples/localstorage/target",
+      "LocalStorageTargetBasePath": "platform-smoke-output"
+    },
+    "dryRun": false,
+    "parallelism": 1
+  }
+}

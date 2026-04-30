@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+        <ProjectReference Include="..\..\Targets\Migration.Connectors.Targets.Bynder\Migration.Connectors.Targets.Bynder.csproj" />
+<PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="Bynder.Sdk" />
+    <PackageReference Include="CsvHelper" />
+    <PackageReference Include="EPPlus" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Polly.Core" />
+    <PackageReference Include="RestSharp" />
+    <PackageReference Include="Stylelabs.M.Sdk" />
+    <PackageReference Include="Stylelabs.M.Sdk.WebClient" />
+  </ItemGroup>
+</Project>

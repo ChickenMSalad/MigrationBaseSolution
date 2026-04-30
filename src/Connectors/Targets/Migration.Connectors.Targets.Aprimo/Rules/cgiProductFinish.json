@@ -1,0 +1,24 @@
+{
+  "ruleSet": "inlineFinishesCGI",
+  "version": 1,
+  "matchMode": "contains",
+  "caseInsensitive": true,
+  "rules": [
+    {
+      "aemFolderName": "Fabrics",
+      "aprimoInlineFinish": "Fabrics"
+    },
+    {
+      "aemFolderName": "Laminates",
+      "aprimoInlineFinish": "Laminates"
+    },
+    {
+      "aemFolderName": "Mattresses",
+      "aprimoInlineFinish": "Mattresses"
+    },
+    {
+      "aemFolderName": "Woods",
+      "aprimoInlineFinish": "Woods"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Manifest.Sql\Migration.Manifest.Sql.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="CsvHelper" />
+    <PackageReference Include="EPPlus" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="SharpGLTF.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Legacy Aprimo-target files that were pulled in during the consolidation
+      and now live in the Aprimo target connector instead. Excluded here so
+      this project remains a pure AEM source connector (no Aprimo coupling).
+    -->
+    <Compile Remove="Clients/AprimoAuthClient.cs" />
+    <Compile Remove="Clients/AprimoAssetClient.cs" />
+    <Compile Remove="Clients/IAprimoAuthClient.cs" />
+    <Compile Remove="Clients/IAprimoAssetClient.cs" />
+    <Compile Remove="Services/AprimoDataMigrationService.cs" />
+    <Compile Remove="Extensions/AprimoRecordExtensions.cs" />
+    <Compile Remove="Models/Aprimo/**/*.cs" />
+    <Compile Remove="Models/AprimoUpsertBuilder.cs" />
+    <Compile Remove="Models/AprimoClassificationResolver.cs" />
+    <Compile Remove="Models/AssetMetadata.cs" />
+    <Compile Remove="Models/AssetMetadataFactory.cs" />
+    <Compile Remove="Models/AssetMetadataMerge.cs" />
+    <Compile Remove="Models/RowDataMetadataPopulator.cs" />
+    <Compile Remove="Models/ExecutionContextState.cs" />
+    <Compile Remove="Mapping/StringOrArrayConverter.cs" />
+    <Compile Remove="Mapping/CommaJoinStringOrArrayConverter.cs" />
+    <Compile Remove="Models/AprimoImageSetAssets.cs" />
+    <Compile Remove="Models/AprimoImageSet.cs" />
+    <Compile Remove="Models/AprimoFieldAttribute.cs" />
+    <Compile Remove="Models/AprimoMetadataMapper.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,45 @@
+{
+  "ruleSet": "itemStatus",
+  "version": 1,
+  "matchMode": "contains",
+  "caseInsensitive": true,
+  "rules": [
+    {
+      "currentValue": "Current",
+      "aprimoValue": "Available"
+    },
+    {
+      "currentValue": "Deleted",
+      "aprimoValue": "Archived"
+    },
+    {
+      "currentValue": "Discontinued",
+      "aprimoValue": "Expired"
+    },
+    {
+      "currentValue": "Introduced",
+      "aprimoValue": "Available"
+    },
+    {
+      "currentValue": "New",
+      "aprimoValue": "Available"
+    },
+    {
+      "currentValue": "Replaced",
+      "aprimoValue": "Available"
+    },
+    {
+      "currentValue": "Tentative",
+      "aprimoValue": "Available"
+    },
+    {
+      "currentValue": null,
+      "aprimoValue": "Available"
+    },
+    {
+      "currentValue": "",
+      "aprimoValue": "Available"
+    }
+
+  ]
+}

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>MigrationBaseSolution-Runner</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Migration.Domain/Migration.Domain.csproj" />
+    <ProjectReference Include="../Migration.Application/Migration.Application.csproj" />
+    <ProjectReference Include="../Migration.Infrastructure/Migration.Infrastructure.csproj" />
+    <ProjectReference Include="../Migration.Shared/Migration.Shared.csproj" />
+    <ProjectReference Include="../Migration.Manifest.Csv/Migration.Manifest.Csv.csproj" />
+    <ProjectReference Include="../Migration.Manifest.Excel/Migration.Manifest.Excel.csproj" />
+    <ProjectReference Include="../Migration.Manifest.Sql/Migration.Manifest.Sql.csproj" />
+    <ProjectReference Include="../Migration.Manifest.Sqlite/Migration.Manifest.Sqlite.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Sources.Aem/Migration.Connectors.Sources.Aem.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Sources.Sitecore/Migration.Connectors.Sources.Sitecore.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Sources.WebDam/Migration.Connectors.Sources.WebDam.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Sources.AzureBlob/Migration.Connectors.Sources.AzureBlob.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Sources.S3/Migration.Connectors.Sources.S3.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Sources.SharePoint/Migration.Connectors.Sources.SharePoint.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Targets.Bynder/Migration.Connectors.Targets.Bynder.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Targets.Aprimo/Migration.Connectors.Targets.Aprimo.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Targets.AzureBlob/Migration.Connectors.Targets.AzureBlob.csproj" />
+    <ProjectReference Include="../Migration.Connectors.Targets.Cloudinary/Migration.Connectors.Targets.Cloudinary.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+  </ItemGroup>
+</Project>

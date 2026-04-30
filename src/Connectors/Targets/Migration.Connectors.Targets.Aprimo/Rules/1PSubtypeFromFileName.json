@@ -1,0 +1,52 @@
+[
+  {
+    "id": "detail-sweep",
+    "priority": 100,
+    "endsWithAny": [ "-detail" ],
+    "containsAny": [ "-sw" ],
+    "subtype": "Sweep",
+    "notes": "Filename ends with -detail and contains -sw"
+  },
+  {
+    "id": "detail-lifestyle",
+    "priority": 90,
+    "endsWithAny": [ "-detail" ],
+    "notContainsAny": [ "-sw" ],
+    "subtype": "Lifestyle",
+    "notes": "Filename ends with -detail and does NOT contain -sw"
+  },
+  {
+    "id": "swatch",
+    "priority": 80,
+    "endsWithAny": [ "-swatch", "-finish" ],
+    "subtype": "Swatch"
+  },
+  {
+    "id": "sweep",
+    "priority": 70,
+    "endsWithAny": [ "-sw" ],
+    "notEndsWithAny": [ "-swatch" ],
+    "subtype": "Sweep"
+  },
+  {
+    "id": "fpo",
+    "priority": 60,
+    "endsWithAny": [ "-fpo" ],
+    "subtype": "Series-FPO"
+  },
+  {
+    "id": "default-lifestyle",
+    "priority": 0,
+    "isDefault": true,
+    "notEndsWithAny": [ "-swatch", "-finish", "-sw", "-fpo", "-detail" ],
+    "subtype": "Lifestyle",
+    "notes": "No explicit suffix => Lifestyle"
+  },
+  {
+    "id": "ai-background-lifestyle",
+    "priority": -10,
+    "requiresAprimoAI": true,
+    "subtype": "Lifestyle",
+    "notes": "No explicit suffix and image has a background (handled elsewhere; not returned by filename resolver)"
+  }
+]

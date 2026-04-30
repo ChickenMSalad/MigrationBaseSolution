@@ -1,0 +1,19 @@
+{
+  "jobName": "webdam-to-bynder-ntara",
+  "sourceType": "WebDam",
+  "targetType": "Bynder",
+  "manifestType": "csv",
+  "manifestPath": "C:/Workspace/MigrationBaseSolution/src/Migration.Hosts.GenericMigration.Console/Profiles/Manifests/BynderWebDamImport_ntara.csv",
+  "mappingProfilePath": "C:/Workspace/MigrationBaseSolution/src/Migration.Hosts.GenericMigration.Console/Profiles/Mappings/webdam-to-bynder.ntara.mapping.json",
+  "dryRun": false,
+  "parallelism": 1,
+  "settings": {
+    "SourceAssetIdColumn": "webdam_id",
+    "SourcePathColumn": "WebDamPath",
+    "DefaultOutputPath": "C:/Migration/Runtime/output/webdam-to-bynder",
+    "BynderDuplicateLookupField": "webdam_id",
+    "BynderOriginIdField": "webdam_id",
+    "BynderBrandStoreId": "D83DC5E0-EF74-41AB-960B12AE467E203A",
+    "WebDamDownloadMode": "metadata-only"
+  }
+}

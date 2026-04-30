@@ -1,0 +1,59 @@
+{
+  "ruleSet": "productCategoryAFIVideos",
+  "version": 1,
+  "matchMode": "contains",
+  "caseInsensitive": true,
+  "rules": [
+    {
+      "aemFolderName": "Accent-Furniture",
+      "aprimoProductCategory": "Accent Furniture"
+    },
+    {
+      "aemFolderName": "Bedroom",
+      "aprimoProductCategory": "Bedroom"
+    },
+    {
+      "aemFolderName": "Dining",
+      "aprimoProductCategory": "Dining"
+    },
+    {
+      "aemFolderName": "Discontinued",
+      "aprimoProductCategory": null,
+      "flags": {
+        "noMappingProvided": true
+      }
+    },
+    {
+      "aemFolderName": "Entertainment Wall",
+      "aprimoProductCategory": "Entertainment Wall"
+    },
+    {
+      "aemFolderName": "Home Office",
+      "aprimoProductCategory": "Home Office"
+    },
+    {
+      "aemFolderName": "Lamps",
+      "aprimoProductCategory": "Lamps"
+    },
+    {
+      "aemFolderName": "Mattresses",
+      "aprimoProductCategory": "Mattresses"
+    },
+    {
+      "aemFolderName": "OccasionalTables",
+      "aprimoProductCategory": "Occasional Tables"
+    },
+    {
+      "aemFolderName": "Outdoor",
+      "aprimoProductCategory": "Outdoor"
+    },
+    {
+      "aemFolderName": "Rugs",
+      "aprimoProductCategory": "Rugs"
+    },
+    {
+      "aemFolderName": "Upholstery",
+      "aprimoProductCategory": "Upholstery"
+    }
+  ]
+}

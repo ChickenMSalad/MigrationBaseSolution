@@ -1,0 +1,752 @@
+{
+  "ruleSetId": "3PVendorAndSubtypeFromFolderToken",
+  "version": 1,
+  "matchMode": "PathContainsIgnoreCase",
+  "preferMostSpecificMatch": true,
+  "rules": [
+    {
+      "aemFolderToken": "3p_misc",
+      "vendorName": "Misc"
+    },
+    {
+      "aemFolderToken": "ACG-Green-Group Inc",
+      "vendorName": "ACG Green Group Inc"
+    },
+    {
+      "aemFolderToken": "ACGGreenGroup-",
+      "vendorName": "ACG Green Group Inc"
+    },
+    {
+      "aemFolderToken": "Adcopci",
+      "vendorName": "Adcopci"
+    },
+    {
+      "aemFolderToken": "AGG-Green-Group-Inc",
+      "vendorName": "ACG Green Group Inc"
+    },
+    {
+      "aemFolderToken": "All-The-Rage",
+      "vendorName": "All The Rages"
+    },
+    {
+      "aemFolderToken": "ames",
+      "vendorName": "ClosetMaid / AMES"
+    },
+    {
+      "aemFolderToken": "Armen-Living",
+      "vendorName": "Armen Living"
+    },
+    {
+      "aemFolderToken": "Balta-Home",
+      "vendorName": "Balta Home"
+    },
+    {
+      "aemFolderToken": "bebejan",
+      "vendorName": "Bebejan"
+    },
+    {
+      "aemFolderToken": "Bedgear",
+      "vendorName": "Bedgear"
+    },
+    {
+      "aemFolderToken": "Benzara",
+      "vendorName": "Benzara"
+    },
+    {
+      "aemFolderToken": "Bolton-Furniture",
+      "vendorName": "Bolton Furniture"
+    },
+    {
+      "aemFolderToken": "Boyd-Sleep",
+      "vendorName": "Boyd Sleep"
+    },
+    {
+      "aemFolderToken": "casper-sleep",
+      "vendorName": "Casper Sleep"
+    },
+    {
+      "aemFolderToken": "Color-swatches",
+      "subtype": "Swatch"
+    },
+    {
+      "aemFolderToken": "CorLiving",
+      "vendorName": "Cor Living"
+    },
+    {
+      "aemFolderToken": "Creative Co-op",
+      "vendorName": "Creative Co-op"
+    },
+    {
+      "aemFolderToken": "Creative Co-op Inc",
+      "vendorName": "Creative Co-op"
+    },
+    {
+      "aemFolderToken": "Creative-Co-op-Inc",
+      "vendorName": "Creative Co-op"
+    },
+    {
+      "aemFolderToken": "Creative_Co-op",
+      "vendorName": "Creative Co-op"
+    },
+    {
+      "aemFolderToken": "Crestview_Collection",
+      "vendorName": "Crestview Collection"
+    },
+    {
+      "aemFolderToken": "crosley",
+      "vendorName": "Crosley"
+    },
+    {
+      "aemFolderToken": "Cyan-Design-Luxe",
+      "vendorName": "Cyan Design"
+    },
+    {
+      "aemFolderToken": "Dalyn",
+      "vendorName": "Dalyn"
+    },
+    {
+      "aemFolderToken": "Davinci_aka_Million_Dollar_Baby",
+      "vendorName": "Million Dollar Baby Co"
+    },
+    {
+      "aemFolderToken": "Delta Children",
+      "vendorName": "Delta Children"
+    },
+    {
+      "aemFolderToken": "delta-children",
+      "vendorName": "Delta Children"
+    },
+    {
+      "aemFolderToken": "Delta_Children",
+      "vendorName": "Delta Children"
+    },
+    {
+      "aemFolderToken": "donco",
+      "vendorName": "Donco"
+    },
+    {
+      "aemFolderToken": "Dorel",
+      "vendorName": "Dorel"
+    },
+    {
+      "aemFolderToken": "dorel-home-furnishings",
+      "vendorName": "Dorel"
+    },
+    {
+      "aemFolderToken": "dorel-juvenile-g",
+      "vendorName": "Dorel"
+    },
+    {
+      "aemFolderToken": "DW-Silk-Luxe",
+      "vendorName": "DW Silk Luxe"
+    },
+    {
+      "aemFolderToken": "eco-top",
+      "vendorName": "Eco Top"
+    },
+    {
+      "aemFolderToken": "Elegant Funiture and Lighting",
+      "vendorName": "Elegant Furniture and Lighting"
+    },
+    {
+      "aemFolderToken": "Elegant_Funiture_and_Lighting",
+      "vendorName": "Elegant Furniture and Lighting"
+    },
+    {
+      "aemFolderToken": "elegant",
+      "vendorName": "Elegant Furniture and Lighting"
+    },
+    {
+      "aemFolderToken": "Elk",
+      "vendorName": "Elk Lighting"
+    },
+    {
+      "aemFolderToken": "Elk-Lighting",
+      "vendorName": "Elk Lighting"
+    },
+    {
+      "aemFolderToken": "Four-Hands",
+      "vendorName": "Four Hands"
+    },
+    {
+      "aemFolderToken": "Four-Hands-Luxe",
+      "vendorName": "Four Hands Luxe"
+    },
+    {
+      "aemFolderToken": "Furinno",
+      "vendorName": "Furinno"
+    },
+    {
+      "aemFolderToken": "fxi-molecule",
+      "vendorName": "FXI-Molecule"
+    },
+    {
+      "aemFolderToken": "Galt-International",
+      "vendorName": "Galt International"
+    },
+    {
+      "aemFolderToken": "Gerson",
+      "vendorName": "Gerson"
+    },
+    {
+      "aemFolderToken": "healthcare",
+      "vendorName": "Healthcare"
+    },
+    {
+      "aemFolderToken": "hiEnd-Accents-Luxe",
+      "vendorName": "HiEnd Accents"
+    },
+    {
+      "aemFolderToken": "hiend-accents",
+      "vendorName": "HiEnd Accents"
+    },
+    {
+      "aemFolderToken": "highwood-usa",
+      "vendorName": "Highwood USA"
+    },
+    {
+      "aemFolderToken": "Homestar_North_America",
+      "vendorName": "Homestar North America"
+    },
+    {
+      "aemFolderToken": "Howard-Elliott-Luxe",
+      "vendorName": "Howard Elliott Luxe"
+    },
+    {
+      "aemFolderToken": "howard-elliott",
+      "vendorName": "Howard Elliott Luxe"
+    },
+    {
+      "aemFolderToken": "Hudson-Valley-Lighting-Group",
+      "vendorName": "Hudson Valley Lighting Group"
+    },
+    {
+      "aemFolderToken": "iEnjoy Home",
+      "vendorName": "iEnjoy Home"
+    },
+    {
+      "aemFolderToken": "iEnjoy_Home",
+      "vendorName": "iEnjoy Home"
+    },
+    {
+      "aemFolderToken": "Imax",
+      "vendorName": "Nearly Natural"
+    },
+    {
+      "aemFolderToken": "International Home",
+      "vendorName": "International Home Miami"
+    },
+    {
+      "aemFolderToken": "International_Home_Miami",
+      "vendorName": "International Home Miami"
+    },
+    {
+      "aemFolderToken": "InternationalHome",
+      "vendorName": "International Home Miami"
+    },
+    {
+      "aemFolderToken": "J Queen",
+      "vendorName": "J Queen New York"
+    },
+    {
+      "aemFolderToken": "Jamie Young Company",
+      "vendorName": "Jamie Young"
+    },
+    {
+      "aemFolderToken": "j-queen-new-york",
+      "vendorName": "J Queen New York"
+    },
+    {
+      "aemFolderToken": "J_Queen",
+      "vendorName": "J Queen New York"
+    },
+    {
+      "aemFolderToken": "JLA Home",
+      "vendorName": "JLA Home"
+    },
+    {
+      "aemFolderToken": "jla-home",
+      "vendorName": "JLA Home"
+    },
+    {
+      "aemFolderToken": "Jonathan-Y",
+      "vendorName": "Jonathan Y Designs"
+    },
+    {
+      "aemFolderToken": "JONATHAN-Y-DESIGNS",
+      "vendorName": "Jonathan Y Designs"
+    },
+    {
+      "aemFolderToken": "Kalalou",
+      "vendorName": "Kalalou"
+    },
+    {
+      "aemFolderToken": "KidKraft",
+      "vendorName": "KidKraft"
+    },
+    {
+      "aemFolderToken": "Kinfine-USA",
+      "vendorName": "Kinfine USA"
+    },
+    {
+      "aemFolderToken": "lagoon-furniture-america",
+      "vendorName": "Lagoon Furniture America"
+    },
+    {
+      "aemFolderToken": "lavin-rugs",
+      "vendorName": "Lavin Rugs"
+    },
+    {
+      "aemFolderToken": "LeftBank-2",
+      "vendorName": "Left Bank"
+    },
+    {
+      "aemFolderToken": "Left-Bank-Luxe",
+      "vendorName": "Left Bank"
+    },
+    {
+      "aemFolderToken": "LGC-Sales",
+      "vendorName": "LGC Sales"
+    },
+    {
+      "aemFolderToken": "lifestyle-solutions",
+      "vendorName": "Lifestyle Solutions"
+    },
+    {
+      "aemFolderToken": "Linon",
+      "vendorName": "Linon"
+    },
+    {
+      "aemFolderToken": "Linon-Home-Decor",
+      "vendorName": "Linon"
+    },
+    {
+      "aemFolderToken": "loloi",
+      "vendorName": "Loloi"
+    },
+    {
+      "aemFolderToken": "loloi-luxe",
+      "vendorName": "Loloi"
+    },
+    {
+      "aemFolderToken": "LR-Home",
+      "vendorName": "LR Home"
+    },
+    {
+      "aemFolderToken": "Lumisource",
+      "vendorName": "Lumisource"
+    },
+    {
+      "aemFolderToken": "Luxe",
+      "vendorName": "Four Hands"
+    },
+    {
+      "aemFolderToken": "Manhattan Comfort",
+      "vendorName": "Manhattan Comfort"
+    },
+    {
+      "aemFolderToken": "Manhattan-Comfort",
+      "vendorName": "Manhattan Comfort"
+    },
+    {
+      "aemFolderToken": "Manhattan_Comfort",
+      "vendorName": "Manhattan Comfort"
+    },
+    {
+      "aemFolderToken": "MarmontHill",
+      "vendorName": "Marmont Hill"
+    },
+    {
+      "aemFolderToken": "Mercana",
+      "vendorName": "Mercana Art Decor"
+    },
+    {
+      "aemFolderToken": "Mercana-Art-Decor",
+      "vendorName": "Mercana Art Decor"
+    },
+    {
+      "aemFolderToken": "mercana-furniture-decor",
+      "vendorName": "Mercana Art Decor"
+    },
+    {
+      "aemFolderToken": "Mercana-Furniture---Décor",
+      "vendorName": "Mercana Art Decor"
+    },
+    {
+      "aemFolderToken": "Mercana1",
+      "vendorName": "Mercana Art Decor"
+    },
+    {
+      "aemFolderToken": "Meyers Corp",
+      "vendorName": "Trinity"
+    },
+    {
+      "aemFolderToken": "Million-Dollar-Baby",
+      "vendorName": "Million Dollar Baby Co"
+    },
+    {
+      "aemFolderToken": "Million-Dollar-Baby-Co",
+      "vendorName": "Million Dollar Baby Co"
+    },
+    {
+      "aemFolderToken": "mirou-mirror",
+      "vendorName": "Mirou Mirror"
+    },
+    {
+      "aemFolderToken": "Misc",
+      "vendorName": "Delta Children"
+    },
+    {
+      "aemFolderToken": "Modway",
+      "vendorName": "Modus Furniture"
+    },
+    {
+      "aemFolderToken": "Monarch-Specialties",
+      "vendorName": "Monarch Specialties"
+    },
+    {
+      "aemFolderToken": "Multi-Vendor",
+      "vendorName": "Misc"
+    },
+    {
+      "aemFolderToken": "My-Word!",
+      "vendorName": "MyWorldSigns"
+    },
+    {
+      "aemFolderToken": "National Tree Company",
+      "vendorName": "National Tree Company"
+    },
+    {
+      "aemFolderToken": "National-Christmas",
+      "vendorName": "National Christmas"
+    },
+    {
+      "aemFolderToken": "National_Tree_Company",
+      "vendorName": "National Tree Company"
+    },
+    {
+      "aemFolderToken": "Nearly-Natural",
+      "vendorName": "Nearly Natural"
+    },
+    {
+      "aemFolderToken": "NorthCape",
+      "vendorName": "NorthCape"
+    },
+    {
+      "aemFolderToken": "Nourison",
+      "vendorName": "Nourison"
+    },
+    {
+      "aemFolderToken": "Nourison3P",
+      "vendorName": "Nourison"
+    },
+    {
+      "aemFolderToken": "Nuloom",
+      "vendorName": "NuLoom"
+    },
+    {
+      "aemFolderToken": "Nuu Garden",
+      "vendorName": "Nuu Garden"
+    },
+    {
+      "aemFolderToken": "Nuu_Garden",
+      "vendorName": "Nuu Garden"
+    },
+    {
+      "aemFolderToken": "OFM",
+      "vendorName": "OFM"
+    },
+    {
+      "aemFolderToken": "OFM-Inc",
+      "vendorName": "OFM"
+    },
+    {
+      "aemFolderToken": "Old_Third_Party-KO",
+      "vendorName": "Misc"
+    },
+    {
+      "aemFolderToken": "Oliver-Gal",
+      "vendorName": "Art Remedy aka Oliver Gal"
+    },
+    {
+      "aemFolderToken": "OopsyDaisy",
+      "vendorName": "Greenbox/Oopsy Daisy"
+    },
+    {
+      "aemFolderToken": "Organic-Dream",
+      "vendorName": "Organic Dream"
+    },
+    {
+      "aemFolderToken": "OTA-World",
+      "vendorName": "OTA World"
+    },
+    {
+      "aemFolderToken": "Package-KnockOuts",
+      "subtype": "Package Knockouts"
+    },
+    {
+      "aemFolderToken": "Pem America",
+      "vendorName": "Pem America"
+    },
+    {
+      "aemFolderToken": "Pem-America",
+      "vendorName": "Pem America"
+    },
+    {
+      "aemFolderToken": "PEM_America",
+      "vendorName": "Pem America"
+    },
+    {
+      "aemFolderToken": "Purple",
+      "vendorName": "Purple"
+    },
+    {
+      "aemFolderToken": "real-flame",
+      "vendorName": "Real Flame"
+    },
+    {
+      "aemFolderToken": "respawn",
+      "vendorName": "Respawn LLC"
+    },
+    {
+      "aemFolderToken": "Restonic",
+      "vendorName": "Restonic Visionary Sleep LLC"
+    },
+    {
+      "aemFolderToken": "Restonic_-_Visionary Sleep",
+      "vendorName": "Restonic Visionary Sleep LLC"
+    },
+    {
+      "aemFolderToken": "restonic-visiona",
+      "vendorName": "Restonic Visionary Sleep LLC"
+    },
+    {
+      "aemFolderToken": "Rizzy Home",
+      "vendorName": "Rizzy Home"
+    },
+    {
+      "aemFolderToken": "rizzy-home",
+      "vendorName": "Rizzy Home"
+    },
+    {
+      "aemFolderToken": "Rizzy_Home",
+      "vendorName": "Rizzy Home"
+    },
+    {
+      "aemFolderToken": "RTA-Products",
+      "vendorName": "RTA Products"
+    },
+    {
+      "aemFolderToken": "Safavieh",
+      "vendorName": "Safavieh"
+    },
+    {
+      "aemFolderToken": "Sagebrook-Luxe",
+      "vendorName": "Sagebrook Home"
+    },
+    {
+      "aemFolderToken": "sagebrook-home",
+      "vendorName": "Sagebrook Home"
+    },
+    {
+      "aemFolderToken": "SEI - Southern Enterprises",
+      "vendorName": "Southern Enterprise"
+    },
+    {
+      "aemFolderToken": "SEI_-_Southern_Enterprises",
+      "vendorName": "Southern Enterprise"
+    },
+    {
+      "aemFolderToken": "seam-seal",
+      "vendorName": "Seam Seal"
+    },
+    {
+      "aemFolderToken": "Second-Story-Home",
+      "vendorName": "Second Story Home"
+    },
+    {
+      "aemFolderToken": "Simpli Home",
+      "vendorName": "Simpli Home"
+    },
+    {
+      "aemFolderToken": "Simpli-Home",
+      "vendorName": "Simpli Home"
+    },
+    {
+      "aemFolderToken": "Simpli_Home",
+      "vendorName": "Simpli Home"
+    },
+    {
+      "aemFolderToken": "Simmons",
+      "vendorName": "Serta Simmons DS"
+    },
+    {
+      "aemFolderToken": "SIS_Covers",
+      "vendorName": "Sis Enterprises"
+    },
+    {
+      "aemFolderToken": "Soft-Tex",
+      "vendorName": "Soft-Tex"
+    },
+    {
+      "aemFolderToken": "Softline",
+      "vendorName": "Safavieh"
+    },
+    {
+      "aemFolderToken": "Southern-Enterprises",
+      "vendorName": "Southern Enterprise"
+    },
+    {
+      "aemFolderToken": "Serta",
+      "vendorName": "Serta Simmons DS"
+    },
+    {
+      "aemFolderToken": "Serta-Simmons",
+      "vendorName": "Serta Simmons DS"
+    },
+    {
+      "aemFolderToken": "Serta-Simmons-Mattress",
+      "vendorName": "Serta Simmons DS"
+    },
+    {
+      "aemFolderToken": "Serta_Simmons_Mattress",
+      "vendorName": "Serta Simmons DS"
+    },
+    {
+      "aemFolderToken": "Stearns---Foster",
+      "vendorName": "TSI-Sealy DS"
+    },
+    {
+      "aemFolderToken": "Storied-Home",
+      "vendorName": "Creative Co-op"
+    },
+    {
+      "aemFolderToken": "stork-craft",
+      "vendorName": "Stork Craft"
+    },
+    {
+      "aemFolderToken": "Sullivans",
+      "vendorName": "Sullivans"
+    },
+    {
+      "aemFolderToken": "Sunny-Daze",
+      "vendorName": "Sunnydaze Decor"
+    },
+    {
+      "aemFolderToken": "Sunnydaze-Decor",
+      "vendorName": "Sunnydaze Decor"
+    },
+    {
+      "aemFolderToken": "Surya",
+      "vendorName": "Surya"
+    },
+    {
+      "aemFolderToken": "Swatch-Bank",
+      "subtype": "Swatch"
+    },
+    {
+      "aemFolderToken": "Tempur Sealy Mattress",
+      "vendorName": "Tempur-Pedic"
+    },
+    {
+      "aemFolderToken": "Tempur-Sealy-Mattress",
+      "vendorName": "Tempur-Pedic"
+    },
+    {
+      "aemFolderToken": "Tempur_Sealy_Mattress",
+      "vendorName": "Tempur-Pedic"
+    },
+    {
+      "aemFolderToken": "The-AMES",
+      "vendorName": "ClosetMaid / AMES"
+    },
+    {
+      "aemFolderToken": "The-AMES-Companies,-INC",
+      "vendorName": "ClosetMaid / AMES"
+    },
+    {
+      "aemFolderToken": "The-Gerson-Company",
+      "vendorName": "Gerson"
+    },
+    {
+      "aemFolderToken": "The_Stow_Company",
+      "vendorName": "The Stow Company"
+    },
+    {
+      "aemFolderToken": "tot-tutors-humbl",
+      "vendorName": "Tot Tutors"
+    },
+    {
+      "aemFolderToken": "Transocean",
+      "vendorName": "Trans Ocean Import"
+    },
+    {
+      "aemFolderToken": "TOV",
+      "vendorName": "TOV Furniture"
+    },
+    {
+      "aemFolderToken": "tsisealy-ds",
+      "vendorName": "TSI-Sealy DS"
+    },
+    {
+      "aemFolderToken": "Tvilum",
+      "vendorName": "Tvilum"
+    },
+    {
+      "aemFolderToken": "UMA-Enterprises",
+      "vendorName": "UMA Enterprises"
+    },
+    {
+      "aemFolderToken": "UMA-Enterprises,-Inc",
+      "vendorName": "UMA Enterprises"
+    },
+    {
+      "aemFolderToken": "Uttermost",
+      "vendorName": "Uttermost"
+    },
+    {
+      "aemFolderToken": "Uttermost-Luxe",
+      "vendorName": "Uttermost"
+    },
+    {
+      "aemFolderToken": "Vifah",
+      "vendorName": "DVG/Vifah"
+    },
+    {
+      "aemFolderToken": "Wendover",
+      "vendorName": "Wendover Art Group"
+    },
+    {
+      "aemFolderToken": "Wendover-Luxe",
+      "vendorName": "Wendover Art Group"
+    },
+    {
+      "aemFolderToken": "westin-outdoor",
+      "vendorName": "Westin"
+    },
+    {
+      "aemFolderToken": "Wholesale Interiors",
+      "vendorName": "Wholesale Interiors"
+    },
+    {
+      "aemFolderToken": "Wholesale_Interiors",
+      "vendorName": "Wholesale Interiors"
+    },
+    {
+      "aemFolderToken": "WHOLESALE-INTERIORS-INC",
+      "vendorName": "Wholesale Interiors"
+    },
+    {
+      "aemFolderToken": "Zinus",
+      "vendorName": "Zinus"
+    },
+    {
+      "aemFolderToken": "ZUO Modern",
+      "vendorName": "Zuo Modern"
+    },
+    {
+      "aemFolderToken": "ZUO-Modern-Inc",
+      "vendorName": "Zuo Modern"
+    }
+  ]
+}

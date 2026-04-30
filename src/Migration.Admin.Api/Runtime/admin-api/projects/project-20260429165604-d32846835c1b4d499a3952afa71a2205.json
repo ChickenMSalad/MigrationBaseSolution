@@ -1,0 +1,14 @@
+{
+  "projectId": "project-20260429165604-d32846835c1b4d499a3952afa71a2205",
+  "displayName": "Platform Smoke - LocalStorage to LocalStorage",
+  "sourceType": "LocalStorage",
+  "targetType": "LocalStorage",
+  "manifestType": "Csv",
+  "createdUtc": "2026-04-29T16:56:04.1996207+00:00",
+  "updatedUtc": "2026-04-29T16:56:04.1996207+00:00",
+  "settings": {
+    "LocalStorageSourceRootDirectory": "../../../samples/localstorage/source",
+    "LocalStorageTargetRootDirectory": "../../../samples/localstorage/target",
+    "LocalStorageTargetBasePath": "platform-smoke-output"
+  }
+}

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+    <!--
+      NOTE: The two references below (Sources.S3, Sources.WebDam) are known
+      cross-connector couplings introduced by:
+        - Services/BynderS3BatchOperationsService.cs     (uses Sources.S3.Clients)
+        - Services/BynderS3UpdateOperationsService.cs    (uses Sources.S3.Clients)
+        - Services/BynderS3MetadataOperationsService.cs  (uses Sources.S3.Clients)
+        - Services/BynderWebDamMigrationService.cs       (uses Sources.WebDam.Clients)
+      Track: lift these "bridging" services out of the Bynder target connector
+      and into the WebDamToBynder host (or a dedicated WebDam->Bynder workflow
+      project). New code MUST NOT add further source-connector dependencies
+      from inside this target connector.
+    -->
+    <ProjectReference Include="..\..\Sources\Migration.Connectors.Sources.S3\Migration.Connectors.Sources.S3.csproj" />
+    <ProjectReference Include="..\..\Sources\Migration.Connectors.Sources.WebDam\Migration.Connectors.Sources.WebDam.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bynder.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Polly.Core" />
+    <PackageReference Include="RestSharp" />
+	<PackageReference Include="Azure.Data.Tables"  />
+  </ItemGroup>
+</Project>

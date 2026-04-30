@@ -1,0 +1,3 @@
+RowId,SourceAssetId,SourcePath,WebDamAssetId,WebDamPath,Filename,Title,Description,Keywords,Collection,AssetBank,Copyright
+row-001,webdam-asset-001,/sample/folder/sample-image-001.jpg,webdam-asset-001,/sample/folder/sample-image-001.jpg,sample-image-001.jpg,Sample Image 001,First generic runner proof asset,"sample;proof;webdam",Sample Collection,Images,Internal use only
+row-002,webdam-asset-002,/sample/folder/sample-image-002.jpg,webdam-asset-002,/sample/folder/sample-image-002.jpg,sample-image-002.jpg,Sample Image 002,Second generic runner proof asset,"sample;proof;bynder",Sample Collection,Images,Internal use only

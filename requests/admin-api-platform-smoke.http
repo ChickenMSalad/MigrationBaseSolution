@@ -1,0 +1,73 @@
+@baseUrl = https://localhost:55436
+@projectId = REPLACE_AFTER_CREATE_PROJECT
+@runId = REPLACE_AFTER_QUEUE_RUN
+
+### Health
+GET {{baseUrl}}/health
+
+### Connector catalog
+GET {{baseUrl}}/api/connectors
+
+### Create LocalStorage -> LocalStorage smoke project
+# Copy the returned projectId into the @projectId variable above.
+POST {{baseUrl}}/api/projects
+Content-Type: application/json
+
+{
+  "displayName": "Platform Smoke - LocalStorage to LocalStorage",
+  "sourceType": "LocalStorage",
+  "targetType": "LocalStorage",
+  "manifestType": "Csv",
+  "settings": {
+    "LocalStorageSourceRootDirectory": "../../../samples/localstorage/source",
+    "LocalStorageTargetRootDirectory": "../../../samples/localstorage/target",
+    "LocalStorageTargetBasePath": "platform-smoke-output"
+  }
+}
+
+### List projects
+GET {{baseUrl}}/api/projects
+
+### Queue dry-run first
+# Copy the returned runId into the @runId variable above.
+POST {{baseUrl}}/api/projects/{{projectId}}/runs
+Content-Type: application/json
+
+{
+  "jobName": "platform-smoke-localstorage-dryrun",
+  "manifestPath": "../../../profiles/manifests/localstorage-platform-smoke.csv",
+  "mappingProfilePath": "../../../profiles/mappings/localstorage-platform-smoke.json",
+  "dryRun": true,
+  "parallelism": 1,
+  "settings": {
+    "LocalStorageSourceRootDirectory": "../../../samples/localstorage/source",
+    "LocalStorageTargetRootDirectory": "../../../samples/localstorage/target",
+    "LocalStorageTargetBasePath": "platform-smoke-output"
+  }
+}
+
+### Queue real run after dry-run succeeds
+POST {{baseUrl}}/api/projects/{{projectId}}/runs
+Content-Type: application/json
+
+{
+  "jobName": "platform-smoke-localstorage-realrun",
+  "manifestPath": "../../../profiles/manifests/localstorage-platform-smoke.csv",
+  "mappingProfilePath": "../../../profiles/mappings/localstorage-platform-smoke.json",
+  "dryRun": false,
+  "parallelism": 1,
+  "settings": {
+    "LocalStorageSourceRootDirectory": "../../../samples/localstorage/source",
+    "LocalStorageTargetRootDirectory": "../../../samples/localstorage/target",
+    "LocalStorageTargetBasePath": "platform-smoke-output"
+  }
+}
+
+### Get run status
+GET {{baseUrl}}/api/runs/{{runId}}
+
+### Get run work-items
+GET {{baseUrl}}/api/runs/{{runId}}/work-items
+
+### List all runs
+GET {{baseUrl}}/api/runs

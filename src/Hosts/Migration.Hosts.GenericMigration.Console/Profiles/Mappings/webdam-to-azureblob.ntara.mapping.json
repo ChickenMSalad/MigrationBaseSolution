@@ -1,0 +1,27 @@
+{
+  "profileName": "webdam-to-azureblob-ntara",
+  "sourceType": "WebDam",
+  "targetType": "AzureBlob",
+  "requiredTargetFields": [],
+  "fieldMappings": [
+    { "source": "File Name", "target": "FileName", "transform": "trim" },
+    { "source": "Asset Name", "target": "AssetName", "transform": "trim" },
+    { "source": "Folder Path", "target": "FolderPath", "transform": "trim" },
+    { "source": "Asset Id", "target": "AssetId", "transform": "trim" },
+    { "source": "webdam_id", "target": "WebDamId", "transform": "trim" },
+    { "source": "Size Bytes", "target": "SizeBytes", "transform": "integer" },
+    { "source": "File Type", "target": "FileType", "transform": "trim" },
+    { "source": "Folder Id", "target": "FolderId", "transform": "trim" },
+    { "source": "Brand", "target": "Brand", "transform": "trim" },
+    { "source": "Caption_Description", "target": "CaptionDescription", "transform": "trim" },
+    { "source": "Category", "target": "Category", "transform": "trim" },
+    { "source": "City", "target": "City", "transform": "trim" },
+    { "source": "Country", "target": "Country", "transform": "trim" },
+    { "source": "Date_Created", "target": "DateCreated", "transform": "normalize-date" },
+    { "source": "Keywords", "target": "Keywords", "transform": "split:semicolon" },
+    { "source": "Photographer", "target": "Photographer", "transform": "trim" },
+    { "source": "Province_State", "target": "ProvinceState", "transform": "trim" },
+    { "source": "Rights_Usage_Terms", "target": "RightsUsageTerms", "transform": "trim" },
+    { "source": "Year", "target": "Year", "transform": "integer" }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "runId": "run-20260429171708-7d6193c5770244b8a61453340ed276d2",
+  "projectId": "project-20260429171646-03d1148d99aa48bab2a161e9d958222a",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "status": "Failed",
+  "dryRun": false,
+  "createdUtc": "2026-04-29T17:17:08.5883871+00:00",
+  "updatedUtc": "2026-04-29T17:17:09.0215918+00:00",
+  "startedUtc": "2026-04-29T17:17:08.8706919+00:00",
+  "completedUtc": "2026-04-29T17:17:09.021591+00:00",
+  "message": "JSON deserialization for type \u0027Migration.Application.Models.MappingProfile\u0027 was missing required properties including: \u0027profileName\u0027.",
+  "job": {
+    "jobName": "platform-smoke-localstorage-realrun",
+    "sourceType": "LocalStorage",
+    "targetType": "LocalStorage",
+    "manifestType": "Csv",
+    "mappingProfilePath": "../../../profiles/mappings/localstorage-platform-smoke.json",
+    "manifestPath": "../../../profiles/manifests/localstorage-platform-smoke.csv",
+    "connectionString": null,
+    "queryText": null,
+    "settings": {
+      "LocalStorageSourceRootDirectory": "../../../samples/localstorage/source",
+      "LocalStorageTargetRootDirectory": "../../../samples/localstorage/target",
+      "LocalStorageTargetBasePath": "platform-smoke-output"
+    },
+    "dryRun": false,
+    "parallelism": 1
+  }
+}

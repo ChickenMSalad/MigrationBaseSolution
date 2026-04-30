@@ -1,0 +1,12 @@
+{
+  "workItemId": "ls-doc-001",
+  "sourceAssetId": "ls-doc-001",
+  "sourcePath": "C:\\Workspace\\MigrationBaseSolution\\samples\\localstorage\\source\\documents\\readme-001.txt",
+  "targetPath": "C:\\Workspace\\MigrationBaseSolution\\samples\\localstorage\\target\\platform-smoke-output\\documents\\ls-doc-001_readme-001.txt",
+  "fileName": "readme-001.txt",
+  "writtenUtc": "2026-04-29T17:20:04.9510769+00:00",
+  "FolderPath": "documents",
+  "title": "Readme Sample",
+  "description": "LocalStorage smoke test document row",
+  "keywords": "document;readme;smoke-test"
+}

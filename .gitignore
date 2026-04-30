@@ -1,0 +1,178 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+out/
+artifacts/
+TestResults/
+coverage/
+coverage-*/
+*.trx
+*.coverage
+*.coveragexml
+
+# .NET
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.snupkg
+*.symbols.nupkg
+project.lock.json
+project.assets.json
+.nuget/
+packages/
+*.cache
+*.pdb
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.suo
+*.user
+*.userprefs
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+
+# Node / React / Vite
+node_modules/
+dist/
+build/
+.vite/
+vite.config.*.timestamp-*
+vite.config.*.mjs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.local
+appsettings.Local.json
+appsettings.*.Local.json
+appsettings.Development.local.json
+appsettings.Production.json
+secrets.json
+*.secrets.json
+
+# Azure / local storage / Azurite
+.azurite/
+__azurite_db*__
+*.azurite
+Azurite*
+local-storage/
+queue-data/
+
+# Migration platform generated data
+migration-output/
+migration-outputs/
+exports/
+exported-manifests/
+generated-manifests/
+manifests/generated/
+runs/output/
+runs/logs/
+worker-output/
+failed-rows/
+retry-output/
+
+# Credentials / tokens / private config
+credentials/
+credential-artifacts/
+tokens/
+*.pfx
+*.pem
+*.key
+*.cer
+*.crt
+*.keystore
+*.jks
+
+# Logs
+logs/
+*.log
+*.tlog
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Package manager caches
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Optional: keep sample fixtures, ignore large raw exports by default
+*.zip
+*.7z
+*.rar
+
+# Allow intentional examples
+!README.md
+!.gitignore
+!**/.gitkeep
+!**/fixtures/**
+!**/samples/**
+!**/examples/**
+!**/*.example.json
+
+# Explicit config + secrets
+appsettings.json
+appsettings.*.json
+!appsettings.Development.json
+!appsettings.example.json
+
+# Force ignore any accidental secrets
+*connectionstring*
+*ConnectionString*
+*apikey*
+*ApiKey*
+*secret*
+*Secret*
+*token*
+*Token*
+*password*
+*Password*
+
+# Credentials / migration-specific sensitive data
+**/credentials/**
+**/credential-artifacts/**
+**/secrets/**
+**/private/**
+**/config/local/**
+**/config/dev/**
+
+# CSV / manifest exports (these can contain real asset data)
+*.csv
+*.tsv
+
+# Exception: allow sample files only
+!*.example.csv
+!*.sample.csv
+
+# Azure / cloud config
+local.settings.json
+*.publishsettings
+
+# Logs with possible sensitive payloads
+*.log
+logs/**

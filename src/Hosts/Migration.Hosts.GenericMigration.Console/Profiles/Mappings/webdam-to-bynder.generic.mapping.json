@@ -1,0 +1,44 @@
+{
+  "profileName": "webdam-to-bynder-generic-proof",
+  "sourceType": "WebDam",
+  "targetType": "Bynder",
+  "requiredTargetFields": [
+    "Name",
+    "OriginId"
+  ],
+  "fieldMappings": [
+    {
+      "source": "Filename",
+      "target": "Name"
+    },
+    {
+      "source": "WebDamAssetId",
+      "target": "OriginId"
+    },
+    {
+      "source": "Title",
+      "target": "Title"
+    },
+    {
+      "source": "Description",
+      "target": "Description"
+    },
+    {
+      "source": "Keywords",
+      "target": "Tags",
+      "transform": "split:semicolon"
+    },
+    {
+      "source": "Collection",
+      "target": "Collection"
+    },
+    {
+      "source": "AssetBank",
+      "target": "AssetBank"
+    },
+    {
+      "source": "Copyright",
+      "target": "Copyright"
+    }
+  ]
+}

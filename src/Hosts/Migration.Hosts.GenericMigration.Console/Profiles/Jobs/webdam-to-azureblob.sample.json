@@ -1,0 +1,23 @@
+{
+  "jobName": "webdam-to-azureblob-proof",
+  "sourceType": "WebDam",
+  "targetType": "AzureBlob",
+  "manifestType": "Excel",
+  "manifestPath": "C:/Migration/Manifests/webdam-export.xlsx",
+  "mappingProfilePath": "../Mappings/webdam-to-azureblob.generic.mapping.json",
+  "dryRun": true,
+  "parallelism": 1,
+  "settings": {
+    "WorksheetName": "Assets",
+    "HeaderRow": "1",
+    "FirstDataRow": "2",
+    "SourceBinaryMode": "WebDamDownloadOnly",
+    "BinaryStagingDirectory": "C:/Migration/Runtime/webdam-binaries",
+    "ForceDownload": "false",
+    "AzureBlobTargetContainer": "migration-proof",
+    "AzureBlobTargetFolder": "webdam-proof",
+    "AzureBlobTargetOverwrite": "true",
+    "AzureBlobIncludeMappedFieldsAsMetadata": "true",
+    "AzureBlobIncludeSourceColumnsAsMetadata": "false"
+  }
+}
