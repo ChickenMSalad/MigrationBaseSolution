@@ -105,6 +105,8 @@ function normalizeCredentialFields(connector: ConnectorDescriptor | null): Crede
     return [];
   }
 
+  // Important: Credentials page should use connector.credentials only.
+  // connector.options belong to project/run/settings flows and are intentionally excluded here.
   return descriptorFields(connector.credentials)
     .map(field => {
       const key = getFieldKey(field);
@@ -213,6 +215,7 @@ export function Credentials() {
   const [credentials, setCredentials] = useState<CredentialSetSummary[]>([]);
   const [connectors, setConnectors] = useState<Array<{ role: Role; connector: ConnectorDescriptor }>>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("Local test credentials");
@@ -298,12 +301,16 @@ export function Credentials() {
   }
 
   async function createCredential() {
-    console.log("Save credential clicked");
     setError(null);
     setMessage(null);
 
     if (!selected) {
       setError("Select a connector first.");
+      return;
+    }
+
+    if (credentialFields.length === 0) {
+      setError("This connector does not declare credential fields.");
       return;
     }
 
@@ -328,40 +335,49 @@ export function Credentials() {
       return;
     }
 
-try {
-  const created = await api.createCredential({
-    displayName,
-    connectorType: connectorValue(selected.connector),
-    connectorRole: selected.role,
-    values,
-    secretKeys
-  });
+    setSaving(true);
 
-  setMessage(`Created credential set ${created.credentialSetId}.`);
-  await load();
-} catch (err) {
-  setError(err instanceof Error ? err.message : String(err));
-}
+    try {
+      const created = await api.createCredential({
+        displayName,
+        connectorType: connectorValue(selected.connector),
+        connectorRole: selected.role,
+        values,
+        secretKeys
+      });
 
-    setMessage(`Created credential set ${created.credentialSetId}.`);
-    await load();
+      setMessage(`Created credential set ${created.credentialSetId}.`);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function testCredential(credentialSetId: string) {
     setError(null);
     setMessage(null);
 
-    const result = await api.testCredential(credentialSetId);
-    setMessage(`${result.success ? "Passed" : "Failed"}: ${result.message}`);
+    try {
+      const result = await api.testCredential(credentialSetId);
+      setMessage(`${result.success ? "Passed" : "Failed"}: ${result.message}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   async function deleteCredential(credentialSetId: string) {
     setError(null);
     setMessage(null);
 
-    await api.deleteCredential(credentialSetId);
-    setMessage(`Deleted credential set ${credentialSetId}.`);
-    await load();
+    try {
+      await api.deleteCredential(credentialSetId);
+      setMessage(`Deleted credential set ${credentialSetId}.`);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   return (
@@ -475,22 +491,23 @@ try {
           )}
 
           <div className="buttonRow">
-<button
-  type="button"
-  className="primaryButton"
-  onClick={() => void createCredential()}
-  disabled={loading}
->
-  Save credential set
-</button>
+            <button
+              type="button"
+              className="primaryButton"
+              onClick={() => void createCredential()}
+              disabled={loading || saving || !selected || credentialFields.length === 0}
+            >
+              {saving ? "Saving..." : "Save credential set"}
+            </button>
 
-<button
-  type="button"
-  className="secondaryButton"
-  onClick={resetValuesFromSchema}
->
-  Reset JSON from schema
-</button>
+            <button
+              type="button"
+              className="secondaryButton"
+              onClick={resetValuesFromSchema}
+              disabled={!selected || saving}
+            >
+              Reset JSON from credentials schema
+            </button>
           </div>
         </div>
       </Card>
@@ -532,8 +549,8 @@ try {
                       )}
                     </td>
                     <td>
-                      <button onClick={() => testCredential(item.credentialSetId)}>Test</button>{" "}
-                      <button onClick={() => deleteCredential(item.credentialSetId)}>Delete</button>
+                      <button type="button" onClick={() => void testCredential(item.credentialSetId)}>Test</button>{" "}
+                      <button type="button" onClick={() => void deleteCredential(item.credentialSetId)}>Delete</button>
                     </td>
                   </tr>
                 ))}
