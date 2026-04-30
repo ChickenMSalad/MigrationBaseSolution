@@ -36,9 +36,6 @@ type DescriptorField = {
   sampleValue?: unknown;
   exampleValue?: unknown;
   example?: unknown;
-  type?: string;
-  valueType?: string;
-  dataType?: string;
 };
 
 const emptyCredentialsJson = JSON.stringify({}, null, 2);
@@ -105,8 +102,6 @@ function normalizeCredentialFields(connector: ConnectorDescriptor | null): Crede
     return [];
   }
 
-  // Important: Credentials page should use connector.credentials only.
-  // connector.options belong to project/run/settings flows and are intentionally excluded here.
   return descriptorFields(connector.credentials)
     .map(field => {
       const key = getFieldKey(field);
