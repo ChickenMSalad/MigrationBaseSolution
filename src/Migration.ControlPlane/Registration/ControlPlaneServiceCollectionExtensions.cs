@@ -7,6 +7,7 @@ using Migration.ControlPlane.Queues;
 using Migration.ControlPlane.Services;
 using Migration.Orchestration.Preflight;
 using Migration.Orchestration.Progress;
+using Migration.ControlPlane.ManifestBuilder;
 
 namespace Migration.ControlPlane.Registration;
 
@@ -26,6 +27,9 @@ public static class ControlPlaneServiceCollectionExtensions
 
         services.AddSingleton<ControlPlaneDeleteService>();
         services.AddSingleton<MigrationPreflightService>();
+
+        services.AddSingleton<ManifestBuilderServiceRegistry>();
+        services.AddSingleton<ManifestBuilderFileStore>();
 
         // Credential management is additive. Legacy hosts continue to use existing appsettings/user-secrets binding.
         services.AddSingleton<CredentialSetFactory>();

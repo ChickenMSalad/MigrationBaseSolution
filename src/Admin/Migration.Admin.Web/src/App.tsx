@@ -10,6 +10,7 @@ import { ProjectDetail } from "./pages/ProjectDetail";
 import { Projects } from "./pages/Projects";
 import { RunDetail } from "./pages/RunDetail";
 import { Runs } from "./pages/Runs";
+import { ManifestBuilder } from "./pages/ManifestBuilder";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="artifacts" element={<Artifacts />} />
         <Route path="mapping-builder" element={<MappingBuilder />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/manifest-builder" element={<ManifestBuilder />} />
       </Route>
     </Routes>
   );

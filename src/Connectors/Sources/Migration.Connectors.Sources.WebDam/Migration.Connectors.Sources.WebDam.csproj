@@ -3,11 +3,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>4fc34017-d0e9-43fb-b902-79df38b79fcf</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
     <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
     <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+	<ProjectReference Include="..\..\..\Migration.ControlPlane\Migration.ControlPlane.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />

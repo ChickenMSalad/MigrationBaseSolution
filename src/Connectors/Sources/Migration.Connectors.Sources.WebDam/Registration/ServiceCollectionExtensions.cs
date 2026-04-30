@@ -5,6 +5,8 @@ using Migration.Application.Abstractions;
 using Migration.Connectors.Sources.WebDam.Clients;
 using Migration.Connectors.Sources.WebDam.Configuration;
 using Migration.Connectors.Sources.WebDam.Services;
+using Migration.Connectors.Sources.WebDam.ManifestBuilder;
+using Migration.ControlPlane.ManifestBuilder;
 
 namespace Migration.Connectors.Sources.WebDam.Registration;
 
@@ -28,6 +30,7 @@ public static class ServiceCollectionExtensions
         });
         services.AddSingleton<WebDamExportService>();
         services.AddSingleton<IAssetSourceConnector, WebDamSourceConnector>();
+        services.AddSingleton<ISourceManifestService, WebDamExportAllAssetsManifestService>();
         return services;
     }
 }

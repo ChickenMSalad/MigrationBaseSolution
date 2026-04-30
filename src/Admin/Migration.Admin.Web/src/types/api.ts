@@ -213,3 +213,43 @@ export type SaveMappingArtifactResponse = {
   artifact: ArtifactRecord;
   mappingProfile: unknown;
 };
+
+export type ManifestBuilderOptionDescriptor = {
+    name: string;
+    label: string;
+    description?: string | null;
+    required: boolean;
+    placeholder?: string | null;
+};
+
+export type ManifestBuilderServiceDescriptor = {
+    sourceType: string;
+    serviceName: string;
+    displayName: string;
+    description?: string | null;
+    options: ManifestBuilderOptionDescriptor[];
+};
+
+export type ManifestBuilderSourceDescriptor = {
+    sourceType: string;
+    displayName: string;
+    services: ManifestBuilderServiceDescriptor[];
+};
+
+export type BuildSourceManifestRequest = {
+    sourceType: string;
+    serviceName: string;
+    credentialSetId?: string | null;
+    options?: Record<string, string>;
+};
+
+export type BuildSourceManifestResponse = {
+    manifestId: string;
+    sourceType: string;
+    serviceName: string;
+    fileName: string;
+    contentType: string;
+    rowCount: number;
+    downloadUrl: string;
+    createdUtc: string;
+};

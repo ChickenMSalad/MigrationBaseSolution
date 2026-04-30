@@ -284,5 +284,6 @@ app.MapArtifactEndpoints();
 app.MapControlPlaneDeleteEndpoints();
 app.MapMappingBuilderEndpoints();
 api.MapPreflightEndpoints();
+app.MapManifestBuilderEndpoints();
 
 app.Run();

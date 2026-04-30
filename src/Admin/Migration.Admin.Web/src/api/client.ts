@@ -17,6 +17,9 @@ import type {
   ProjectArtifactBindingRequest,
   ProjectArtifactBindingResponse,
   ArtifactRecord,
+  BuildSourceManifestRequest,
+  BuildSourceManifestResponse,
+  ManifestBuilderSourceDescriptor
 } from "../types/api";
 
 const configuredBaseUrl = import.meta.env.VITE_ADMIN_API_BASE_URL?.trim() ?? "";
@@ -86,7 +89,15 @@ export const api = {
   runEvents: (runId: string, take = 250) =>
     request<RunEventsResponse>(`/api/runs/${encodeURIComponent(runId)}/events?take=${take}`),
   runFailures: (runId: string) => request<RunFailuresResponse>(`/api/runs/${encodeURIComponent(runId)}/failures`),
-  runWorkItems: (runId: string) => request<RunWorkItemsResponse>(`/api/runs/${encodeURIComponent(runId)}/work-items`)
+    runWorkItems: (runId: string) => request<RunWorkItemsResponse>(`/api/runs/${encodeURIComponent(runId)}/work-items`),
+    manifestBuilderSources: () =>
+        request<ManifestBuilderSourceDescriptor[]>("/api/manifest-builder/sources"),
+
+    buildManifest: (body: BuildSourceManifestRequest) =>
+        request<BuildSourceManifestResponse>("/api/manifest-builder/build", {
+            method: "POST",
+            body: JSON.stringify(body)
+        })
 };
 
 export function displayConnectorName(connector: { displayName?: string; type?: string; name?: string }) {

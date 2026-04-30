@@ -13,3 +13,69 @@
 .row-actions, .chip-row, .pillRow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
 .chip { display: inline-flex; align-items: center; border: 1px solid #d0d7de; border-radius: 999px; padding: 4px 10px; font-size: 0.85rem; background: #f6f8fa; }
 .small-gap { gap: 0.75rem; }
+
+/* Manifest Builder only — scoped */
+
+.manifestBuilder .formGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 1.25rem 1.5rem;
+  align-items: start;
+}
+
+/* Label wrapper */
+.manifestBuilder .formGrid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+/* Keep your existing input styles — just normalize sizing */
+.manifestBuilder .formGrid input,
+.manifestBuilder .formGrid select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Help text alignment */
+.manifestBuilder .helpText {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  opacity: 0.75;
+  max-width: 36ch;
+}
+
+/* Button row spans full width */
+.manifestBuilder .buttonRow {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+/* Result layout cleanup */
+.manifestBuilder .detailGrid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.6rem 1.2rem;
+  align-items: center;
+}
+
+.manifestBuilder .detailGrid span {
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .manifestBuilder .formGrid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .manifestBuilder .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
