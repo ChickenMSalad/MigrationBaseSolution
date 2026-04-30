@@ -85,58 +85,92 @@
 
 .credentialsPage .credentialsForm {
   display: grid;
-  grid-template-columns: minmax(260px, 420px) minmax(260px, 420px);
-  gap: 1.25rem 1rem;
-  align-items: start;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  width: 100%;
 }
 
-.credentialsPage .credentialsForm .fullWidth {
-  grid-column: 1 / -1;
+.credentialsPage .credentialsFormTopRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 1rem;
+  align-items: end;
+  width: 100%;
 }
 
-.credentialsPage .credentialsForm label {
+.credentialsPage .credentialsFormTopRow label,
+.credentialsPage .credentialsJsonField {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+  min-width: 0;
 }
 
-.credentialsPage .credentialsForm textarea {
+.credentialsPage .credentialsJsonField {
   width: 100%;
-  min-height: 260px;
+}
+
+.credentialsPage .credentialsJsonField textarea {
+  width: 100%;
+  max-width: 100%;
+  min-height: 320px;
   box-sizing: border-box;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.45;
   resize: vertical;
 }
 
-.credentialsPage .credentialSchemaHelp {
+.credentialsPage .credentialSchemaSummary {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.credentialsPage .credentialSchemaSummary section,
+.credentialsPage .credentialNotice {
+  min-width: 0;
   padding: 1rem;
   border: 1px solid var(--border, #d7deea);
   border-radius: 0.9rem;
   background: rgba(255, 255, 255, 0.55);
 }
 
-.credentialsPage .credentialSchemaHelp ul {
+.credentialsPage .credentialSchemaSummary h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.credentialsPage .credentialSchemaSummary p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.credentialsPage .credentialSchemaSummary ul {
   margin: 0.5rem 0 0;
   padding-left: 1.25rem;
 }
 
-.credentialsPage .credentialSchemaHelp p {
-  margin: 0.5rem 0 0;
+.credentialsPage .credentialSchemaSummary li {
+  overflow-wrap: anywhere;
 }
 
-.credentialsPage .credentialSchemaHelp code {
+.credentialsPage .credentialSchemaSummary code,
+.credentialsPage table code {
   font-size: 0.85rem;
   word-break: break-word;
 }
 
-.credentialsPage .buttonRow.fullWidth {
+.credentialsPage .buttonRow {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
-  margin-top: 0.25rem;
+}
+
+.credentialsPage .buttonRow button {
+  white-space: nowrap;
 }
 
 .credentialsPage .successBanner {
@@ -148,12 +182,41 @@
   font-weight: 600;
 }
 
-@media (max-width: 900px) {
-  .credentialsPage .credentialsForm {
+/* Medium screens */
+@media (max-width: 1100px) {
+  .credentialsPage .credentialSchemaSummary {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablet/mobile */
+@media (max-width: 800px) {
+  .credentialsPage .credentialsFormTopRow {
     grid-template-columns: 1fr;
   }
 
-  .credentialsPage .credentialSchemaHelp {
-    grid-template-columns: 1fr;
+  .credentialsPage .credentialsJsonField textarea {
+    min-height: 360px;
+  }
+}
+
+/* Very narrow responsive testing */
+@media (max-width: 520px) {
+  .credentialsPage {
+    min-width: 0;
+  }
+
+  .credentialsPage .credentialsForm {
+    gap: 1rem;
+  }
+
+  .credentialsPage .buttonRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .credentialsPage .buttonRow button {
+    width: 100%;
+    white-space: normal;
   }
 }
