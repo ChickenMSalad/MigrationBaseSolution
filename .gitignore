@@ -176,3 +176,21 @@ local.settings.json
 # Logs with possible sensitive payloads
 *.log
 logs/**
+
+# -----------------------------
+# Azurite (local Azure storage emulator)
+# -----------------------------
+
+# Azurite DB files (root + nested)
+__azurite_db_*.json
+__azurite_db_*
+*.azurite
+
+# Azurite folders
+.azurite/
+azurite/
+local-azurite/
+
+# Debug logs
+azurite_debug.log
+*.log
