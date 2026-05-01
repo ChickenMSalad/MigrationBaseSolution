@@ -1,19 +1,14 @@
 import type {
   ArtifactRecord,
-  BuildSourceManifestRequest,
-  BuildSourceManifestResponse,
-  ConnectorDescriptor,
+  BindProjectArtifactsRequest,
+  BindProjectCredentialsRequest,
   ConnectorsResponse,
+  ConnectorDescriptor,
   CreateCredentialSetRequest,
   CreateProjectRequest,
   CreateRunRequest,
   CredentialSetSummary,
   CredentialTestResult,
-  ManifestBuilderSourceDescriptor,
-  PreflightResult,
-  ProjectArtifactBindingRequest,
-  ProjectArtifactBindingResponse,
-  ProjectPreflightRequest,
   ProjectRecord,
   RunEventsResponse,
   RunFailuresResponse,
@@ -22,16 +17,15 @@ import type {
   RunWorkItemsResponse
 } from "../types/api";
 
-const configuredBaseUrl = import.meta.env.VITE_ADMIN_API_BASE_URL?.trim() ?? "";
-const baseUrl = configuredBaseUrl.replace(/\/$/, "");
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
+  const response = await fetch(path, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {})
-    }
+    headers: init?.body instanceof FormData
+      ? init.headers
+      : {
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {})
+        }
   });
 
   if (!response.ok) {
@@ -39,7 +33,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
     try {
       const body = await response.json();
-      message = body?.error ?? JSON.stringify(body);
+      message = body?.error ?? body?.message ?? JSON.stringify(body);
     } catch {
       try {
         message = await response.text();
@@ -58,59 +52,113 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function requestForm<T>(path: string, form: FormData, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    method: init?.method ?? "POST",
-    body: form
-  });
+export function connectorValue(connector: ConnectorDescriptor | null | undefined) {
+  return String(connector?.type ?? connector?.name ?? connector?.displayName ?? "").trim();
+}
 
-  if (!response.ok) {
-    let message = `${response.status} ${response.statusText}`;
+export function displayConnectorName(connector: ConnectorDescriptor | null | undefined) {
+  return String(connector?.displayName ?? connector?.name ?? connector?.type ?? "Unnamed connector").trim();
+}
 
-    try {
-      const body = await response.json();
-      message = body?.error ?? JSON.stringify(body);
-    } catch {
-      try {
-        message = await response.text();
-      } catch {
-        // keep default message
-      }
+function queryString(params: Record<string, string | number | boolean | null | undefined>) {
+  const search = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      search.set(key, String(value));
     }
-
-    throw new Error(message);
   }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return (await response.json()) as T;
+  const text = search.toString();
+  return text ? `?${text}` : "";
 }
 
 export const api = {
-  health: () =>
-    request<{ status: string; service: string; utc: string }>("/health"),
+  health: () => request<{ status: string; service: string; utc: string }>("/health"),
 
-  connectors: () =>
-    request<ConnectorsResponse>("/api/connectors"),
+  connectors: () => request<ConnectorsResponse>("/api/connectors"),
 
-  connectorSchema: (connectorType: string, role?: string) => {
-    const suffix = role ? `?role=${encodeURIComponent(role)}` : "";
-    return request<ConnectorDescriptor>(`/api/connectors/${encodeURIComponent(connectorType)}/schema${suffix}`);
+  projects: () => request<ProjectRecord[]>("/api/projects"),
+
+  project: (projectId: string) =>
+    request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}`),
+
+  createProject: (payload: CreateProjectRequest) =>
+    request<ProjectRecord>("/api/projects", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+
+  updateProject: (project: ProjectRecord) =>
+    request<ProjectRecord>("/api/projects", {
+      method: "POST",
+      body: JSON.stringify(project)
+    }),
+
+  bindProjectArtifacts: (projectId: string, payload: BindProjectArtifactsRequest) =>
+    request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}/artifacts`, {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    }),
+
+  bindProjectCredentials: async (project: ProjectRecord, payload: BindProjectCredentialsRequest) => {
+    // No new backend store/pattern required: the existing project Settings bag already persists
+    // project context. The top-level values are included for forward compatibility; current
+    // backends that do not have those properties will ignore them and keep the settings values.
+    const settings = {
+      ...(project.settings ?? {}),
+      sourceCredentialSetId: payload.sourceCredentialSetId ?? null,
+      targetCredentialSetId: payload.targetCredentialSetId ?? null
+    } satisfies Record<string, string | null>;
+
+    return request<ProjectRecord>("/api/projects", {
+      method: "POST",
+      body: JSON.stringify({
+        ...project,
+        sourceCredentialSetId: payload.sourceCredentialSetId ?? null,
+        targetCredentialSetId: payload.targetCredentialSetId ?? null,
+        settings
+      })
+    });
   },
 
-  credentials: () =>
-    request<CredentialSetSummary[]>("/api/credentials"),
+  artifacts: (kind?: string) =>
+    request<ArtifactRecord[]>(`/api/artifacts${queryString({ kind })}`),
 
-  credential: (credentialSetId: string) =>
-    request<CredentialSetSummary>(`/api/credentials/${encodeURIComponent(credentialSetId)}`),
+  runs: () => request<RunRecord[]>("/api/runs"),
 
-  createCredential: (body: CreateCredentialSetRequest) =>
+  run: (runId: string) =>
+    request<RunRecord>(`/api/runs/${encodeURIComponent(runId)}`),
+
+  createRun: (projectId: string, payload: CreateRunRequest) =>
+    request<RunRecord>(`/api/projects/${encodeURIComponent(projectId)}/runs`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+
+  queuePreflight: (projectId: string) =>
+    request<RunRecord>(`/api/projects/${encodeURIComponent(projectId)}/preflight`, {
+      method: "POST"
+    }),
+
+  runSummary: (runId: string) =>
+    request<RunSummary>(`/api/runs/${encodeURIComponent(runId)}/summary`),
+
+  runEvents: (runId: string, take = 250) =>
+    request<RunEventsResponse>(`/api/runs/${encodeURIComponent(runId)}/events${queryString({ take })}`),
+
+  runFailures: (runId: string) =>
+    request<RunFailuresResponse>(`/api/runs/${encodeURIComponent(runId)}/failures`),
+
+  runWorkItems: (runId: string) =>
+    request<RunWorkItemsResponse>(`/api/runs/${encodeURIComponent(runId)}/work-items`),
+
+  credentials: () => request<CredentialSetSummary[]>("/api/credentials"),
+
+  createCredential: (payload: CreateCredentialSetRequest) =>
     request<CredentialSetSummary>("/api/credentials", {
       method: "POST",
-      body: JSON.stringify(body)
+      body: JSON.stringify(payload)
     }),
 
   testCredential: (credentialSetId: string) =>
@@ -121,117 +169,5 @@ export const api = {
   deleteCredential: (credentialSetId: string) =>
     request<void>(`/api/credentials/${encodeURIComponent(credentialSetId)}`, {
       method: "DELETE"
-    }),
-
-  projects: () =>
-    request<ProjectRecord[]>("/api/projects"),
-
-  project: (projectId: string) =>
-    request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}`),
-
-  createProject: (body: CreateProjectRequest) =>
-    request<ProjectRecord>("/api/projects", {
-      method: "POST",
-      body: JSON.stringify(body)
-    }),
-
-  deleteProject: (projectId: string) =>
-    request<void>(`/api/projects/${encodeURIComponent(projectId)}`, {
-      method: "DELETE"
-    }),
-
-  runs: () =>
-    request<RunRecord[]>("/api/runs"),
-
-  run: (runId: string) =>
-    request<RunRecord>(`/api/runs/${encodeURIComponent(runId)}`),
-
-  deleteRun: (runId: string) =>
-    request<void>(`/api/runs/${encodeURIComponent(runId)}`, {
-      method: "DELETE"
-    }),
-
-  cancelRun: (runId: string) =>
-    request<RunRecord>(`/api/runs/${encodeURIComponent(runId)}/cancel`, {
-      method: "POST"
-    }),
-
-  artifacts: (kind?: string) => {
-    const suffix = kind ? `?kind=${encodeURIComponent(kind)}` : "";
-    return request<ArtifactRecord[]>(`/api/artifacts${suffix}`);
-  },
-
-  artifactDownloadUrl: (artifactId: string) =>
-    `${baseUrl}/api/artifacts/${encodeURIComponent(artifactId)}/download`,
-
-  uploadArtifact: (file: File, options: { kind: string; projectId?: string | null; description?: string | null }) => {
-    const form = new FormData();
-    form.append("file", file);
-    form.append("kind", options.kind);
-
-    if (options.projectId) {
-      form.append("projectId", options.projectId);
-    }
-
-    if (options.description) {
-      form.append("description", options.description);
-    }
-
-    return requestForm<ArtifactRecord>("/api/artifacts", form);
-  },
-
-  deleteArtifact: (artifactId: string) =>
-    request<void>(`/api/artifacts/${encodeURIComponent(artifactId)}`, {
-      method: "DELETE"
-    }),
-
-projectArtifactBinding: (projectId: string) =>
-  request<ProjectArtifactBindingResponse>(`/api/projects/${encodeURIComponent(projectId)}/artifacts/`),
-
-bindProjectArtifacts: (projectId: string, body: ProjectArtifactBindingRequest) =>
-  request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}/artifacts/`, {
-    method: "PUT",
-    body: JSON.stringify(body)
-  }),
-
-  createRun: (projectId: string, body: CreateRunRequest) =>
-    request<RunRecord>(`/api/projects/${encodeURIComponent(projectId)}/runs`, {
-      method: "POST",
-      body: JSON.stringify(body)
-    }),
-
-  runPreflight: (projectId: string, body: ProjectPreflightRequest) =>
-    request<PreflightResult>(`/api/projects/${encodeURIComponent(projectId)}/preflight`, {
-      method: "POST",
-      body: JSON.stringify(body)
-    }),
-
-  runSummary: (runId: string) =>
-    request<RunSummary>(`/api/runs/${encodeURIComponent(runId)}/summary`),
-
-  runEvents: (runId: string, take = 250) =>
-    request<RunEventsResponse>(`/api/runs/${encodeURIComponent(runId)}/events?take=${take}`),
-
-  runFailures: (runId: string) =>
-    request<RunFailuresResponse>(`/api/runs/${encodeURIComponent(runId)}/failures`),
-
-  runWorkItems: (runId: string) =>
-    request<RunWorkItemsResponse>(`/api/runs/${encodeURIComponent(runId)}/work-items`),
-
-  manifestBuilderSources: () =>
-    request<ManifestBuilderSourceDescriptor[]>("/api/manifest-builder/sources"),
-
-  buildManifest: (body: BuildSourceManifestRequest) =>
-    request<BuildSourceManifestResponse>("/api/manifest-builder/build", {
-      method: "POST",
-      body: JSON.stringify(body)
     })
 };
-
-export function displayConnectorName(connector: { displayName?: string; type?: string; name?: string } | null | undefined) {
-  return connector?.displayName || connector?.type || connector?.name || "Unknown";
-}
-
-export function connectorValue(connector: { type?: string; name?: string; displayName?: string } | null | undefined) {
-  return connector?.type || connector?.name || connector?.displayName || "";
-}

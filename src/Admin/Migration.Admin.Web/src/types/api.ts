@@ -7,9 +7,6 @@ export type ConnectorDescriptor = {
   capabilities?: unknown;
   credentials?: unknown[];
   options?: unknown[];
-  manifestColumns?: unknown[];
-  mappingFields?: unknown[];
-  metadata?: Record<string, string>;
 };
 
 export type ConnectorsResponse = {
@@ -48,14 +45,15 @@ export type CredentialTestResult = {
 
 export type ArtifactRecord = {
   artifactId: string;
-  artifactType?: string | number;
-  kind?: string | number;
+  kind?: string;
+  artifactType?: string;
   fileName: string;
   contentType?: string;
   createdUtc?: string;
   uploadedUtc?: string;
   projectId?: string | null;
   description?: string | null;
+  metadata?: Record<string, string>;
 };
 
 export type ProjectRecord = {
@@ -66,22 +64,31 @@ export type ProjectRecord = {
   manifestType: string;
   createdUtc: string;
   updatedUtc: string;
-  settings?: Record<string, unknown>;
   manifestArtifactId?: string | null;
   mappingArtifactId?: string | null;
+  taxonomyArtifactId?: string | null;
+  sourceCredentialSetId?: string | null;
+  targetCredentialSetId?: string | null;
+  settings?: Record<string, string | null>;
 };
 
-export type ProjectArtifactBindingRequest = {
-  manifestArtifactId?: string | null;
-  mappingArtifactId?: string | null;
+export type CreateProjectRequest = {
+  displayName: string;
+  sourceType: string;
+  targetType: string;
+  manifestType: string;
+  settings?: Record<string, string | null>;
 };
 
-export type ProjectArtifactBindingResponse = {
-  projectId: string;
+export type BindProjectArtifactsRequest = {
   manifestArtifactId?: string | null;
   mappingArtifactId?: string | null;
-  manifestArtifact?: ArtifactRecord | null;
-  mappingArtifact?: ArtifactRecord | null;
+  taxonomyArtifactId?: string | null;
+};
+
+export type BindProjectCredentialsRequest = {
+  sourceCredentialSetId?: string | null;
+  targetCredentialSetId?: string | null;
 };
 
 export type RunRecord = {
@@ -98,14 +105,6 @@ export type RunRecord = {
   job?: unknown;
 };
 
-export type CreateProjectRequest = {
-  displayName: string;
-  sourceType: string;
-  targetType: string;
-  manifestType: string;
-  settings?: Record<string, unknown>;
-};
-
 export type CreateRunRequest = {
   jobName?: string | null;
   manifestPath?: string | null;
@@ -114,46 +113,7 @@ export type CreateRunRequest = {
   mappingArtifactId?: string | null;
   dryRun: boolean;
   parallelism: number;
-  settings?: Record<string, unknown>;
-};
-
-export type ProjectPreflightRequest = {
-  jobName?: string | null;
-  manifestPath?: string | null;
-  mappingProfilePath?: string | null;
-  manifestArtifactId?: string | null;
-  mappingArtifactId?: string | null;
-  settings?: Record<string, unknown>;
-};
-
-export type PreflightIssue = {
-  severity: "Error" | "Warning" | "Info" | string;
-  code: string;
-  message: string;
-  rowId?: string | null;
-  field?: string | null;
-  sourceAssetId?: string | null;
-};
-
-export type PreflightSummary = {
-  totalRows: number;
-  checkedRows: number;
-  errorCount: number;
-  warningCount: number;
-  infoCount: number;
-  passed: boolean;
-};
-
-export type PreflightResult = {
-  preflightId: string;
-  projectId?: string | null;
-  jobName: string;
-  status: "Passed" | "Warning" | "Failed" | string;
-  startedUtc: string;
-  completedUtc: string;
-  summary: PreflightSummary;
-  issues: PreflightIssue[];
-  details?: Record<string, unknown>;
+  settings?: Record<string, string | null>;
 };
 
 export type RunSummary = {
@@ -217,45 +177,4 @@ export type SaveMappingArtifactRequest = {
 export type SaveMappingArtifactResponse = {
   artifact: ArtifactRecord;
   mappingProfile: unknown;
-};
-
-export type ManifestBuilderOptionDescriptor = {
-  name: string;
-  label: string;
-  description?: string | null;
-  required: boolean;
-  placeholder?: string | null;
-};
-
-export type ManifestBuilderServiceDescriptor = {
-  sourceType: string;
-  serviceName: string;
-  displayName: string;
-  description?: string | null;
-  options: ManifestBuilderOptionDescriptor[];
-};
-
-export type ManifestBuilderSourceDescriptor = {
-  sourceType: string;
-  displayName: string;
-  services: ManifestBuilderServiceDescriptor[];
-};
-
-export type BuildSourceManifestRequest = {
-  sourceType: string;
-  serviceName: string;
-  credentialSetId?: string | null;
-  options?: Record<string, string>;
-};
-
-export type BuildSourceManifestResponse = {
-  manifestId: string;
-  artifactId: string;
-  sourceType: string;
-  serviceName: string;
-  fileName: string;
-  contentType: string;
-  rowCount: number;
-  downloadUrl: string;
-  createdUtc: string;
 };
