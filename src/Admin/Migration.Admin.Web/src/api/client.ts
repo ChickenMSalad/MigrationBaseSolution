@@ -74,6 +74,13 @@ export const api = {
     const suffix = kind ? `?kind=${encodeURIComponent(kind)}` : "";
     return request<ArtifactRecord[]>(`/api/artifacts${suffix}`);
   },
+artifactDownloadUrl: (artifactId: string) =>
+  `${baseUrl}/api/artifacts/${encodeURIComponent(artifactId)}/download`,
+
+deleteArtifact: (artifactId: string) =>
+  request<void>(`/api/artifacts/${encodeURIComponent(artifactId)}`, {
+    method: "DELETE"
+  }),
   projectArtifactBinding: (projectId: string) =>
     request<ProjectArtifactBindingResponse>(`/api/projects/${encodeURIComponent(projectId)}/artifacts`),
   bindProjectArtifacts: (projectId: string, body: ProjectArtifactBindingRequest) =>

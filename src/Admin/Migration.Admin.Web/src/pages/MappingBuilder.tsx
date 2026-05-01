@@ -259,7 +259,7 @@ export function MappingBuilder() {
       <div className="pageTitle">
         <div>
           <h1>Mapping Builder</h1>
-          <p>Build a generic mapping profile from an uploaded manifest and save it as a mapping artifact.</p>
+          <p>Build a generic mapping profile from an uploaded manifest. Saved mappings are stored as Mapping artifacts and can be managed from the Artifacts page.</p>
         </div>
       </div>
 
@@ -368,11 +368,19 @@ export function MappingBuilder() {
         </button>
       </Card>
 
-      {createdArtifact && (
-        <Card title="Created mapping artifact">
-          <JsonBlock value={createdArtifact} />
-        </Card>
-      )}
+{createdArtifact && (
+  <div className="successBanner">
+    <strong>Mapping artifact created.</strong>
+    <p>
+      Saved <code>{createdArtifact.fileName}</code> to Artifacts as kind <strong>Mapping</strong>.
+    </p>
+    <div className="buttonRow">
+      <a className="secondaryButton" href="/artifacts">
+        View in Artifacts
+      </a>
+    </div>
+  </div>
+)}
     </div>
   );
 }

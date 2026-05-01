@@ -5,17 +5,6 @@ namespace Migration.Connectors.Sources.WebDam.ManifestBuilder;
 
 public sealed class WebDamExportAllAssetsManifestService : ISourceManifestService
 {
-    private static readonly string[] Columns =
-    [
-        "AssetId",
-        "FileName",
-        "Name",
-        "SizeBytes",
-        "FileType",
-        "FolderId",
-        "FolderPath"
-    ];
-
     private readonly WebDamManifestExportServiceFactory _exportServiceFactory;
 
     public WebDamExportAllAssetsManifestService(WebDamManifestExportServiceFactory exportServiceFactory)
@@ -33,14 +22,14 @@ public sealed class WebDamExportAllAssetsManifestService : ISourceManifestServic
             SourceType,
             ServiceName,
             "Export All Assets",
-            "Exports all WebDam assets into a migration manifest CSV.",
+            "Exports all WebDam assets into a migration manifest file.",
             [
                 new ManifestBuilderOptionDescriptor(
-                    "note",
-                    "Note",
-                    "Optional operator note. This is not sent to WebDam.",
+                    "format",
+                    "Format",
+                    "Use csv for a single migration-ready manifest, or xlsx for a legacy-style workbook with Assets, Metadata, and Metadata Schema sheets.",
                     Required: false,
-                    Placeholder: "Optional note")
+                    Placeholder: "csv or xlsx")
             ]);
     }
 
@@ -56,15 +45,33 @@ public sealed class WebDamExportAllAssetsManifestService : ISourceManifestServic
             .ExportAllAssetsAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        var csv = ManifestCsvWriter.WriteObjects(export.Assets, Columns);
-        var fileName = $"webdam-manifest-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.csv";
+        var format = request.Options is not null &&
+                     request.Options.TryGetValue("format", out var requestedFormat) &&
+                     !string.IsNullOrWhiteSpace(requestedFormat)
+            ? requestedFormat.Trim().ToLowerInvariant()
+            : "csv";
 
-        return new BuildSourceManifestResult(
-            SourceType,
-            ServiceName,
-            fileName,
-            "text/csv",
-            csv,
-            export.Assets.Count);
+        return format switch
+        {
+            "xlsx" or "excel" => new BuildSourceManifestResult(
+                SourceType,
+                ServiceName,
+                $"webdam-export-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                Content: null,
+                ContentBytes: WebDamExportFileWriter.WriteWorkbook(export),
+                export.Assets.Count),
+
+            "csv" => new BuildSourceManifestResult(
+                SourceType,
+                ServiceName,
+                $"webdam-manifest-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.csv",
+                "text/csv",
+                Content: null,
+                ContentBytes: WebDamExportFileWriter.WriteManifestCsv(export),
+                export.Assets.Count),
+
+            _ => throw new ArgumentException("Unsupported WebDam export format. Use 'csv' or 'xlsx'.")
+        };
     }
 }

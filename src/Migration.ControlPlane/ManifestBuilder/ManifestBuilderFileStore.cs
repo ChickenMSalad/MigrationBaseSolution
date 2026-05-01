@@ -31,7 +31,16 @@ public sealed class ManifestBuilderFileStore
         Directory.CreateDirectory(folder);
 
         var contentPath = Path.Combine(folder, safeFileName);
-        await File.WriteAllTextAsync(contentPath, result.Content, cancellationToken).ConfigureAwait(false);
+        //await File.WriteAllTextAsync(contentPath, result.Content, cancellationToken).ConfigureAwait(false);
+
+        if (result.ContentBytes is not null)
+        {
+            await File.WriteAllBytesAsync(contentPath, result.ContentBytes, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await File.WriteAllTextAsync(contentPath, result.Content ?? string.Empty, cancellationToken).ConfigureAwait(false);
+        }
 
         var metadata = new StoredManifestBuilderFile(
             manifestId,

@@ -30,11 +30,13 @@ public sealed record BuildSourceManifestResult(
     string ServiceName,
     string FileName,
     string ContentType,
-    string Content,
+    string? Content,          // keep existing
+    byte[]? ContentBytes,     // new
     int RowCount);
 
 public sealed record BuildSourceManifestResponse(
     string ManifestId,
+    string ArtifactId,
     string SourceType,
     string ServiceName,
     string FileName,

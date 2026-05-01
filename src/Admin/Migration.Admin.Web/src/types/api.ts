@@ -44,13 +44,13 @@ export type CredentialTestResult = {
 };
 
 export type ArtifactRecord = {
-  artifactId: string;
-  artifactType?: string;
-  kind?: string;
-  fileName: string;
-  createdUtc?: string;
-  uploadedUtc?: string;
-  projectId?: string | null;
+    artifactId: string;
+    artifactType?: string;
+    kind?: string;
+    fileName: string;
+    createdUtc?: string;
+    uploadedUtc?: string;
+    projectId?: string | null;
 };
 
 export type ProjectRecord = {
@@ -245,6 +245,7 @@ export type BuildSourceManifestRequest = {
 
 export type BuildSourceManifestResponse = {
     manifestId: string;
+    artifactId: string;
     sourceType: string;
     serviceName: string;
     fileName: string;

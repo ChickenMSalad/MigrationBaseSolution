@@ -2,11 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import { Card } from "../components/Card";
 import { LoadingError } from "../components/LoadingError";
-import type {
-  BuildSourceManifestResponse,
-  CredentialSetSummary,
-  ManifestBuilderSourceDescriptor
-} from "../types/api";
+import type { BuildSourceManifestResponse, CredentialSetSummary, ManifestBuilderSourceDescriptor } from "../types/api";
 
 export function ManifestBuilder() {
   const [sources, setSources] = useState<ManifestBuilderSourceDescriptor[]>([]);
@@ -110,12 +106,12 @@ export function ManifestBuilder() {
   }
 
   return (
-    <div className="pageStack  manifestBuilder">
+    <div className="pageStack manifestBuilder">
       <div className="pageHeader">
         <div>
           <h1>Manifest Builder</h1>
           <p className="muted">
-            Choose a source, choose credentials, run a manifest service, and download the generated CSV.
+            Choose a source, choose credentials, run a manifest service, and create a Manifest artifact.
           </p>
         </div>
       </div>
@@ -123,6 +119,11 @@ export function ManifestBuilder() {
       {error && <LoadingError message={error} />}
 
       <Card title="Build Manifest">
+        <p className="muted">
+          Generated manifests are saved under <strong>Artifacts</strong> as kind <strong>Manifest</strong>.
+          You can download the new manifest here immediately or manage it later from the Artifacts page.
+        </p>
+
         {loading ? (
           <p className="muted">Loading manifest sources…</p>
         ) : sources.length === 0 ? (
@@ -168,7 +169,7 @@ export function ManifestBuilder() {
                 ))}
               </select>
               <span className="helpText">
-                Current WebDam export still uses configured WebDamOptions. Credential selection is ready for the next connector iteration.
+                Choose a saved credential set for this source, or use configured/default credentials.
               </span>
             </label>
 
@@ -187,8 +188,9 @@ export function ManifestBuilder() {
 
             <div className="buttonRow">
               <button
+                type="button"
                 className="primaryButton"
-                onClick={buildManifest}
+                onClick={() => void buildManifest()}
                 disabled={building || !sourceType || !serviceName}
               >
                 {building ? "Building…" : "Build Manifest"}
@@ -199,19 +201,20 @@ export function ManifestBuilder() {
       </Card>
 
       {result && (
-        <Card title="Manifest Ready">
+        <Card title="Manifest Artifact Created">
+          <p className="successText">
+            Manifest saved to Artifacts as <strong>{result.fileName}</strong>.
+          </p>
+
           <div className="detailGrid">
-            <span>Manifest ID</span>
-            <strong>{result.manifestId}</strong>
+            <span>Artifact ID</span>
+            <strong>{result.artifactId || result.manifestId}</strong>
 
             <span>Source</span>
             <strong>{result.sourceType}</strong>
 
             <span>Service</span>
             <strong>{result.serviceName}</strong>
-
-            <span>File</span>
-            <strong>{result.fileName}</strong>
 
             <span>Rows</span>
             <strong>{result.rowCount}</strong>
@@ -220,6 +223,10 @@ export function ManifestBuilder() {
           <div className="buttonRow">
             <a className="primaryButton" href={result.downloadUrl}>
               Download Manifest
+            </a>
+
+            <a className="secondaryButton" href="/artifacts">
+              View in Artifacts
             </a>
           </div>
         </Card>
