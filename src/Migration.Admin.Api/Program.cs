@@ -175,8 +175,8 @@ api.MapPost("/projects/{projectId}/preflight", async (string projectId, CreatePr
     }
 
     var run = factory.CreatePreflight(project, resolvedRequest);
-    await store.SaveRunAsync(run, cancellationToken).ConfigureAwait(false);
     await queue.EnqueueAsync(run, cancellationToken).ConfigureAwait(false);
+    await store.SaveRunAsync(run, cancellationToken).ConfigureAwait(false);
     return Results.Accepted($"/api/runs/{run.RunId}", run);
 })
 .WithName("QueuePreflight")
