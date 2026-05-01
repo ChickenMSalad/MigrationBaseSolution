@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Azure;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using Microsoft.Extensions.Logging;
@@ -35,13 +36,7 @@ public sealed class AzureQueueMigrationRunQueue : IMigrationRunQueue
             throw new InvalidOperationException("MigrationRunQueue:QueueName is required when Provider is AzureQueue.");
         }
 
-        var client = new QueueClient(
-            _options.ConnectionString,
-            _options.QueueName,
-            new QueueClientOptions
-            {
-                MessageEncoding = QueueMessageEncoding.Base64
-            });
+        var client = CreateQueueClient();
 
         if (_options.CreateIfMissing)
         {
@@ -60,23 +55,41 @@ public sealed class AzureQueueMigrationRunQueue : IMigrationRunQueue
 
         try
         {
+            _logger.LogInformation(
+                "Sending migration run queue message. Queue={QueueName}; RunId={RunId}; JsonLength={JsonLength}; Base64Encoding=true; ServiceVersion=V2021_12_02",
+                _options.QueueName,
+                run.RunId,
+                json.Length);
+
             await client.SendMessageAsync(json, cancellationToken).ConfigureAwait(false);
+
+            _logger.LogInformation(
+                "Enqueued migration run {RunId} to Azure Storage Queue {QueueName}.",
+                run.RunId,
+                _options.QueueName);
         }
-        catch (Exception ex)
+        catch (RequestFailedException ex)
         {
             _logger.LogError(
                 ex,
-                "Failed to enqueue migration run {RunId} to Azure Storage Queue {QueueName}.",
-                run.RunId,
-                _options.QueueName);
+                "Azure Storage Queue enqueue failed. Queue={QueueName}; Status={Status}; ErrorCode={ErrorCode}; Message={Message}; JsonLength={JsonLength}",
+                _options.QueueName,
+                ex.Status,
+                ex.ErrorCode,
+                ex.Message,
+                json.Length);
 
             throw;
         }
+    }
 
-        _logger.LogInformation(
-            "Enqueued migration run {RunId} to Azure Storage Queue {QueueName}. Payload: {Payload}",
-            run.RunId,
-            _options.QueueName,
-            json);
+    private QueueClient CreateQueueClient()
+    {
+        var options = new QueueClientOptions(QueueClientOptions.ServiceVersion.V2021_12_02)
+        {
+            MessageEncoding = QueueMessageEncoding.Base64
+        };
+
+        return new QueueClient(_options.ConnectionString, _options.QueueName, options);
     }
 }

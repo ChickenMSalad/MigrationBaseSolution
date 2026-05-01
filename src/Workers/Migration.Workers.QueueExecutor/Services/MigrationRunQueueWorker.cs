@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
@@ -56,13 +57,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
             throw new InvalidOperationException("MigrationRunQueue:QueueName is required when Provider is AzureQueue.");
         }
 
-        var queue = new QueueClient(
-            _queueOptions.ConnectionString,
-            _queueOptions.QueueName,
-            new QueueClientOptions
-            {
-                MessageEncoding = QueueMessageEncoding.Base64
-            });
+        var queue = CreateQueueClient();
 
         if (_queueOptions.CreateIfMissing)
         {
@@ -70,7 +65,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         }
 
         _logger.LogInformation(
-            "Migration queue executor started. Queue={QueueName}; ExecuteRuns={ExecuteRuns}",
+            "Migration queue executor started. Queue={QueueName}; ExecuteRuns={ExecuteRuns}; Base64Encoding=true; ServiceVersion=V2021_12_02",
             _queueOptions.QueueName,
             _executorOptions.ExecuteRuns);
 
@@ -101,8 +96,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
 
                     try
                     {
-                        var body = message.Body.ToString();
-                        var runMessage = JsonSerializer.Deserialize<QueuedMigrationRunMessage>(body, JsonOptions);
+                        var runMessage = DeserializeMessage(message.Body.ToString());
 
                         if (runMessage is null || string.IsNullOrWhiteSpace(runMessage.RunId))
                         {
@@ -140,6 +134,37 @@ public sealed class MigrationRunQueueWorker : BackgroundService
             {
                 _logger.LogError(ex, "Queue polling failed. Retrying after delay.");
                 await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, _executorOptions.PollDelaySeconds)), stoppingToken).ConfigureAwait(false);
+            }
+        }
+    }
+
+    private QueueClient CreateQueueClient()
+    {
+        var options = new QueueClientOptions(QueueClientOptions.ServiceVersion.V2021_12_02)
+        {
+            MessageEncoding = QueueMessageEncoding.Base64
+        };
+
+        return new QueueClient(_queueOptions.ConnectionString, _queueOptions.QueueName, options);
+    }
+
+    private static QueuedMigrationRunMessage? DeserializeMessage(string body)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<QueuedMigrationRunMessage>(body, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            // Tolerate old messages that were manually base64 encoded or queued by a client with different encoding settings.
+            try
+            {
+                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(body));
+                return JsonSerializer.Deserialize<QueuedMigrationRunMessage>(decoded, JsonOptions);
+            }
+            catch
+            {
+                throw;
             }
         }
     }
