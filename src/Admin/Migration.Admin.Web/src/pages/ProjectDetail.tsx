@@ -122,25 +122,28 @@ export function ProjectDetail() {
     [mappingArtifacts, mappingArtifactId]
   );
 
-  async function bindArtifacts() {
-    setBinding(true);
-    setError(null);
-    setMessage(null);
+async function bindArtifacts() {
+  setBinding(true);
+  setError(null);
+  setMessage(null);
 
-    try {
-      const updated = await api.bindProjectArtifacts(projectId, {
-        manifestArtifactId: manifestArtifactId || null,
-        mappingArtifactId: mappingArtifactId || null
-      });
+  try {
+    const updated = await api.bindProjectArtifacts(projectId, {
+      manifestArtifactId: manifestArtifactId || null,
+      mappingArtifactId: mappingArtifactId || null
+    });
 
-      setProject(updated);
-      setMessage("Project artifact references updated.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBinding(false);
-    }
+    setProject(updated);
+    setManifestArtifactId(updated.manifestArtifactId ?? "");
+    setMappingArtifactId(updated.mappingArtifactId ?? "");
+    setMessage("Project artifact references updated.");
+    await load();
+  } catch (err) {
+    setError(err instanceof Error ? err.message : String(err));
+  } finally {
+    setBinding(false);
   }
+}
 
   async function startRun() {
     setSaving(true);

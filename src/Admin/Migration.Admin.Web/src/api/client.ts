@@ -185,14 +185,14 @@ export const api = {
       method: "DELETE"
     }),
 
-  projectArtifactBinding: (projectId: string) =>
-    request<ProjectArtifactBindingResponse>(`/api/projects/${encodeURIComponent(projectId)}/artifacts`),
+projectArtifactBinding: (projectId: string) =>
+  request<ProjectArtifactBindingResponse>(`/api/projects/${encodeURIComponent(projectId)}/artifacts/`),
 
-  bindProjectArtifacts: (projectId: string, body: ProjectArtifactBindingRequest) =>
-    request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}/artifacts`, {
-      method: "PUT",
-      body: JSON.stringify(body)
-    }),
+bindProjectArtifacts: (projectId: string, body: ProjectArtifactBindingRequest) =>
+  request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}/artifacts/`, {
+    method: "PUT",
+    body: JSON.stringify(body)
+  }),
 
   createRun: (projectId: string, body: CreateRunRequest) =>
     request<RunRecord>(`/api/projects/${encodeURIComponent(projectId)}/runs`, {
