@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -10,7 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Migration.ControlPlane\Migration.ControlPlane.csproj" />
     <ProjectReference Include="..\..\Migration.GenericRuntime\Migration.GenericRuntime.csproj" />
-	<ProjectReference Include="..\..\Connectors\Migration.Connectors.Registration\Migration.Connectors.Registration.csproj" />
+    <ProjectReference Include="..\..\Connectors\Migration.Connectors.Registration\Migration.Connectors.Registration.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,5 +27,4 @@
   <ItemGroup>
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
 </Project>

@@ -18,8 +18,7 @@ public static class QueueExecutorServiceCollectionExtensions
         services.AddGenericMigrationRuntime(configuration);
         services.AddMigrationControlPlane(configuration);
 
-        // Concrete connector modules used by queued migration runs.
-        // Keep the worker decoupled from individual connector projects by depending on the composition project only.
+        // Concrete connector modules are composed here, not directly in the worker project.
         services.AddMigrationConnectorModules(configuration);
 
         services.AddHostedService<MigrationRunQueueWorker>();
