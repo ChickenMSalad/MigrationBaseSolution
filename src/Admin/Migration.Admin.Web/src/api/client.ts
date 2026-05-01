@@ -124,6 +124,9 @@ export const api = {
       method: "DELETE"
     }),
 
+    deleteRun: (runId: string) =>
+        request<void>(`/api/runs/${encodeURIComponent(runId)}`, { method: "DELETE" }),
+
   bindProjectArtifacts: (projectId: string, payload: BindProjectArtifactsRequest) =>
     request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}/artifacts`, {
       method: "PUT",
