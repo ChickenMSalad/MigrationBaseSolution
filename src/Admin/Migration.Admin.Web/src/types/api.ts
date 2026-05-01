@@ -254,3 +254,16 @@ export type BuildSourceManifestResponse = {
     downloadUrl: string;
     createdUtc: string;
 };
+export type ConnectorDescriptor = {
+  type?: string;
+  name?: string;
+  displayName?: string;
+  description?: string;
+  direction?: string;
+  capabilities?: unknown;
+  credentials?: unknown[];
+  options?: unknown[];
+  manifestColumns?: unknown[];
+  mappingFields?: unknown[];
+  metadata?: Record<string, string>;
+};

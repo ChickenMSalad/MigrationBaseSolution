@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+
 import { Layout } from "./components/Layout";
 import { Artifacts } from "./pages/Artifacts";
 import { Connectors } from "./pages/Connectors";
@@ -11,6 +12,7 @@ import { Projects } from "./pages/Projects";
 import { RunDetail } from "./pages/RunDetail";
 import { Runs } from "./pages/Runs";
 import { ManifestBuilder } from "./pages/ManifestBuilder";
+import { TaxonomyBuilder } from "./pages/TaxonomyBuilder";
 
 export default function App() {
   return (
@@ -26,8 +28,9 @@ export default function App() {
         <Route path="credentials" element={<Credentials />} />
         <Route path="artifacts" element={<Artifacts />} />
         <Route path="mapping-builder" element={<MappingBuilder />} />
+        <Route path="manifest-builder" element={<ManifestBuilder />} />
+        <Route path="taxonomy-builder" element={<TaxonomyBuilder />} />
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/manifest-builder" element={<ManifestBuilder />} />
       </Route>
     </Routes>
   );

@@ -1,4 +1,4 @@
-export type ArtifactKind = 'Unknown' | 'Manifest' | 'Mapping' | 'Binary' | 'Report' | 'Other';
+export type ArtifactKind = 'Unknown' | 'Manifest' | 'Mapping' | 'Taxonomy' | 'Binary' | 'Report' | 'Other';
 
 export interface ControlPlaneArtifactRecord {
   artifactId: string;

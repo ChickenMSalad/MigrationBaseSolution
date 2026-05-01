@@ -1,4 +1,4 @@
-import { Activity, Amphora, Boxes, FolderKanban, GitBranch, Home, KeyRound, Map, PlugZap, FileSpreadsheet } from "lucide-react";
+import { Activity, Amphora, Boxes, FileSpreadsheet, FolderKanban, GitBranch, Home, KeyRound, Map, PlugZap, Tags } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const nav = [
@@ -8,8 +8,9 @@ const nav = [
   { to: "/connectors", label: "Connectors", icon: PlugZap },
   { to: "/credentials", label: "Credentials", icon: KeyRound },
   { to: "/artifacts", label: "Artifacts", icon: Amphora },
-  { to: "/mapping-builder", label: "Mapping Builder", icon: Map },
   { to: "/manifest-builder", label: "Manifest Builder", icon: FileSpreadsheet },
+  { to: "/taxonomy-builder", label: "Taxonomy Builder", icon: Tags },
+  { to: "/mapping-builder", label: "Mapping Builder", icon: Map }
 ];
 
 export function Layout() {
@@ -27,6 +28,7 @@ export function Layout() {
         <nav>
           {nav.map((item) => {
             const Icon = item.icon;
+
             return (
               <NavLink
                 key={item.to}

@@ -131,6 +131,40 @@ public static class ArtifactEndpoints
             })
             .WithSummary("Get artifact metadata.");
 
+        group.MapPost("/taxonomies", async (
+            HttpRequest request,
+            IArtifactStore artifacts,
+            CancellationToken cancellationToken) =>
+        {
+            if (!request.HasFormContentType)
+            {
+                return Results.BadRequest(new { error = "Expected multipart/form-data." });
+            }
+
+            var form = await request.ReadFormAsync(cancellationToken).ConfigureAwait(false);
+            var file = form.Files.GetFile("file");
+
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(new { error = "Upload a non-empty taxonomy using form field 'file'." });
+            }
+
+            await using var stream = file.OpenReadStream();
+
+            var record = await artifacts.SaveAsync(
+                stream,
+                file.FileName,
+                string.IsNullOrWhiteSpace(file.ContentType) ? "application/json" : file.ContentType,
+                ArtifactKind.Taxonomy,
+                form["projectId"].FirstOrDefault(),
+                form["description"].FirstOrDefault(),
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            return Results.Created($"/api/artifacts/{record.ArtifactId}", record);
+        })
+        .DisableAntiforgery()
+        .WithSummary("Upload a taxonomy/metaproperty artifact.");
+
         group.MapGet("/{artifactId}/download", async (
                 string artifactId,
                 IArtifactStore artifacts,
@@ -190,6 +224,14 @@ public static class ArtifactEndpoints
         {
             return ArtifactKind.Manifest;
         }
+
+        if (fileName.Contains("taxonomy", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("metaproperties", StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("metaproperty", StringComparison.OrdinalIgnoreCase))
+        {
+            return ArtifactKind.Taxonomy;
+        }
+
 
         if (extension.Equals(".json", StringComparison.OrdinalIgnoreCase))
         {
