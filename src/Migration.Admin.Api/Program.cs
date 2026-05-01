@@ -64,6 +64,13 @@ app.MapGet("/health", () => Results.Ok(new
 
 var api = app.MapGroup("/api");
 
+// Extensions below are relative to the existing /api route group.
+api.MapRunMonitoringEndpoints();
+api.MapCredentialEndpoints();
+api.MapProjectArtifactBindingEndpoints();
+api.MapProjectCredentialBindingEndpoints();
+api.MapPreflightEndpoints();
+
 api.MapGet("/connectors", (IConnectorCatalog catalog) => Results.Ok(new
 {
     sources = catalog.GetSources(),
@@ -277,14 +284,11 @@ app.MapGet("/debug/config", (IConfiguration configuration, IWebHostEnvironment e
     });
 });
 
-api.MapRunMonitoringEndpoints();
-api.MapCredentialEndpoints();
-api.MapProjectArtifactBindingEndpoints();
+// These extensions already include their /api route prefix internally.
+// Keep them on app, not on the /api group, to avoid /api/api routes.
 app.MapArtifactEndpoints();
 app.MapControlPlaneDeleteEndpoints();
 app.MapMappingBuilderEndpoints();
-api.MapPreflightEndpoints();
 app.MapManifestBuilderEndpoints();
-api.MapProjectCredentialBindingEndpoints();
 
 app.Run();

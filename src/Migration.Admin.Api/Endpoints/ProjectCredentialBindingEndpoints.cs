@@ -2,20 +2,16 @@ using Migration.ControlPlane.Services;
 
 namespace Migration.Admin.Api.Endpoints;
 
-public sealed record ProjectCredentialBindingRequest(
-    string? SourceCredentialSetId,
-    string? TargetCredentialSetId);
-
 public static class ProjectCredentialBindingEndpoints
 {
     public static IEndpointRouteBuilder MapProjectCredentialBindingEndpoints(this IEndpointRouteBuilder app)
     {
-        // This extension is called from Program.cs on the existing "/api" route group:
+        // Called from Program.cs on the existing /api route group:
         //
         //     var api = app.MapGroup("/api");
         //     api.MapProjectCredentialBindingEndpoints();
         //
-        // So this path must be relative to "/api".
+        // Therefore this path must be relative to /api.
         var group = app.MapGroup("/projects/{projectId}/credentials")
             .WithTags("Project Credentials");
 
@@ -25,24 +21,27 @@ public static class ProjectCredentialBindingEndpoints
             IAdminProjectStore store,
             CancellationToken cancellationToken) =>
         {
-            var existing = await store.GetProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
+            var project = await store.GetProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
 
-            if (existing is null)
+            if (project is null)
             {
                 return Results.NotFound(new { error = $"Project '{projectId}' was not found." });
             }
 
-            if (existing.Settings is null)
+            // Settings is the existing persisted project context bag in this repo.
+            // It is init-only on the project record, so do not assign project.Settings.
+            // Mutate the existing dictionary instead.
+            if (project.Settings is null)
             {
                 return Results.BadRequest(new { error = "Project settings were not initialized." });
             }
 
-            SetOrRemove(existing.Settings, "sourceCredentialSetId", request.SourceCredentialSetId);
-            SetOrRemove(existing.Settings, "targetCredentialSetId", request.TargetCredentialSetId);
+            SetOrRemove(project.Settings, "sourceCredentialSetId", request.SourceCredentialSetId);
+            SetOrRemove(project.Settings, "targetCredentialSetId", request.TargetCredentialSetId);
 
-            await store.SaveProjectAsync(existing, cancellationToken).ConfigureAwait(false);
+            await store.SaveProjectAsync(project, cancellationToken).ConfigureAwait(false);
 
-            return Results.Ok(existing);
+            return Results.Ok(project);
         })
         .WithSummary("Bind source and target credential set ids to a project.");
 
@@ -60,3 +59,7 @@ public static class ProjectCredentialBindingEndpoints
         settings[key] = value.Trim();
     }
 }
+
+public sealed record ProjectCredentialBindingRequest(
+    string? SourceCredentialSetId,
+    string? TargetCredentialSetId);

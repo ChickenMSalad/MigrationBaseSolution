@@ -73,6 +73,30 @@ function queryString(params: Record<string, string | number | boolean | null | u
   return text ? `?${text}` : "";
 }
 
+export type ManifestBuilderSource = {
+  sourceType?: string;
+  type?: string;
+  displayName?: string;
+  description?: string;
+  options?: unknown[];
+};
+
+export type BuildManifestRequest = {
+  sourceType: string;
+  credentialSetId: string;
+  projectId?: string | null;
+  fileName?: string | null;
+  options?: Record<string, string | number | boolean | null | undefined>;
+};
+
+export type BuildManifestResponse = {
+  artifact?: ArtifactRecord;
+  artifactId?: string;
+  fileName?: string;
+  rowCount?: number;
+  message?: string;
+};
+
 export const api = {
   health: () => request<{ status: string; service: string; utc: string }>("/health"),
 
@@ -89,10 +113,15 @@ export const api = {
       body: JSON.stringify(payload)
     }),
 
-  updateProject: (project: ProjectRecord) =>
-    request<ProjectRecord>("/api/projects", {
-      method: "POST",
-      body: JSON.stringify(project)
+  updateProject: (projectId: string, payload: Partial<ProjectRecord>) =>
+    request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    }),
+
+  deleteProject: (projectId: string) =>
+    request<void>(`/api/projects/${encodeURIComponent(projectId)}`, {
+      method: "DELETE"
     }),
 
   bindProjectArtifacts: (projectId: string, payload: BindProjectArtifactsRequest) =>
@@ -101,14 +130,49 @@ export const api = {
       body: JSON.stringify(payload)
     }),
 
-  bindProjectCredentials: (projectId: string, payload: BindProjectCredentialsRequest) =>
-    request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}/credentials`, {
+  bindProjectCredentials: (project: ProjectRecord, payload: BindProjectCredentialsRequest) =>
+    request<ProjectRecord>(`/api/projects/${encodeURIComponent(project.projectId)}/credentials`, {
       method: "PUT",
       body: JSON.stringify(payload)
     }),
 
   artifacts: (kind?: string) =>
     request<ArtifactRecord[]>(`/api/artifacts${queryString({ kind })}`),
+
+  artifactDownloadUrl: (artifactId: string) =>
+    `/api/artifacts/${encodeURIComponent(artifactId)}`,
+
+  deleteArtifact: (artifactId: string) =>
+    request<void>(`/api/artifacts/${encodeURIComponent(artifactId)}`, {
+      method: "DELETE"
+    }),
+
+  uploadArtifact: (kind: string, file: File) => {
+    const form = new FormData();
+    form.append("kind", kind);
+    form.append("artifactType", kind);
+    form.append("file", file);
+
+    return request<ArtifactRecord>("/api/artifacts", {
+      method: "POST",
+      body: form
+    });
+  },
+
+  manifestBuilderSources: () =>
+    request<ManifestBuilderSource[]>("/api/manifest-builder/sources"),
+
+  buildManifest: (payload: BuildManifestRequest) =>
+    request<BuildManifestResponse>("/api/manifest-builder/build", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+
+  createManifestArtifact: (payload: BuildManifestRequest) =>
+    request<BuildManifestResponse>("/api/manifest-builder/build", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
 
   runs: () => request<RunRecord[]>("/api/runs"),
 
