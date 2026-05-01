@@ -285,6 +285,6 @@ app.MapControlPlaneDeleteEndpoints();
 app.MapMappingBuilderEndpoints();
 api.MapPreflightEndpoints();
 app.MapManifestBuilderEndpoints();
-app.MapProjectCredentialBindingEndpoints();
+api.MapProjectCredentialBindingEndpoints();
 
 app.Run();
