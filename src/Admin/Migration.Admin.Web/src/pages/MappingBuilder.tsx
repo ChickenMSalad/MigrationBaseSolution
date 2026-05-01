@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, JsonBlock } from "../components/Card";
 import { LoadingError } from "../components/LoadingError";
 
-type ArtifactKind = "Manifest" | "Mapping" | "Binary" | "Report" | "Other" | string;
+type ArtifactKind = "Manifest" | "Mapping" | "Taxonomy" | "Binary" | "Report" | "Other" | string;
 
 type ArtifactRecord = {
   artifactId: string;
@@ -22,6 +22,7 @@ type ProjectRecord = {
   manifestType: string;
   manifestArtifactId?: string | null;
   mappingArtifactId?: string | null;
+  taxonomyArtifactId?: string | null;
 };
 
 type ManifestPreview = {
@@ -31,12 +32,28 @@ type ManifestPreview = {
   sampleRows: Record<string, string>[];
 };
 
+type MappingType = "intermediate" | "target";
+
 type MappingRow = {
   id: string;
   source: string;
   target: string;
   transform: string;
   required: boolean;
+};
+
+type TagRule = {
+  id: string;
+  sourceField: string;
+  tagName: string;
+  transform: string;
+};
+
+type MetadataRule = {
+  id: string;
+  sourceField: string;
+  jsonPath: string;
+  transform: string;
 };
 
 type SaveMappingResponse = {
@@ -90,6 +107,10 @@ function artifactKind(a: ArtifactRecord): string {
   return String(a.kind ?? a.artifactType ?? "");
 }
 
+function isKind(a: ArtifactRecord, kind: string): boolean {
+  return artifactKind(a).toLowerCase() === kind.toLowerCase();
+}
+
 function newRow(source = "", target = ""): MappingRow {
   return {
     id: crypto.randomUUID(),
@@ -97,6 +118,24 @@ function newRow(source = "", target = ""): MappingRow {
     target,
     transform: "",
     required: false
+  };
+}
+
+function newTagRule(sourceField = "", tagName = ""): TagRule {
+  return {
+    id: crypto.randomUUID(),
+    sourceField,
+    tagName,
+    transform: "trim"
+  };
+}
+
+function newMetadataRule(sourceField = "", jsonPath = ""): MetadataRule {
+  return {
+    id: crypto.randomUUID(),
+    sourceField,
+    jsonPath,
+    transform: "trim"
   };
 }
 
@@ -110,17 +149,36 @@ function defaultTargetName(source: string): string {
     .toLowerCase();
 }
 
+function defaultBlobNameTemplate(columns: string[]): string {
+  const fileName = columns.find(c => /file\s*name|filename|name/i.test(c));
+  const assetId = columns.find(c => /asset\s*id|assetid|id/i.test(c));
+
+  if (fileName) return `{${fileName}}`;
+  if (assetId) return `{${assetId}}`;
+  return "{assetId}";
+}
+
 export function MappingBuilder() {
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [manifestArtifacts, setManifestArtifacts] = useState<ArtifactRecord[]>([]);
+  const [taxonomyArtifacts, setTaxonomyArtifacts] = useState<ArtifactRecord[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedManifestArtifactId, setSelectedManifestArtifactId] = useState("");
+  const [selectedTargetArtifactId, setSelectedTargetArtifactId] = useState("");
+  const [mappingType, setMappingType] = useState<MappingType>("intermediate");
   const [preview, setPreview] = useState<ManifestPreview | null>(null);
   const [profileName, setProfileName] = useState("generated-mapping-profile");
   const [sourceType, setSourceType] = useState("LocalStorage");
   const [targetType, setTargetType] = useState("LocalStorage");
   const [fileName, setFileName] = useState("generated-mapping-profile.json");
   const [rows, setRows] = useState<MappingRow[]>([newRow()]);
+  const [blobNameTemplate, setBlobNameTemplate] = useState("{assetId}");
+  const [metadataJsonPathTemplate, setMetadataJsonPathTemplate] = useState("metadata/{assetId}.json");
+  const [binaryOnly, setBinaryOnly] = useState(false);
+  const [writeMetadataJson, setWriteMetadataJson] = useState(true);
+  const [writeBlobTags, setWriteBlobTags] = useState(true);
+  const [tagRules, setTagRules] = useState<TagRule[]>([newTagRule()]);
+  const [metadataRules, setMetadataRules] = useState<MetadataRule[]>([newMetadataRule()]);
   const [bindToProject, setBindToProject] = useState(true);
   const [createdArtifact, setCreatedArtifact] = useState<ArtifactRecord | null>(null);
   const [saving, setSaving] = useState(false);
@@ -141,16 +199,71 @@ export function MappingBuilder() {
         ...(r.transform.trim() ? { transform: r.transform.trim() } : {})
       }));
 
+    const cleanTagRules = tagRules
+      .filter(r => r.sourceField.trim() && r.tagName.trim())
+      .map(r => ({
+        sourceField: r.sourceField.trim(),
+        tagName: r.tagName.trim(),
+        ...(r.transform.trim() ? { transform: r.transform.trim() } : {})
+      }));
+
+    const cleanMetadataRules = metadataRules
+      .filter(r => r.sourceField.trim() && r.jsonPath.trim())
+      .map(r => ({
+        sourceField: r.sourceField.trim(),
+        jsonPath: r.jsonPath.trim(),
+        ...(r.transform.trim() ? { transform: r.transform.trim() } : {})
+      }));
+
+    if (mappingType === "intermediate") {
+      return {
+        profileName,
+        sourceType,
+        targetType,
+        mappingType,
+        intermediateStorage: {
+          provider: "AzureBlob",
+          binaryOnly,
+          blobNameTemplate,
+          writeBlobTags: !binaryOnly && writeBlobTags,
+          writeMetadataJson: !binaryOnly && writeMetadataJson,
+          metadataJsonPathTemplate: !binaryOnly && writeMetadataJson ? metadataJsonPathTemplate : null,
+          tagRules: binaryOnly ? [] : cleanTagRules,
+          metadataRules: binaryOnly ? [] : cleanMetadataRules
+        },
+        fieldMappings: [],
+        requiredTargetFields: []
+      };
+    }
+
     return {
       profileName,
       sourceType,
       targetType,
+      mappingType,
+      manifestArtifactId: selectedManifestArtifactId || null,
+      targetArtifactId: selectedTargetArtifactId || null,
       fieldMappings: cleanRows,
       requiredTargetFields: rows
         .filter(r => r.required && r.target.trim())
         .map(r => r.target.trim())
     };
-  }, [rows, profileName, sourceType, targetType]);
+  }, [
+    rows,
+    tagRules,
+    metadataRules,
+    profileName,
+    sourceType,
+    targetType,
+    mappingType,
+    selectedManifestArtifactId,
+    selectedTargetArtifactId,
+    binaryOnly,
+    blobNameTemplate,
+    writeBlobTags,
+    writeMetadataJson,
+    metadataJsonPathTemplate
+  ]);
 
   async function loadInitial() {
     setLoading(true);
@@ -158,10 +271,12 @@ export function MappingBuilder() {
     try {
       const [projectData, artifactData] = await Promise.all([
         request<ProjectRecord[]>("/api/projects"),
-        request<ArtifactRecord[]>("/api/artifacts?kind=Manifest")
+        request<ArtifactRecord[]>("/api/artifacts")
       ]);
+      const artifacts = artifactData ?? [];
       setProjects(projectData ?? []);
-      setManifestArtifacts((artifactData ?? []).filter(x => artifactKind(x).toLowerCase() === "manifest" || !artifactKind(x)));
+      setManifestArtifacts(artifacts.filter(x => isKind(x, "Manifest") || !artifactKind(x)));
+      setTaxonomyArtifacts(artifacts.filter(x => isKind(x, "Taxonomy") || isKind(x, "Manifest")));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -181,7 +296,12 @@ export function MappingBuilder() {
       setSelectedManifestArtifactId(selectedProject.manifestArtifactId);
     }
 
-    const safeName = `${selectedProject.displayName || selectedProject.projectId}-mapping`
+    if (selectedProject.taxonomyArtifactId) {
+      setSelectedTargetArtifactId(selectedProject.taxonomyArtifactId);
+    }
+
+    const suffix = mappingType === "intermediate" ? "intermediate-storage-mapping" : "target-mapping";
+    const safeName = `${selectedProject.displayName || selectedProject.projectId}-${suffix}`
       .replace(/\s+/g, "-")
       .replace(/[^a-zA-Z0-9_.-]/g, "")
       .toLowerCase();
@@ -191,7 +311,7 @@ export function MappingBuilder() {
       setFileName(`${safeName}.json`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProjectId]);
+  }, [selectedProjectId, mappingType]);
 
   async function loadPreview() {
     if (!selectedManifestArtifactId) return;
@@ -202,7 +322,10 @@ export function MappingBuilder() {
       setPreview(data);
 
       if (data.columns.length > 0) {
+        setBlobNameTemplate(defaultBlobNameTemplate(data.columns));
         setRows(data.columns.map(c => newRow(c, defaultTargetName(c))));
+        setTagRules(data.columns.slice(0, 5).map(c => newTagRule(c, defaultTargetName(c))));
+        setMetadataRules(data.columns.map(c => newMetadataRule(c, defaultTargetName(c))));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -213,8 +336,24 @@ export function MappingBuilder() {
     setRows(current => current.map(row => row.id === id ? { ...row, ...patch } : row));
   }
 
+  function updateTagRule(id: string, patch: Partial<TagRule>) {
+    setTagRules(current => current.map(row => row.id === id ? { ...row, ...patch } : row));
+  }
+
+  function updateMetadataRule(id: string, patch: Partial<MetadataRule>) {
+    setMetadataRules(current => current.map(row => row.id === id ? { ...row, ...patch } : row));
+  }
+
   function removeRow(id: string) {
     setRows(current => current.length <= 1 ? current : current.filter(row => row.id !== id));
+  }
+
+  function removeTagRule(id: string) {
+    setTagRules(current => current.length <= 1 ? current : current.filter(row => row.id !== id));
+  }
+
+  function removeMetadataRule(id: string) {
+    setMetadataRules(current => current.length <= 1 ? current : current.filter(row => row.id !== id));
   }
 
   async function saveMapping() {
@@ -228,11 +367,14 @@ export function MappingBuilder() {
           profileName,
           sourceType,
           targetType,
+          mappingType,
           fileName,
           manifestArtifactId: selectedManifestArtifactId || null,
+          targetArtifactId: mappingType === "target" ? selectedTargetArtifactId || null : null,
           projectId: selectedProjectId || null,
-          fieldMappings: mappingProfile.fieldMappings,
-          requiredTargetFields: mappingProfile.requiredTargetFields
+          fieldMappings: mappingType === "target" ? mappingProfile.fieldMappings : [],
+          requiredTargetFields: mappingType === "target" ? mappingProfile.requiredTargetFields : [],
+          intermediateStorage: mappingType === "intermediate" ? mappingProfile.intermediateStorage : null
         })
       });
 
@@ -243,7 +385,8 @@ export function MappingBuilder() {
           method: "PUT",
           body: JSON.stringify({
             manifestArtifactId: selectedManifestArtifactId || null,
-            mappingArtifactId: response.artifact.artifactId
+            mappingArtifactId: response.artifact.artifactId,
+            taxonomyArtifactId: mappingType === "target" ? selectedTargetArtifactId || null : undefined
           })
         });
       }
@@ -254,19 +397,31 @@ export function MappingBuilder() {
     }
   }
 
+  const canSave = mappingType === "intermediate"
+    ? Boolean(profileName.trim() && blobNameTemplate.trim() && (binaryOnly || tagRules.some(r => r.sourceField.trim() && r.tagName.trim()) || metadataRules.some(r => r.sourceField.trim() && r.jsonPath.trim())))
+    : mappingProfile.fieldMappings.length > 0;
+
   return (
     <div className="pageStack">
       <div className="pageTitle">
         <div>
           <h1>Mapping Builder</h1>
-          <p>Build a generic mapping profile from an uploaded manifest. Saved mappings are stored as Mapping artifacts and can be managed from the Artifacts page.</p>
+          <p>Build an intermediate storage mapping for Azure Blob staging, or a target mapping profile for final target systems.</p>
         </div>
       </div>
 
       <LoadingError loading={loading} error={error} />
 
-      <Card title="Setup" subtitle="Choose a project and manifest. Project values are optional but help pre-fill source and target types.">
+      <Card title="Setup" subtitle="Choose whether this mapping describes intermediate storage behavior or final target field mapping.">
         <div className="formGrid wide">
+          <label>
+            Mapping type
+            <select value={mappingType} onChange={(e) => setMappingType(e.target.value as MappingType)}>
+              <option value="intermediate">Intermediate storage mapping</option>
+              <option value="target">Target system mapping</option>
+            </select>
+          </label>
+
           <label>
             Project
             <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}>
@@ -279,17 +434,31 @@ export function MappingBuilder() {
             </select>
           </label>
 
-          <label>
-            Manifest artifact
-            <select value={selectedManifestArtifactId} onChange={(e) => setSelectedManifestArtifactId(e.target.value)}>
-              <option value="">Select a manifest artifact</option>
-              {manifestArtifacts.map(artifact => (
-                <option key={artifact.artifactId} value={artifact.artifactId}>
-                  {artifact.fileName} ({artifact.artifactId})
-                </option>
-              ))}
-            </select>
-          </label>
+          {/*<label>*/}
+          {/*  Source manifest artifact*/}
+          {/*  <select value={selectedManifestArtifactId} onChange={(e) => setSelectedManifestArtifactId(e.target.value)}>*/}
+          {/*    <option value="">Select a manifest artifact</option>*/}
+          {/*    {manifestArtifacts.map(artifact => (*/}
+          {/*      <option key={artifact.artifactId} value={artifact.artifactId}>*/}
+          {/*        {artifact.fileName} ({artifact.artifactId})*/}
+          {/*      </option>*/}
+          {/*    ))}*/}
+          {/*  </select>*/}
+          {/*</label>*/}
+
+          {mappingType === "target" && (
+            <label>
+              Target taxonomy/manifest artifact
+              <select value={selectedTargetArtifactId} onChange={(e) => setSelectedTargetArtifactId(e.target.value)}>
+                <option value="">Select target artifact</option>
+                {taxonomyArtifacts.map(artifact => (
+                  <option key={artifact.artifactId} value={artifact.artifactId}>
+                    {artifact.fileName} ({artifactKind(artifact) || "Artifact"})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
 
         <button className="primary" disabled={!selectedManifestArtifactId} onClick={loadPreview}>
@@ -306,7 +475,7 @@ export function MappingBuilder() {
         </Card>
       )}
 
-      <Card title="Mapping profile" subtitle="The generated JSON matches Migration.Application.Models.MappingProfile.">
+      <Card title="Mapping profile" subtitle="The saved JSON stays a Mapping artifact. Intermediate profiles add storage behavior for Azure Blob runs.">
         <div className="formGrid wide">
           <label>Profile name<input value={profileName} onChange={(e) => setProfileName(e.target.value)} /></label>
           <label>File name<input value={fileName} onChange={(e) => setFileName(e.target.value)} /></label>
@@ -315,47 +484,153 @@ export function MappingBuilder() {
         </div>
       </Card>
 
-      <Card title="Field mappings" subtitle="Mark required target fields when the target must receive a value.">
-        <div className="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Source</th>
-                <th>Target</th>
-                <th>Transform</th>
-                <th>Required target</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(row => (
-                <tr key={row.id}>
-                  <td>
-                    <select value={row.source} onChange={(e) => updateRow(row.id, { source: e.target.value })}>
-                      <option value="">Select source</option>
-                      {preview?.columns.map(column => <option key={column} value={column}>{column}</option>)}
-                    </select>
-                  </td>
-                  <td><input value={row.target} onChange={(e) => updateRow(row.id, { target: e.target.value })} /></td>
-                  <td>
-                    <select value={row.transform} onChange={(e) => updateRow(row.id, { transform: e.target.value })}>
-                      {transforms.map(transform => (
-                        <option key={transform || "none"} value={transform}>{transform || "none"}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <input type="checkbox" checked={row.required} onChange={(e) => updateRow(row.id, { required: e.target.checked })} />
-                  </td>
-                  <td><button className="ghost" onClick={() => removeRow(row.id)}>Remove</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {mappingType === "intermediate" && (
+        <>
+          <Card title="Intermediate storage behavior" subtitle="Define how the WebDam manifest should become Azure Blob objects, tags, and optional metadata JSON.">
+            <div className="formGrid wide">
+              <label>
+                Blob name template
+                <input value={blobNameTemplate} onChange={(e) => setBlobNameTemplate(e.target.value)} placeholder="assets/{Asset ID}/{Filename}" />
+              </label>
+              <label>
+                Metadata JSON path template
+                <input disabled={binaryOnly || !writeMetadataJson} value={metadataJsonPathTemplate} onChange={(e) => setMetadataJsonPathTemplate(e.target.value)} placeholder="metadata/{assetId}.json" />
+              </label>
+            </div>
 
-        <button className="ghost" onClick={() => setRows(current => [...current, newRow()])}>+ Add mapping row</button>
-      </Card>
+            <label className="check">
+              <input type="checkbox" checked={binaryOnly} onChange={(e) => setBinaryOnly(e.target.checked)} />
+              Binary only; do not write blob tags or metadata JSON
+            </label>
+            <label className="check">
+              <input type="checkbox" disabled={binaryOnly} checked={writeBlobTags} onChange={(e) => setWriteBlobTags(e.target.checked)} />
+              Store selected manifest values as Azure Blob index tags
+            </label>
+            <label className="check">
+              <input type="checkbox" disabled={binaryOnly} checked={writeMetadataJson} onChange={(e) => setWriteMetadataJson(e.target.checked)} />
+              Write selected manifest values to a metadata JSON sidecar
+            </label>
+          </Card>
+
+          {!binaryOnly && writeBlobTags && (
+            <Card title="Blob tag rules" subtitle="Choose manifest columns that should become Azure Blob index tags. Use tags for searchable lookup fields instead of path prefixes.">
+              <div className="tableWrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Manifest field</th>
+                      <th>Blob tag name</th>
+                      <th>Transform</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tagRules.map(row => (
+                      <tr key={row.id}>
+                        <td>
+                          <select value={row.sourceField} onChange={(e) => updateTagRule(row.id, { sourceField: e.target.value })}>
+                            <option value="">Select source</option>
+                            {preview?.columns.map(column => <option key={column} value={column}>{column}</option>)}
+                          </select>
+                        </td>
+                        <td><input value={row.tagName} onChange={(e) => updateTagRule(row.id, { tagName: e.target.value })} /></td>
+                        <td>
+                          <select value={row.transform} onChange={(e) => updateTagRule(row.id, { transform: e.target.value })}>
+                            {transforms.map(transform => <option key={transform || "none"} value={transform}>{transform || "none"}</option>)}
+                          </select>
+                        </td>
+                        <td><button className="ghost" onClick={() => removeTagRule(row.id)}>Remove</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button className="ghost" onClick={() => setTagRules(current => [...current, newTagRule()])}>+ Add tag rule</button>
+            </Card>
+          )}
+
+          {!binaryOnly && writeMetadataJson && (
+            <Card title="Metadata JSON rules" subtitle="Choose manifest columns to include in the JSON sidecar stored alongside binaries.">
+              <div className="tableWrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Manifest field</th>
+                      <th>JSON property/path</th>
+                      <th>Transform</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metadataRules.map(row => (
+                      <tr key={row.id}>
+                        <td>
+                          <select value={row.sourceField} onChange={(e) => updateMetadataRule(row.id, { sourceField: e.target.value })}>
+                            <option value="">Select source</option>
+                            {preview?.columns.map(column => <option key={column} value={column}>{column}</option>)}
+                          </select>
+                        </td>
+                        <td><input value={row.jsonPath} onChange={(e) => updateMetadataRule(row.id, { jsonPath: e.target.value })} /></td>
+                        <td>
+                          <select value={row.transform} onChange={(e) => updateMetadataRule(row.id, { transform: e.target.value })}>
+                            {transforms.map(transform => <option key={transform || "none"} value={transform}>{transform || "none"}</option>)}
+                          </select>
+                        </td>
+                        <td><button className="ghost" onClick={() => removeMetadataRule(row.id)}>Remove</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button className="ghost" onClick={() => setMetadataRules(current => [...current, newMetadataRule()])}>+ Add metadata rule</button>
+            </Card>
+          )}
+        </>
+      )}
+
+      {mappingType === "target" && (
+        <Card title="Field mappings" subtitle="Map source manifest columns to target taxonomy fields and mark required target fields.">
+          <div className="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  <th>Target</th>
+                  <th>Transform</th>
+                  <th>Required target</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(row => (
+                  <tr key={row.id}>
+                    <td>
+                      <select value={row.source} onChange={(e) => updateRow(row.id, { source: e.target.value })}>
+                        <option value="">Select source</option>
+                        {preview?.columns.map(column => <option key={column} value={column}>{column}</option>)}
+                      </select>
+                    </td>
+                    <td><input value={row.target} onChange={(e) => updateRow(row.id, { target: e.target.value })} /></td>
+                    <td>
+                      <select value={row.transform} onChange={(e) => updateRow(row.id, { transform: e.target.value })}>
+                        {transforms.map(transform => (
+                          <option key={transform || "none"} value={transform}>{transform || "none"}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <input type="checkbox" checked={row.required} onChange={(e) => updateRow(row.id, { required: e.target.checked })} />
+                    </td>
+                    <td><button className="ghost" onClick={() => removeRow(row.id)}>Remove</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <button className="ghost" onClick={() => setRows(current => [...current, newRow()])}>+ Add mapping row</button>
+        </Card>
+      )}
 
       <Card title="Generated mapping JSON">
         <JsonBlock value={mappingProfile} />
@@ -363,24 +638,16 @@ export function MappingBuilder() {
           <input type="checkbox" checked={bindToProject} onChange={(e) => setBindToProject(e.target.checked)} />
           Bind saved mapping to selected project
         </label>
-        <button className="primary" disabled={saving || mappingProfile.fieldMappings.length === 0} onClick={saveMapping}>
+        <button className="primary" disabled={saving || !canSave} onClick={saveMapping}>
           {saving ? "Saving…" : "Save Mapping Artifact"}
         </button>
       </Card>
 
-{createdArtifact && (
-  <div className="successBanner">
-    <strong>Mapping artifact created.</strong>
-    <p>
-      Saved <code>{createdArtifact.fileName}</code> to Artifacts as kind <strong>Mapping</strong>.
-    </p>
-    <div className="buttonRow">
-      <a className="secondaryButton" href="/artifacts">
-        View in Artifacts
-      </a>
-    </div>
-  </div>
-)}
+      {createdArtifact && (
+        <Card title="Created mapping artifact">
+          <JsonBlock value={createdArtifact} />
+        </Card>
+      )}
     </div>
   );
 }
