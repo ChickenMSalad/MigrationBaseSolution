@@ -57,9 +57,10 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
             return Fail(item, "Target payload has no binary SourceUri to upload to Azure Blob.");
         }
 
-        var naming = ResolveBlobNaming(job, item, binary);
+        var intermediateStorage = ResolveIntermediateStorageProfile(job);
+        var naming = ResolveBlobNaming(job, item, binary, intermediateStorage);
         var overwrite = GetBool(job, _options.Overwrite, "AzureBlobTargetOverwrite", "AzureBlobOverwrite", "Overwrite");
-        var writeSidecar = GetBool(job, _options.WriteMetadataSidecar, "AzureBlobWriteMetadataSidecar", "WriteMetadataSidecar");
+        var writeSidecar = intermediateStorage?.WriteMetadataJson ?? GetBool(job, _options.WriteMetadataSidecar, "AzureBlobWriteMetadataSidecar", "WriteMetadataSidecar");
         var createContainer = GetBool(job, _options.CreateContainerIfMissing, "AzureBlobCreateContainerIfMissing", "CreateContainerIfMissing");
 
         var container = new BlobContainerClient(connectionString, containerName);
@@ -85,19 +86,21 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
             ContentType = FirstNonEmpty(binary.ContentType, GuessContentType(naming.BinaryFileName))
         };
 
-        var blobMetadata = BuildBlobMetadata(job, item);
+        var blobMetadata = BuildBlobMetadata(job, item, intermediateStorage);
+        var blobTags = BuildBlobTags(job, item, intermediateStorage);
 
         _logger.LogInformation("Uploading work item {WorkItemId} to Azure Blob {BlobName}.", item.WorkItemId, naming.BinaryBlobName);
 
         await blob.UploadAsync(sourceStream, new BlobUploadOptions
         {
             HttpHeaders = headers,
-            Metadata = blobMetadata.Count == 0 ? null : blobMetadata
+            Metadata = blobMetadata.Count == 0 ? null : blobMetadata,
+            Tags = blobTags.Count == 0 ? null : blobTags
         }, cancellationToken).ConfigureAwait(false);
 
         if (writeSidecar)
         {
-            var sidecarResult = await WriteMetadataSidecarAsync(container, job, item, binary, naming, overwrite, cancellationToken).ConfigureAwait(false);
+            var sidecarResult = await WriteMetadataSidecarAsync(container, job, item, binary, naming, overwrite, intermediateStorage, cancellationToken).ConfigureAwait(false);
             if (!sidecarResult.Success)
             {
                 return sidecarResult;
@@ -110,8 +113,8 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
             Success = true,
             TargetAssetId = $"azureblob:{naming.BinaryBlobName}",
             Message = writeSidecar
-                ? $"Uploaded binary and metadata sidecar: {naming.BinaryBlobName}; {naming.MetadataBlobName}"
-                : $"Uploaded binary: {naming.BinaryBlobName}"
+                ? $"Uploaded binary{(blobTags.Count > 0 ? ", tags" : string.Empty)} and metadata sidecar: {naming.BinaryBlobName}; {naming.MetadataBlobName}"
+                : $"Uploaded binary{(blobTags.Count > 0 ? " and tags" : string.Empty)}: {naming.BinaryBlobName}"
         };
     }
 
@@ -122,6 +125,7 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         AssetBinary binary,
         BlobNaming naming,
         bool overwrite,
+        IntermediateStorageProfile? intermediateStorage,
         CancellationToken cancellationToken)
     {
         var sidecarBlob = container.GetBlobClient(naming.MetadataBlobName);
@@ -130,7 +134,7 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
             return Fail(item, $"Azure Blob metadata sidecar already exists and overwrite is disabled: {naming.MetadataBlobName}");
         }
 
-        var document = BuildSidecarDocument(job, item, binary, naming);
+        var document = BuildSidecarDocument(job, item, binary, naming, intermediateStorage);
         var jsonOptions = new JsonSerializerOptions { WriteIndented = GetBool(job, _options.PrettyPrintMetadataSidecar, "AzureBlobPrettyPrintMetadataSidecar", "PrettyPrintMetadataSidecar") };
         var json = JsonSerializer.Serialize(document, jsonOptions);
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
@@ -150,7 +154,7 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         return new MigrationResult { WorkItemId = item.WorkItemId, Success = true, TargetAssetId = $"azureblob:{naming.MetadataBlobName}" };
     }
 
-    private BlobNaming ResolveBlobNaming(MigrationJobDefinition job, AssetWorkItem item, AssetBinary binary)
+    private BlobNaming ResolveBlobNaming(MigrationJobDefinition job, AssetWorkItem item, AssetBinary binary, IntermediateStorageProfile? intermediateStorage)
     {
         var uniqueIdField = GetSetting(job, "AzureBlobUniqueIdField", "UniqueIdField") ?? _options.UniqueIdField;
         var fileNameField = GetSetting(job, "AzureBlobFileNameField", "FileNameField") ?? _options.FileNameField;
@@ -175,11 +179,14 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
 
         originalFileName = SanitizePathSegment(Path.GetFileName(originalFileName));
 
-        var rootFolder = GetSetting(job, "AzureBlobTargetRootFolder", "AzureBlobRootFolder", "TargetRootFolder")
-            ?? _options.RootFolderPath
-            ?? _options.FolderPath;
+        var rootFolder = FirstNonEmpty(
+            intermediateStorage?.RootFolder,
+            GetSetting(job, "AzureBlobTargetRootFolder", "AzureBlobRootFolder", "TargetRootFolder"),
+            _options.RootFolderPath,
+            _options.FolderPath);
 
-        var preserveSourceFolderPath = GetBool(job, _options.PreserveSourceFolderPath, "AzureBlobPreserveSourceFolderPath", "PreserveSourceFolderPath");
+        var preserveSourceFolderPath = intermediateStorage?.PreserveSourceFolderPath
+            ?? GetBool(job, _options.PreserveSourceFolderPath, "AzureBlobPreserveSourceFolderPath", "PreserveSourceFolderPath");
         var sourceFolderPath = preserveSourceFolderPath
             ? FirstNonEmpty(GetValue(item, folderPathField), item.SourceAsset?.Path)
             : null;
@@ -187,8 +194,8 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         var safeUniqueId = SanitizePathSegment(uniqueId);
         var tokens = CreateTokens(item, safeUniqueId, originalFileName);
 
-        var binaryTemplate = GetSetting(job, "AzureBlobBinaryFileNameTemplate", "BinaryFileNameTemplate") ?? _options.BinaryFileNameTemplate;
-        var metadataTemplate = GetSetting(job, "AzureBlobMetadataFileNameTemplate", "MetadataFileNameTemplate") ?? _options.MetadataFileNameTemplate;
+        var binaryTemplate = FirstNonEmpty(intermediateStorage?.BinaryFileNameTemplate, GetSetting(job, "AzureBlobBinaryFileNameTemplate", "BinaryFileNameTemplate"), _options.BinaryFileNameTemplate) ?? "{uniqueid}_{filename}";
+        var metadataTemplate = FirstNonEmpty(intermediateStorage?.MetadataFileNameTemplate, GetSetting(job, "AzureBlobMetadataFileNameTemplate", "MetadataFileNameTemplate"), _options.MetadataFileNameTemplate) ?? "{uniqueid}.metadata.json";
 
         var binaryFileName = SanitizePathSegment(ApplyTemplate(binaryTemplate, tokens));
         var metadataFileName = SanitizePathSegment(ApplyTemplate(metadataTemplate, tokens));
@@ -211,7 +218,7 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         };
     }
 
-    private Dictionary<string, object?> BuildSidecarDocument(MigrationJobDefinition job, AssetWorkItem item, AssetBinary binary, BlobNaming naming)
+    private Dictionary<string, object?> BuildSidecarDocument(MigrationJobDefinition job, AssetWorkItem item, AssetBinary binary, BlobNaming naming, IntermediateStorageProfile? intermediateStorage)
     {
         var mode = GetSetting(job, "AzureBlobMetadataSidecarMode", "MetadataSidecarMode") ?? _options.MetadataSidecarMode;
         var includeEmpty = GetBool(job, _options.IncludeEmptyMetadataValues, "AzureBlobIncludeEmptyMetadataValues", "IncludeEmptyMetadataValues");
@@ -266,11 +273,29 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
             document["sourceMetadata"] = FilterDictionary(item.SourceAsset.Metadata, includeColumns, excludeColumns, includeEmpty);
         }
 
+        if (intermediateStorage is not null)
+        {
+            document["mappingProfile"] = new Dictionary<string, object?>
+            {
+                ["mappingType"] = "intermediate",
+                ["storageMode"] = intermediateStorage.StorageMode
+            };
+
+            document["intermediateMetadata"] = intermediateStorage.MetadataFields.Count > 0
+                ? BuildMappedDocument(item, intermediateStorage.MetadataFields)
+                : FilterDictionary(item.Manifest.Columns, includeColumns, excludeColumns, includeEmpty);
+        }
+
         return document;
     }
 
-    private Dictionary<string, string> BuildBlobMetadata(MigrationJobDefinition job, AssetWorkItem item)
+    private Dictionary<string, string> BuildBlobMetadata(MigrationJobDefinition job, AssetWorkItem item, IntermediateStorageProfile? intermediateStorage)
     {
+        if (intermediateStorage is not null)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
         if (!GetBool(job, _options.WriteBlobMetadata, "AzureBlobWriteBlobMetadata", "WriteBlobMetadata"))
         {
             return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -303,6 +328,81 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         return metadata;
     }
 
+    private Dictionary<string, string> BuildBlobTags(MigrationJobDefinition job, AssetWorkItem item, IntermediateStorageProfile? intermediateStorage)
+    {
+        if (intermediateStorage?.WriteBlobTags != true)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var tags = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var field in intermediateStorage.TagFields)
+        {
+            if (tags.Count >= 10)
+            {
+                _logger.LogWarning("Azure Blob index tags are limited to 10. Remaining tag mappings were skipped for work item {WorkItemId}.", item.WorkItemId);
+                break;
+            }
+
+            var value = GetValue(item, field.SourceField);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            AddBlobTag(tags, field.TargetName, value);
+        }
+
+        return tags;
+    }
+
+    private static Dictionary<string, object?> BuildMappedDocument(AssetWorkItem item, IEnumerable<FieldMapping> fields)
+    {
+        var document = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var field in fields)
+        {
+            var value = GetValue(item, field.SourceField);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            document[field.TargetName] = value;
+        }
+
+        return document;
+    }
+
+    private void AddBlobTag(IDictionary<string, string> tags, string key, string value)
+    {
+        var sanitizedKey = SafeBlobTagKey(key);
+        if (string.IsNullOrWhiteSpace(sanitizedKey)) return;
+
+        var sanitizedValue = SafeBlobTagValue(value);
+        if (string.IsNullOrWhiteSpace(sanitizedValue)) return;
+
+        tags[sanitizedKey] = sanitizedValue;
+    }
+
+    private string SafeBlobTagValue(string value)
+    {
+        var sanitized = value.Replace("\r", " ").Replace("\n", " ").Trim();
+        sanitized = new string(sanitized.Select(ch => ch <= 127 ? ch : '?').ToArray());
+        return sanitized.Length <= 256 ? sanitized : sanitized[..256];
+    }
+
+    private static string SafeBlobTagKey(string key)
+    {
+        var sb = new StringBuilder(key.Length);
+        foreach (var ch in key)
+        {
+            sb.Append(char.IsLetterOrDigit(ch) || ch is '_' or '-' or '.' or '/' or ':' or '=' ? ch : '_');
+        }
+
+        var sanitized = sb.ToString().Trim('_');
+        return sanitized.Length <= 128 ? sanitized : sanitized[..128];
+    }
+
     private async Task<Stream> OpenBinaryStreamAsync(string sourceUri, CancellationToken cancellationToken)
     {
         if (Uri.TryCreate(sourceUri, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
@@ -320,6 +420,159 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         }
 
         return new FileStream(localPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1024 * 128, useAsync: true);
+    }
+
+    private static IntermediateStorageProfile? ResolveIntermediateStorageProfile(MigrationJobDefinition job)
+    {
+        var json = GetSetting(
+            job,
+            "MappingProfileJson",
+            "MappingArtifactJson",
+            "MappingJson",
+            "IntermediateStorageMappingJson",
+            "AzureBlobIntermediateStorageJson");
+
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            var mappingType = GetString(root, "mappingType", "type", "profileType");
+            var storage = TryGetObject(root, "intermediateStorage", out var intermediateStorage)
+                ? intermediateStorage
+                : root;
+
+            if (!string.IsNullOrWhiteSpace(mappingType) &&
+                !mappingType.Equals("intermediate", StringComparison.OrdinalIgnoreCase) &&
+                !TryGetObject(root, "intermediateStorage", out _))
+            {
+                return null;
+            }
+
+            var storageMode = FirstNonEmpty(GetString(storage, "storageMode", "mode"), "binaryWithMetadataJson") ?? "binaryWithMetadataJson";
+            var profile = new IntermediateStorageProfile
+            {
+                StorageMode = storageMode,
+                RootFolder = GetString(storage, "rootFolder", "rootFolderPath", "folderPath", "prefix"),
+                BinaryFileNameTemplate = GetString(storage, "binaryFileNameTemplate", "fileNameTemplate", "blobNameTemplate"),
+                MetadataFileNameTemplate = GetString(storage, "metadataFileNameTemplate", "metadataJsonFileNameTemplate", "sidecarFileNameTemplate"),
+                PreserveSourceFolderPath = GetBool(storage, "preserveSourceFolderPath", "preserveFolders", "preserveSourcePath")
+            };
+
+            profile.TagFields.AddRange(ReadFieldMappings(storage, "tagFields", "tags", "tagMappings", "blobTags"));
+            profile.MetadataFields.AddRange(ReadFieldMappings(storage, "metadataFields", "metadataMappings", "jsonMetadataFields", "sidecarFields"));
+
+            return profile;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static IEnumerable<FieldMapping> ReadFieldMappings(JsonElement source, params string[] propertyNames)
+    {
+        foreach (var propertyName in propertyNames)
+        {
+            if (!TryGetArray(source, propertyName, out var array))
+            {
+                continue;
+            }
+
+            foreach (var element in array.EnumerateArray())
+            {
+                if (element.ValueKind == JsonValueKind.String)
+                {
+                    var field = element.GetString();
+                    if (!string.IsNullOrWhiteSpace(field))
+                    {
+                        yield return new FieldMapping(field, field);
+                    }
+                    continue;
+                }
+
+                if (element.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var sourceField = GetString(element, "sourceField", "source", "manifestField", "field", "column", "name");
+                var targetName = FirstNonEmpty(
+                    GetString(element, "targetName", "targetField", "tagName", "jsonName", "metadataName", "name", "as"),
+                    sourceField);
+
+                if (!string.IsNullOrWhiteSpace(sourceField) && !string.IsNullOrWhiteSpace(targetName))
+                {
+                    yield return new FieldMapping(sourceField, targetName);
+                }
+            }
+        }
+    }
+
+    private static string? GetString(JsonElement element, params string[] propertyNames)
+    {
+        foreach (var propertyName in propertyNames)
+        {
+            if (element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String)
+            {
+                var text = value.GetString();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    return text;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static bool? GetBool(JsonElement element, params string[] propertyNames)
+    {
+        foreach (var propertyName in propertyNames)
+        {
+            if (!element.TryGetProperty(propertyName, out var value))
+            {
+                continue;
+            }
+
+            if (value.ValueKind == JsonValueKind.True) return true;
+            if (value.ValueKind == JsonValueKind.False) return false;
+            if (value.ValueKind == JsonValueKind.String && bool.TryParse(value.GetString(), out var parsed)) return parsed;
+        }
+
+        return null;
+    }
+
+    private static bool TryGetObject(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.TryGetProperty(propertyName, out value) && value.ValueKind == JsonValueKind.Object)
+        {
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static bool TryGetArray(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.TryGetProperty(propertyName, out value) && value.ValueKind == JsonValueKind.Array)
+        {
+            return true;
+        }
+
+        value = default;
+        return false;
     }
 
     private static Dictionary<string, object?> FilterDictionary<TValue>(IDictionary<string, TValue> source, HashSet<string> includeColumns, HashSet<string> excludeColumns, bool includeEmpty)
@@ -518,6 +771,28 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
     }
 
     private static string? FirstNonEmpty(params string?[] values) => values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
+    private sealed class IntermediateStorageProfile
+    {
+        public required string StorageMode { get; init; }
+        public string? RootFolder { get; init; }
+        public string? BinaryFileNameTemplate { get; init; }
+        public string? MetadataFileNameTemplate { get; init; }
+        public bool? PreserveSourceFolderPath { get; init; }
+        public List<FieldMapping> TagFields { get; } = new();
+        public List<FieldMapping> MetadataFields { get; } = new();
+
+        public bool WriteBlobTags => StorageMode.Equals("binaryWithTags", StringComparison.OrdinalIgnoreCase)
+            || StorageMode.Equals("binaryWithTagsAndMetadataJson", StringComparison.OrdinalIgnoreCase)
+            || StorageMode.Equals("tags", StringComparison.OrdinalIgnoreCase);
+
+        public bool WriteMetadataJson => StorageMode.Equals("binaryWithMetadataJson", StringComparison.OrdinalIgnoreCase)
+            || StorageMode.Equals("binaryWithTagsAndMetadataJson", StringComparison.OrdinalIgnoreCase)
+            || StorageMode.Equals("metadataJson", StringComparison.OrdinalIgnoreCase)
+            || StorageMode.Equals("json", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed record FieldMapping(string SourceField, string TargetName);
 
     private sealed class BlobNaming
     {
