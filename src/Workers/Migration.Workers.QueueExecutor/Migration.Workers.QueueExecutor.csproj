@@ -1,14 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>Migration-Workers-QueueExecutor</UserSecretsId>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\Migration.ControlPlane\Migration.ControlPlane.csproj" />
     <ProjectReference Include="..\..\Migration.GenericRuntime\Migration.GenericRuntime.csproj" />
+	<ProjectReference Include="..\..\Connectors\Migration.Connectors.Registration\Migration.Connectors.Registration.csproj" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Queues" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
@@ -20,7 +24,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
+
   <ItemGroup>
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
 </Project>

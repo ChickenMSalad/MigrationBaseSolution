@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Migration.Connectors.Registration;
 using Migration.ControlPlane.Registration;
 using Migration.GenericRuntime.Registration;
 using Migration.Workers.QueueExecutor.Options;
@@ -13,9 +14,13 @@ public static class QueueExecutorServiceCollectionExtensions
     {
         services.Configure<QueueExecutorOptions>(configuration.GetSection(QueueExecutorOptions.SectionName));
 
-        // Shared runtime registration: manifests, connectors, mapper, validation, orchestration, state, and progress.
+        // Shared runtime registration: manifests, mapper, validation, orchestration, state, and progress.
         services.AddGenericMigrationRuntime(configuration);
         services.AddMigrationControlPlane(configuration);
+
+        // Concrete connector modules used by queued migration runs.
+        // Keep the worker decoupled from individual connector projects by depending on the composition project only.
+        services.AddMigrationConnectorModules(configuration);
 
         services.AddHostedService<MigrationRunQueueWorker>();
 
