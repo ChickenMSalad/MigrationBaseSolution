@@ -34,7 +34,10 @@ public sealed class WebDamSourceConnector : IAssetSourceConnector
             ["_binaryAcquisitionMode"] = mode
         };
         WebDamAssetDto? webDamAsset = null;
-        if (!string.IsNullOrWhiteSpace(sourceAssetId) && ShouldLoadWebDamMetadata(mode))
+        var hasExplicitSourcePath = !string.IsNullOrWhiteSpace(explicitSourcePath);
+
+        if (!string.IsNullOrWhiteSpace(sourceAssetId) &&
+            ShouldLoadWebDamMetadata(mode, hasExplicitSourcePath))
         {
             EnsureApiClientAvailable();
             webDamAsset = await _apiClient!.GetAssetAsync(sourceAssetId, cancellationToken).ConfigureAwait(false);
@@ -83,7 +86,22 @@ public sealed class WebDamSourceConnector : IAssetSourceConnector
     {
         if (_apiClient is null) throw new InvalidOperationException("WebDam API services are not registered. Register the source connector with AddWebDamSourceConnector(configuration) when using webdam_id based migrations.");
     }
-    private static bool ShouldLoadWebDamMetadata(string mode) => !mode.Equals("ManifestPathOnly", StringComparison.OrdinalIgnoreCase) && !mode.Equals("StagedOnly", StringComparison.OrdinalIgnoreCase);
+    private static bool ShouldLoadWebDamMetadata(string mode, bool hasExplicitSourcePath)
+    {
+        if (mode.Equals("ManifestPathOnly", StringComparison.OrdinalIgnoreCase) ||
+            mode.Equals("StagedOnly", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (hasExplicitSourcePath &&
+            mode.Equals("PreferManifestPath", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
+    }
     private static bool ShouldForceDownload(MigrationJobDefinition job) => bool.TryParse(GetSetting(job, "ForceDownload", "WebDamForceDownload"), out var force) && force;
     private static string ResolveStagingDirectory(MigrationJobDefinition job)
     {

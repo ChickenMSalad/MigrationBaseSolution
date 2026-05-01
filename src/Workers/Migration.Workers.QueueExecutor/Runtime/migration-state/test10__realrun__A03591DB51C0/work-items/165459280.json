@@ -1,0 +1,24 @@
+{
+  "runId": "test10-20260501231707",
+  "jobName": "test10::realrun::A03591DB51C0",
+  "workItemId": "165459280",
+  "status": "TargetFailed",
+  "dryRun": false,
+  "startedUtc": null,
+  "completedUtc": "2026-05-01T23:17:11.5726455+00:00",
+  "updatedUtc": "2026-05-01T23:17:11.572644+00:00",
+  "sourceAssetId": null,
+  "targetAssetId": null,
+  "message": "No usable WebDam credentials were available. Configure password grant, a refresh token, or call AuthenticateWithAuthorizationCodeAsync first.",
+  "lastError": "No usable WebDam credentials were available. Configure password grant, a refresh token, or call AuthenticateWithAuthorizationCodeAsync first.",
+  "checksum": null,
+  "attemptCount": 1,
+  "properties": {
+    "OriginalJobName": "test10",
+    "ManifestFingerprint": "A03591DB51C0",
+    "ExecutionMode": "Live",
+    "ManifestPath": "C:\\Workspace\\MigrationBaseSolution\\.migration-control-plane\\artifacts\\artifact-20260501160637-18d9587b88b041c3ab9fcd9c683aae03\\webdam-manifest-20260501-160637.csv",
+    "ManifestRowId": "165459280"
+  },
+  "isTerminalSuccess": false
+}
