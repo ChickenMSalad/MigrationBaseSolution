@@ -14,13 +14,11 @@ public static class QueueExecutorServiceCollectionExtensions
     {
         services.Configure<QueueExecutorOptions>(configuration.GetSection(QueueExecutorOptions.SectionName));
 
-        // Shared runtime registration: manifests, mapper, validation, orchestration, state, and progress.
         services.AddGenericMigrationRuntime(configuration);
         services.AddMigrationControlPlane(configuration);
-
-        // Concrete connector modules are composed here, not directly in the worker project.
         services.AddMigrationConnectorModules(configuration);
 
+        services.AddSingleton<ProjectCredentialJobSettingsHydrator>();
         services.AddHostedService<MigrationRunQueueWorker>();
 
         return services;

@@ -1,0 +1,24 @@
+{
+  "runId": "test13-20260501233234",
+  "jobName": "test13::realrun::A03591DB51C0",
+  "workItemId": "165459282",
+  "status": "Succeeded",
+  "dryRun": false,
+  "startedUtc": null,
+  "completedUtc": "2026-05-01T23:33:26.9079752+00:00",
+  "updatedUtc": "2026-05-01T23:33:26.9079725+00:00",
+  "sourceAssetId": "165459282",
+  "targetAssetId": "azureblob:165459282_large-Marketing Materials - tiffany-nutt-0ClfreiNppM-unsplash.jpeg",
+  "message": "Uploaded binary and metadata sidecar: 165459282_large-Marketing Materials - tiffany-nutt-0ClfreiNppM-unsplash.jpeg; 165459282_metadata.json",
+  "lastError": null,
+  "checksum": null,
+  "attemptCount": 1,
+  "properties": {
+    "OriginalJobName": "test13",
+    "ManifestFingerprint": "A03591DB51C0",
+    "ExecutionMode": "Live",
+    "ManifestPath": "C:\\Workspace\\MigrationBaseSolution\\.migration-control-plane\\artifacts\\artifact-20260501160637-18d9587b88b041c3ab9fcd9c683aae03\\webdam-manifest-20260501-160637.csv",
+    "ManifestRowId": "165459282"
+  },
+  "isTerminalSuccess": true
+}

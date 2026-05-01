@@ -19,6 +19,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
 
     private readonly IAdminProjectStore _store;
     private readonly IMigrationJobRunner _runner;
+    private readonly ProjectCredentialJobSettingsHydrator _credentialHydrator;
     private readonly MigrationRunQueueOptions _queueOptions;
     private readonly QueueExecutorOptions _executorOptions;
     private readonly ILogger<MigrationRunQueueWorker> _logger;
@@ -26,12 +27,14 @@ public sealed class MigrationRunQueueWorker : BackgroundService
     public MigrationRunQueueWorker(
         IAdminProjectStore store,
         IMigrationJobRunner runner,
+        ProjectCredentialJobSettingsHydrator credentialHydrator,
         IOptions<MigrationRunQueueOptions> queueOptions,
         IOptions<QueueExecutorOptions> executorOptions,
         ILogger<MigrationRunQueueWorker> logger)
     {
         _store = store;
         _runner = runner;
+        _credentialHydrator = credentialHydrator;
         _queueOptions = queueOptions.Value;
         _executorOptions = executorOptions.Value;
         _logger = logger;
@@ -41,9 +44,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
     {
         if (!_queueOptions.Provider.Equals("AzureQueue", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogWarning(
-                "Queue executor is idle because MigrationRunQueue:Provider is {Provider}. Set it to AzureQueue to process queued runs.",
-                _queueOptions.Provider);
+            _logger.LogWarning("Queue executor is idle because MigrationRunQueue:Provider is {Provider}. Set it to AzureQueue to process queued runs.", _queueOptions.Provider);
             return;
         }
 
@@ -58,7 +59,6 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         }
 
         var queue = CreateQueueClient();
-
         if (_queueOptions.CreateIfMissing)
         {
             await queue.CreateIfNotExistsAsync(cancellationToken: stoppingToken).ConfigureAwait(false);
@@ -73,14 +73,10 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         {
             try
             {
-                _logger.LogInformation("Polling migration queue {QueueName}", _queueOptions.QueueName);
-
                 var response = await queue.ReceiveMessagesAsync(
                     maxMessages: Math.Max(1, _executorOptions.MaxMessagesPerPoll),
                     visibilityTimeout: TimeSpan.FromMinutes(Math.Max(1, _executorOptions.VisibilityTimeoutMinutes)),
                     cancellationToken: stoppingToken).ConfigureAwait(false);
-
-                _logger.LogInformation("Queue poll returned {Count} messages", response.Value.Length);
 
                 if (response.Value.Length == 0)
                 {
@@ -91,13 +87,11 @@ public sealed class MigrationRunQueueWorker : BackgroundService
                 foreach (var message in response.Value)
                 {
                     stoppingToken.ThrowIfCancellationRequested();
-
                     var deleteMessage = false;
 
                     try
                     {
                         var runMessage = DeserializeMessage(message.Body.ToString());
-
                         if (runMessage is null || string.IsNullOrWhiteSpace(runMessage.RunId))
                         {
                             _logger.LogWarning("Discarding malformed migration queue message {MessageId}.", message.MessageId);
@@ -114,10 +108,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(
-                            ex,
-                            "Failed while processing queue message {MessageId}. The message will become visible again after the visibility timeout.",
-                            message.MessageId);
+                        _logger.LogError(ex, "Failed while processing queue message {MessageId}. The message will become visible again after the visibility timeout.", message.MessageId);
                     }
 
                     if (deleteMessage)
@@ -156,23 +147,14 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         }
         catch (JsonException)
         {
-            // Tolerate old messages that were manually base64 encoded or queued by a client with different encoding settings.
-            try
-            {
-                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(body));
-                return JsonSerializer.Deserialize<QueuedMigrationRunMessage>(decoded, JsonOptions);
-            }
-            catch
-            {
-                throw;
-            }
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(body));
+            return JsonSerializer.Deserialize<QueuedMigrationRunMessage>(decoded, JsonOptions);
         }
     }
 
     private async Task<bool> ProcessRunMessageAsync(QueuedMigrationRunMessage message, CancellationToken cancellationToken)
     {
         var run = await _store.GetRunAsync(message.RunId, cancellationToken).ConfigureAwait(false);
-
         if (run is null)
         {
             _logger.LogWarning("Run control record {RunId} was not found.", message.RunId);
@@ -203,9 +185,12 @@ public sealed class MigrationRunQueueWorker : BackgroundService
 
         try
         {
-            _logger.LogInformation("Executing migration run {RunId} ({JobName}).", running.RunId, running.JobName);
+            var hydratedJob = await _credentialHydrator.HydrateAsync(running.Job, cancellationToken).ConfigureAwait(false);
+            running = running with { Job = hydratedJob };
+            await _store.SaveRunAsync(running, cancellationToken).ConfigureAwait(false);
 
-            var summary = await _runner.RunAsync(running.Job, cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation("Executing migration run {RunId} ({JobName}).", running.RunId, running.JobName);
+            var summary = await _runner.RunAsync(hydratedJob, cancellationToken).ConfigureAwait(false);
 
             var completed = running with
             {
@@ -234,7 +219,6 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Migration run {RunId} failed.", running.RunId);
-
             var failed = running with
             {
                 Status = AdminRunStatuses.Failed,
