@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Azure.Storage.Queues;
+using Azure.Storage.Queues.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Migration.ControlPlane.Models;
@@ -10,10 +11,13 @@ namespace Migration.ControlPlane.Queues;
 public sealed class AzureQueueMigrationRunQueue : IMigrationRunQueue
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly MigrationRunQueueOptions _options;
     private readonly ILogger<AzureQueueMigrationRunQueue> _logger;
 
-    public AzureQueueMigrationRunQueue(IOptions<MigrationRunQueueOptions> options, ILogger<AzureQueueMigrationRunQueue> logger)
+    public AzureQueueMigrationRunQueue(
+        IOptions<MigrationRunQueueOptions> options,
+        ILogger<AzureQueueMigrationRunQueue> logger)
     {
         _options = options.Value;
         _logger = logger;
@@ -26,7 +30,19 @@ public sealed class AzureQueueMigrationRunQueue : IMigrationRunQueue
             throw new InvalidOperationException("MigrationRunQueue:ConnectionString is required when Provider is AzureQueue.");
         }
 
-        var client = new QueueClient(_options.ConnectionString, _options.QueueName);
+        if (string.IsNullOrWhiteSpace(_options.QueueName))
+        {
+            throw new InvalidOperationException("MigrationRunQueue:QueueName is required when Provider is AzureQueue.");
+        }
+
+        var client = new QueueClient(
+            _options.ConnectionString,
+            _options.QueueName,
+            new QueueClientOptions
+            {
+                MessageEncoding = QueueMessageEncoding.Base64
+            });
+
         if (_options.CreateIfMissing)
         {
             await client.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -41,12 +57,26 @@ public sealed class AzureQueueMigrationRunQueue : IMigrationRunQueue
         };
 
         var json = JsonSerializer.Serialize(message, JsonOptions);
-        await client.SendMessageAsync(json, cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await client.SendMessageAsync(json, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to enqueue migration run {RunId} to Azure Storage Queue {QueueName}.",
+                run.RunId,
+                _options.QueueName);
+
+            throw;
+        }
+
         _logger.LogInformation(
-            "Enqueued migration run {RunId} to queue {QueueName}. Payload: {Payload}",
+            "Enqueued migration run {RunId} to Azure Storage Queue {QueueName}. Payload: {Payload}",
             run.RunId,
             _options.QueueName,
             json);
-        //_logger.LogInformation("Queued migration run {RunId} on Azure Storage Queue {QueueName}.", run.RunId, _options.QueueName);
     }
 }
