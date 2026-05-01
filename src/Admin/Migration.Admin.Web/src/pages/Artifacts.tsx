@@ -4,17 +4,35 @@ import { Card, EmptyState } from "../components/Card";
 import { LoadingError } from "../components/LoadingError";
 import type { ArtifactRecord } from "../types/api";
 
-function artifactType(artifact: ArtifactRecord) {
-  return artifact.kind || artifact.artifactType || "Unknown";
+const artifactKindNames: Record<string, string> = {
+  "0": "Other",
+  "1": "Manifest",
+  "2": "Mapping",
+  "3": "Taxonomy",
+  "4": "Staging",
+  other: "Other",
+  manifest: "Manifest",
+  mapping: "Mapping",
+  taxonomy: "Taxonomy",
+  staging: "Staging"
+};
+
+function displayArtifactKind(artifact: ArtifactRecord) {
+  const raw = artifact.kind ?? artifact.artifactType ?? "Other";
+  return artifactKindNames[String(raw).toLowerCase()] ?? String(raw);
 }
 
-function uploadedAt(artifact: ArtifactRecord) {
-  return artifact.createdUtc || artifact.uploadedUtc || "";
+function artifactUploaded(artifact: ArtifactRecord) {
+  return artifact.createdUtc ?? artifact.uploadedUtc ?? null;
+}
+
+function formatDate(value?: string | null) {
+  return value ? new Date(value).toLocaleString() : "Unknown";
 }
 
 export function Artifacts() {
   const [artifacts, setArtifacts] = useState<ArtifactRecord[]>([]);
-  const [artifactTypeValue, setArtifactTypeValue] = useState("Manifest");
+  const [artifactType, setArtifactType] = useState("Manifest");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -49,22 +67,9 @@ export function Artifacts() {
     setMessage(null);
 
     try {
-      const form = new FormData();
-      form.append("kind", artifactTypeValue);
-      form.append("file", file);
-
-      const response = await fetch("/api/artifacts", {
-        method: "POST",
-        body: form
-      });
-
-      if (!response.ok) {
-        setError(await response.text());
-        return;
-      }
-
-      setFile(null);
+      await api.uploadArtifact(file, { kind: artifactType });
       setMessage("Artifact uploaded.");
+      setFile(null);
       await loadArtifacts();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -100,9 +105,7 @@ export function Artifacts() {
       <div className="pageHeader">
         <div>
           <h1>Artifacts</h1>
-          <p className="muted">
-            Upload, download, and manage manifest and mapping artifacts for migration projects.
-          </p>
+          <p className="muted">Upload, download, and manage artifacts for migration projects.</p>
         </div>
       </div>
 
@@ -110,12 +113,13 @@ export function Artifacts() {
       {message && <div className="successBanner">{message}</div>}
 
       <Card title="Upload Artifact">
-        <div className="formGrid">
+        <div className="formGrid wide">
           <label>
             Type
-            <select value={artifactTypeValue} onChange={event => setArtifactTypeValue(event.target.value)}>
+            <select value={artifactType} onChange={event => setArtifactType(event.target.value)}>
               <option value="Manifest">Manifest</option>
               <option value="Mapping">Mapping</option>
+              <option value="Taxonomy">Taxonomy</option>
               <option value="Other">Other</option>
             </select>
           </label>
@@ -132,7 +136,7 @@ export function Artifacts() {
               onClick={() => void uploadArtifact()}
               disabled={!file || uploading}
             >
-              {uploading ? "Uploading..." : "Upload"}
+              {uploading ? "Uploading…" : "Upload"}
             </button>
           </div>
         </div>
@@ -156,32 +160,27 @@ export function Artifacts() {
                 </tr>
               </thead>
               <tbody>
-                {artifacts.map(artifact => {
-                  const uploaded = uploadedAt(artifact);
-
-                  return (
-                    <tr key={artifact.artifactId}>
-                      <td>{artifactType(artifact)}</td>
-                      <td>{artifact.fileName}</td>
-                      <td>
-                        {uploaded ? new Date(uploaded).toLocaleString() : <span className="muted">Unknown</span>}
-                      </td>
-                      <td>
-                        <small>{artifact.artifactId}</small>
-                      </td>
-                      <td>
-                        <a href={api.artifactDownloadUrl(artifact.artifactId)}>Download</a>{" "}
+                {artifacts.map(artifact => (
+                  <tr key={artifact.artifactId}>
+                    <td>{displayArtifactKind(artifact)}</td>
+                    <td>{artifact.fileName}</td>
+                    <td>{formatDate(artifactUploaded(artifact))}</td>
+                    <td><small>{artifact.artifactId}</small></td>
+                    <td>
+                      <div className="inlineActions">
+                        <a href={api.artifactDownloadUrl(artifact.artifactId)}>Download</a>
                         <button
                           type="button"
+                          className="dangerButton"
                           onClick={() => void deleteArtifact(artifact.artifactId)}
                           disabled={deletingId === artifact.artifactId}
                         >
-                          {deletingId === artifact.artifactId ? "Deleting..." : "Delete"}
+                          {deletingId === artifact.artifactId ? "Deleting…" : "Delete"}
                         </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

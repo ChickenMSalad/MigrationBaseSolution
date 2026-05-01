@@ -1,87 +1,211 @@
-.page, .pageStack { display: grid; gap: 20px; max-width: 1320px; margin: 0 auto; }
-.page { padding: 0; }
-.page-header, .pageTitle { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
-.metricGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.metric { display: grid; gap: 10px; }
-.metric span { color: var(--color-muted); }
-.metric strong { font-size: 34px; }
-.formGrid, .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: end; }
-.formGrid.wide { grid-template-columns: 1fr; }
-.connectorGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
-.connectorCard { border: 1px solid var(--color-border); border-radius: 16px; padding: 14px; }
-.connectorCard summary { font-weight: 800; cursor: pointer; }
-.row-actions, .chip-row, .pillRow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
-.chip { display: inline-flex; align-items: center; border: 1px solid #d0d7de; border-radius: 999px; padding: 4px 10px; font-size: 0.85rem; background: #f6f8fa; }
-.small-gap { gap: 0.75rem; }
-
-/* Manifest Builder only — scoped */
-
-.manifestBuilder .formGrid {
+.page,
+.pageStack {
   display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
-  gap: 1.25rem 1.5rem;
-  align-items: start;
+  gap: 20px;
+  max-width: 1320px;
+  margin: 0 auto;
 }
 
-/* Label wrapper */
-.manifestBuilder .formGrid label {
+.page {
+  padding: 0;
+}
+
+.pageHeader,
+.page-header,
+.pageTitle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.formGrid,
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.formGrid.wide {
+  grid-template-columns: 1fr;
+}
+
+.formGrid label,
+.form-grid label {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  font-weight: 600;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
-/* Keep your existing input styles — just normalize sizing */
-.manifestBuilder .formGrid input,
-.manifestBuilder .formGrid select {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Help text alignment */
-.manifestBuilder .helpText {
-  margin-top: 0.25rem;
-  font-size: 0.85rem;
-  line-height: 1.3;
-  opacity: 0.75;
-  max-width: 36ch;
-}
-
-/* Button row spans full width */
-.manifestBuilder .buttonRow {
-  grid-column: 1 / -1;
+.buttonRow,
+.actionRow,
+.inlineActions,
+.row-actions,
+.chip-row,
+.pillRow {
   display: flex;
   align-items: center;
-  margin-top: 0.5rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
-/* Result layout cleanup */
-.manifestBuilder .detailGrid {
+.buttonRow {
+  margin-top: 1rem;
+}
+
+.inlineActions {
+  margin: 0;
+}
+
+.secondaryButton,
+.dangerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: #0f172a;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.secondaryButton:hover {
+  background: #f4f6fb;
+}
+
+.dangerButton {
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.dangerButton:hover {
+  background: #fef2f2;
+}
+
+.secondaryButton:disabled,
+.dangerButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.metricGrid.compact {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.metric {
+  display: grid;
+  gap: 10px;
+}
+
+.metric span {
+  color: var(--color-muted);
+}
+
+.metric strong {
+  font-size: 34px;
+}
+
+.metricGrid.compact .metric strong {
+  font-size: 24px;
+}
+
+.connectorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.connectorCard {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.connectorCard summary {
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d0d7de;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  background: #f6f8fa;
+}
+
+.small-gap {
+  gap: 0.75rem;
+}
+
+.helpText {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+.successBanner {
+  padding: 0.85rem 1rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.85rem;
+  background: #f0fdf4;
+  color: #166534;
+  font-weight: 650;
+}
+
+.successBanner p {
+  margin: 0.5rem 0 0;
+}
+
+.successText {
+  color: #166534;
+  font-weight: 650;
+  margin-top: 0;
+}
+
+.detailGrid {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 0.6rem 1.2rem;
   align-items: center;
 }
 
-.manifestBuilder .detailGrid span {
-  opacity: 0.7;
+.detailGrid span {
+  color: var(--color-muted);
 }
 
-/* Responsive */
-@media (max-width: 1100px) {
-  .manifestBuilder .formGrid {
-    grid-template-columns: repeat(2, minmax(220px, 1fr));
-  }
+.detailGrid strong,
+.detailGrid small {
+  overflow-wrap: anywhere;
 }
 
-@media (max-width: 700px) {
-  .manifestBuilder .formGrid {
-    grid-template-columns: 1fr;
-  }
+/* Manifest Builder */
+
+.manifestBuilder .formGrid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: start;
 }
 
+.manifestBuilder .buttonRow {
+  grid-column: 1 / -1;
+}
 
-/* Credentials page */
+/* Credentials */
 
 .credentialsPage .credentialsForm {
   display: grid;
@@ -106,10 +230,6 @@
   min-width: 0;
 }
 
-.credentialsPage .credentialsJsonField {
-  width: 100%;
-}
-
 .credentialsPage .credentialsJsonField textarea {
   width: 100%;
   max-width: 100%;
@@ -123,7 +243,7 @@
 
 .credentialsPage .credentialSchemaSummary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
   gap: 1rem;
   width: 100%;
 }
@@ -132,7 +252,7 @@
 .credentialsPage .credentialNotice {
   min-width: 0;
   padding: 1rem;
-  border: 1px solid var(--border, #d7deea);
+  border: 1px solid var(--color-border);
   border-radius: 0.9rem;
   background: rgba(255, 255, 255, 0.55);
 }
@@ -142,8 +262,8 @@
   font-size: 0.95rem;
 }
 
-.credentialsPage .credentialSchemaSummary p {
-  margin: 0;
+.credentialsPage .credentialSchemaSummary p,
+.credentialsPage .credentialSchemaSummary li {
   overflow-wrap: anywhere;
 }
 
@@ -152,294 +272,42 @@
   padding-left: 1.25rem;
 }
 
-.credentialsPage .credentialSchemaSummary li {
-  overflow-wrap: anywhere;
-}
-
 .credentialsPage .credentialSchemaSummary code,
 .credentialsPage table code {
   font-size: 0.85rem;
   word-break: break-word;
 }
 
-.credentialsPage .buttonRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.credentialsPage .buttonRow button {
-  white-space: nowrap;
-}
-
-.credentialsPage .successBanner {
+.credentialsPage .credentialsNotice,
+.taxonomyBuilderPage .taxonomyNotice {
   padding: 0.85rem 1rem;
-  border: 1px solid #bbf7d0;
   border-radius: 0.85rem;
-  background: #f0fdf4;
-  color: #166534;
-  font-weight: 600;
-}
-
-/* Medium screens */
-@media (max-width: 1100px) {
-  .credentialsPage .credentialSchemaSummary {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Tablet/mobile */
-@media (max-width: 800px) {
-  .credentialsPage .credentialsFormTopRow {
-    grid-template-columns: 1fr;
-  }
-
-  .credentialsPage .credentialsJsonField textarea {
-    min-height: 360px;
-  }
-}
-
-/* Very narrow responsive testing */
-@media (max-width: 520px) {
-  .credentialsPage {
-    min-width: 0;
-  }
-
-  .credentialsPage .credentialsForm {
-    gap: 1rem;
-  }
-
-  .credentialsPage .buttonRow {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .credentialsPage .buttonRow button {
-    width: 100%;
-    white-space: normal;
-  }
-}
-
-/* Credentials page alerts / responsive fixes */
-
-.credentialsPage .credentialsNotice {
-    padding: 0.85rem 1rem;
-    border-radius: 0.85rem;
-    font-weight: 650;
-    line-height: 1.4;
-}
-
-.credentialsPage .credentialsNotice--success {
-    border: 1px solid #bbf7d0;
-    background: #f0fdf4;
-    color: #166534;
-}
-
-.credentialsPage .credentialsNotice--error {
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #991b1b;
-}
-
-.credentialsPage .credentialsNotice--info {
-    border: 1px solid #bfdbfe;
-    background: #eff6ff;
-    color: #1e40af;
-}
-
-.credentialsPage .credentialsForm {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-    width: 100%;
-}
-
-.credentialsPage .credentialsFormTopRow {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(260px, 1fr));
-    gap: 1rem;
-    align-items: end;
-    width: 100%;
-}
-
-    .credentialsPage .credentialsFormTopRow label,
-    .credentialsPage .credentialsJsonField {
-        display: flex;
-        flex-direction: column;
-        gap: 0.45rem;
-        min-width: 0;
-    }
-
-        .credentialsPage .credentialsJsonField textarea {
-            width: 100%;
-            max-width: 100%;
-            min-height: 320px;
-            box-sizing: border-box;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.9rem;
-            line-height: 1.45;
-            resize: vertical;
-        }
-
-.credentialsPage .credentialSchemaSummary {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(180px, 1fr));
-    gap: 1rem;
-    width: 100%;
-}
-
-    .credentialsPage .credentialSchemaSummary section,
-    .credentialsPage .credentialNotice {
-        min-width: 0;
-        padding: 1rem;
-        border: 1px solid var(--border, #d7deea);
-        border-radius: 0.9rem;
-        background: rgba(255, 255, 255, 0.55);
-    }
-
-    .credentialsPage .credentialSchemaSummary h3 {
-        margin: 0 0 0.5rem;
-        font-size: 0.95rem;
-    }
-
-    .credentialsPage .credentialSchemaSummary p {
-        margin: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .credentialsPage .credentialSchemaSummary ul {
-        margin: 0.5rem 0 0;
-        padding-left: 1.25rem;
-    }
-
-    .credentialsPage .credentialSchemaSummary li {
-        overflow-wrap: anywhere;
-    }
-
-    .credentialsPage .credentialSchemaSummary code,
-    .credentialsPage table code {
-        font-size: 0.85rem;
-        word-break: break-word;
-    }
-
-.credentialsPage .buttonRow {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: center;
-}
-
-    .credentialsPage .buttonRow button {
-        white-space: nowrap;
-    }
-
-.credentialsPage .tableWrap {
-    margin-top: 1rem;
-}
-
-@media (max-width: 1200px) {
-    .credentialsPage .credentialSchemaSummary {
-        grid-template-columns: repeat(2, minmax(220px, 1fr));
-    }
-}
-
-@media (max-width: 800px) {
-    .credentialsPage .credentialsFormTopRow,
-    .credentialsPage .credentialSchemaSummary {
-        grid-template-columns: 1fr;
-    }
-
-    .credentialsPage .credentialsJsonField textarea {
-        min-height: 360px;
-    }
-}
-
-@media (max-width: 520px) {
-    .credentialsPage .buttonRow {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-        .credentialsPage .buttonRow button {
-            width: 100%;
-            white-space: normal;
-        }
-}
-
-.manifestBuilder .successText {
-  color: #166534;
   font-weight: 650;
-  margin-top: 0;
+  line-height: 1.4;
 }
 
-.successBanner {
-  padding: 0.85rem 1rem;
+.credentialsPage .credentialsNotice--success,
+.taxonomyBuilderPage .taxonomyNotice--success {
   border: 1px solid #bbf7d0;
-  border-radius: 0.85rem;
   background: #f0fdf4;
   color: #166534;
-  font-weight: 600;
 }
 
-.successBanner p {
-  margin: 0.5rem 0 0;
+.credentialsPage .credentialsNotice--error,
+.taxonomyBuilderPage .taxonomyNotice--error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
 }
 
-/* Project workspace */
-
-.projectWorkspacePage .projectWorkspaceGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+.credentialsPage .credentialsNotice--info,
+.taxonomyBuilderPage .taxonomyNotice--info {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
 }
 
-.projectWorkspacePage .projectWorkspaceSlot {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  min-width: 0;
-  padding: 1rem;
-  border: 1px solid var(--border, #d7deea);
-  border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.55);
-}
-
-.projectWorkspacePage .projectWorkspaceSlot h3 {
-  margin: 0 0 0.25rem;
-}
-
-.projectWorkspacePage .projectWorkspaceSlot p {
-  margin: 0;
-}
-
-.projectWorkspacePage .projectWorkspaceSlot label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.projectWorkspacePage .projectWorkspaceSlot select {
-  width: 100%;
-}
-
-.projectWorkspacePage .projectWorkspaceDetails {
-  margin-top: 1rem;
-}
-
-.projectWorkspacePage .projectWorkspaceDetails summary {
-  cursor: pointer;
-  font-weight: 700;
-}
-
-@media (max-width: 900px) {
-  .projectWorkspacePage .projectWorkspaceGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Project Detail cleanup */
+/* Project Detail */
 
 .projectDetailPage .projectDetailHeader {
   align-items: flex-start;
@@ -449,19 +317,11 @@
   margin: 0.35rem 0 0.15rem;
 }
 
-.projectDetailPage .projectDetailHeaderActions {
-  margin-top: 0.5rem;
-}
-
 .projectSnapshotGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem;
   margin: 0;
-}
-
-.projectSnapshotGrid div {
-  min-width: 0;
 }
 
 .projectSnapshotGrid dt {
@@ -477,7 +337,8 @@
   overflow-wrap: anywhere;
 }
 
-.projectArtifactGrid {
+.projectArtifactGrid,
+.projectArtifactSummaryGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(260px, 1fr));
   gap: 1rem;
@@ -488,13 +349,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-}
-
-.projectArtifactSummaryGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
 }
 
 .projectArtifactSummary {
@@ -516,36 +370,51 @@
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1200px) {
+  .credentialsPage .credentialSchemaSummary {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .projectArtifactGrid,
   .projectArtifactSummaryGrid {
     grid-template-columns: 1fr;
   }
 }
 
-/* Taxonomy Builder */
+@media (max-width: 800px) {
+  .pageHeader,
+  .page-header,
+  .pageTitle {
+    display: grid;
+  }
 
-.taxonomyBuilderPage .taxonomyNotice {
-  padding: 0.85rem 1rem;
-  border-radius: 0.85rem;
-  font-weight: 650;
-  line-height: 1.4;
+  .credentialsPage .credentialsFormTopRow,
+  .credentialsPage .credentialSchemaSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .credentialsPage .credentialsJsonField textarea {
+    min-height: 360px;
+  }
 }
 
-.taxonomyBuilderPage .taxonomyNotice--success {
-  border: 1px solid #bbf7d0;
-  background: #f0fdf4;
-  color: #166534;
-}
+@media (max-width: 520px) {
+  .buttonRow,
+  .inlineActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-.taxonomyBuilderPage .taxonomyNotice--error {
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #991b1b;
-}
-
-.taxonomyBuilderPage .taxonomyNotice--info {
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1e40af;
+  .buttonRow button,
+  .buttonRow a,
+  .inlineActions button,
+  .inlineActions a {
+    width: 100%;
+  }
 }

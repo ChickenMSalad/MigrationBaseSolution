@@ -7,6 +7,9 @@ export type ConnectorDescriptor = {
   capabilities?: unknown;
   credentials?: unknown[];
   options?: unknown[];
+  manifestColumns?: unknown[];
+  mappingFields?: unknown[];
+  metadata?: Record<string, string>;
 };
 
 export type ConnectorsResponse = {
@@ -30,7 +33,7 @@ export type CreateCredentialSetRequest = {
   displayName: string;
   connectorType: string;
   connectorRole: string;
-  values: Record<string, string | null>;
+  values: Record<string, unknown>;
   secretKeys?: string[];
 };
 
@@ -44,13 +47,15 @@ export type CredentialTestResult = {
 };
 
 export type ArtifactRecord = {
-    artifactId: string;
-    artifactType?: string;
-    kind?: string;
-    fileName: string;
-    createdUtc?: string;
-    uploadedUtc?: string;
-    projectId?: string | null;
+  artifactId: string;
+  artifactType?: string | number;
+  kind?: string | number;
+  fileName: string;
+  contentType?: string;
+  createdUtc?: string;
+  uploadedUtc?: string;
+  projectId?: string | null;
+  description?: string | null;
 };
 
 export type ProjectRecord = {
@@ -61,7 +66,7 @@ export type ProjectRecord = {
   manifestType: string;
   createdUtc: string;
   updatedUtc: string;
-  settings?: Record<string, string | null>;
+  settings?: Record<string, unknown>;
   manifestArtifactId?: string | null;
   mappingArtifactId?: string | null;
 };
@@ -98,7 +103,7 @@ export type CreateProjectRequest = {
   sourceType: string;
   targetType: string;
   manifestType: string;
-  settings?: Record<string, string | null>;
+  settings?: Record<string, unknown>;
 };
 
 export type CreateRunRequest = {
@@ -109,7 +114,7 @@ export type CreateRunRequest = {
   mappingArtifactId?: string | null;
   dryRun: boolean;
   parallelism: number;
-  settings?: Record<string, string | null>;
+  settings?: Record<string, unknown>;
 };
 
 export type ProjectPreflightRequest = {
@@ -118,7 +123,7 @@ export type ProjectPreflightRequest = {
   mappingProfilePath?: string | null;
   manifestArtifactId?: string | null;
   mappingArtifactId?: string | null;
-  settings?: Record<string, string | null>;
+  settings?: Record<string, unknown>;
 };
 
 export type PreflightIssue = {
@@ -215,55 +220,42 @@ export type SaveMappingArtifactResponse = {
 };
 
 export type ManifestBuilderOptionDescriptor = {
-    name: string;
-    label: string;
-    description?: string | null;
-    required: boolean;
-    placeholder?: string | null;
+  name: string;
+  label: string;
+  description?: string | null;
+  required: boolean;
+  placeholder?: string | null;
 };
 
 export type ManifestBuilderServiceDescriptor = {
-    sourceType: string;
-    serviceName: string;
-    displayName: string;
-    description?: string | null;
-    options: ManifestBuilderOptionDescriptor[];
+  sourceType: string;
+  serviceName: string;
+  displayName: string;
+  description?: string | null;
+  options: ManifestBuilderOptionDescriptor[];
 };
 
 export type ManifestBuilderSourceDescriptor = {
-    sourceType: string;
-    displayName: string;
-    services: ManifestBuilderServiceDescriptor[];
+  sourceType: string;
+  displayName: string;
+  services: ManifestBuilderServiceDescriptor[];
 };
 
 export type BuildSourceManifestRequest = {
-    sourceType: string;
-    serviceName: string;
-    credentialSetId?: string | null;
-    options?: Record<string, string>;
+  sourceType: string;
+  serviceName: string;
+  credentialSetId?: string | null;
+  options?: Record<string, string>;
 };
 
 export type BuildSourceManifestResponse = {
-    manifestId: string;
-    artifactId: string;
-    sourceType: string;
-    serviceName: string;
-    fileName: string;
-    contentType: string;
-    rowCount: number;
-    downloadUrl: string;
-    createdUtc: string;
-};
-export type ConnectorDescriptor = {
-  type?: string;
-  name?: string;
-  displayName?: string;
-  description?: string;
-  direction?: string;
-  capabilities?: unknown;
-  credentials?: unknown[];
-  options?: unknown[];
-  manifestColumns?: unknown[];
-  mappingFields?: unknown[];
-  metadata?: Record<string, string>;
+  manifestId: string;
+  artifactId: string;
+  sourceType: string;
+  serviceName: string;
+  fileName: string;
+  contentType: string;
+  rowCount: number;
+  downloadUrl: string;
+  createdUtc: string;
 };

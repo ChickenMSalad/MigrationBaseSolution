@@ -1,18 +1,149 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, connectorValue, displayConnectorName } from "../api/client";
-import { Card, JsonBlock } from "../components/Card";
+import { Card } from "../components/Card";
 import { LoadingError } from "../components/LoadingError";
 import type { ConnectorDescriptor, CredentialSetSummary } from "../types/api";
 
 type NoticeKind = "success" | "error" | "info";
+type ExportFormat = "csv" | "excel";
 
 type PageNotice = {
   kind: NoticeKind;
   message: string;
 };
 
+type TaxonomyRow = {
+  source: string;
+  name: string;
+  displayName: string;
+  description: string;
+  required: string;
+  type: string;
+};
+
 function noticeClassName(kind: NoticeKind) {
-  return `taxonomyNotice taxonomyNotice--${kind}`;
+  return `notice ${kind === "error" ? "error" : ""}`;
+}
+
+function descriptorArray(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value) ? value.filter(x => typeof x === "object" && x !== null) as Array<Record<string, unknown>> : [];
+}
+
+function valueOf(row: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[key];
+
+    if (value !== undefined && value !== null && value !== "") {
+      return String(value);
+    }
+  }
+
+  return "";
+}
+
+function buildRows(connector: ConnectorDescriptor): TaxonomyRow[] {
+  const options = descriptorArray(connector.options).map(row => ({
+    source: "Options",
+    name: valueOf(row, ["name", "key", "field", "propertyName", "optionName"]),
+    displayName: valueOf(row, ["displayName", "label", "name", "key"]),
+    description: valueOf(row, ["description", "helpText"]),
+    required: valueOf(row, ["required", "isRequired"]),
+    type: valueOf(row, ["type", "valueType", "dataType"])
+  }));
+
+  const mappingFields = descriptorArray(connector.mappingFields).map(row => ({
+    source: "MappingFields",
+    name: valueOf(row, ["name", "key", "field", "source", "target"]),
+    displayName: valueOf(row, ["displayName", "label", "name", "key"]),
+    description: valueOf(row, ["description", "helpText"]),
+    required: valueOf(row, ["required", "isRequired"]),
+    type: valueOf(row, ["type", "valueType", "dataType"])
+  }));
+
+  const manifestColumns = descriptorArray(connector.manifestColumns).map(row => ({
+    source: "ManifestColumns",
+    name: valueOf(row, ["name", "key", "field", "column"]),
+    displayName: valueOf(row, ["displayName", "label", "name", "key"]),
+    description: valueOf(row, ["description", "helpText"]),
+    required: valueOf(row, ["required", "isRequired"]),
+    type: valueOf(row, ["type", "valueType", "dataType"])
+  }));
+
+  return [...options, ...mappingFields, ...manifestColumns];
+}
+
+function csvEscape(value: string) {
+  const text = value ?? "";
+  const mustQuote = text.includes(",") || text.includes("\"") || text.includes("\r") || text.includes("\n");
+
+  if (!mustQuote) {
+    return text;
+  }
+
+  return `"${text.replace(/"/g, "\"\"")}"`;
+}
+
+function buildCsv(rows: TaxonomyRow[]) {
+  const header = ["Source", "Name", "DisplayName", "Description", "Required", "Type"];
+  const lines = [
+    header.join(","),
+    ...rows.map(row => [
+      row.source,
+      row.name,
+      row.displayName,
+      row.description,
+      row.required,
+      row.type
+    ].map(csvEscape).join(","))
+  ];
+
+  return lines.join("\r\n") + "\r\n";
+}
+
+function xmlEscape(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function worksheetXml(name: string, rows: string[][]) {
+  const rowXml = rows.map(row =>
+    `<Row>${row.map(cell => `<Cell><Data ss:Type="String">${xmlEscape(cell ?? "")}</Data></Cell>`).join("")}</Row>`
+  ).join("");
+
+  return `<Worksheet ss:Name="${xmlEscape(name)}"><Table>${rowXml}</Table></Worksheet>`;
+}
+
+function buildExcelXml(connector: ConnectorDescriptor, rows: TaxonomyRow[]) {
+  const taxonomyRows = [
+    ["Source", "Name", "DisplayName", "Description", "Required", "Type"],
+    ...rows.map(row => [row.source, row.name, row.displayName, row.description, row.required, row.type])
+  ];
+
+  const metadataRows = [
+    ["Key", "Value"],
+    ...Object.entries(connector.metadata ?? {}).map(([key, value]) => [key, String(value)])
+  ];
+
+  const schemaRows = [
+    ["Section", "Json"],
+    ["Options", JSON.stringify(connector.options ?? [], null, 2)],
+    ["MappingFields", JSON.stringify(connector.mappingFields ?? [], null, 2)],
+    ["ManifestColumns", JSON.stringify(connector.manifestColumns ?? [], null, 2)]
+  ];
+
+  return `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:x="urn:schemas-microsoft-com:office:excel"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  ${worksheetXml("Taxonomy", taxonomyRows)}
+  ${worksheetXml("Metadata", metadataRows)}
+  ${worksheetXml("Connector Schema", schemaRows)}
+</Workbook>`;
 }
 
 function safeFilePart(value: string) {
@@ -23,84 +154,12 @@ function safeFilePart(value: string) {
     .replace(/^-+|-+$/g, "") || "connector";
 }
 
-function descriptorArray(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : [];
-}
-
-function buildTaxonomyPayload(connector: ConnectorDescriptor, credentialSetId: string | null) {
-  const now = new Date().toISOString();
-  const connectorType = connectorValue(connector);
-
-  return {
-    artifactType: "Taxonomy",
-    generatedBy: "TaxonomyBuilder",
-    generatedUtc: now,
-    source: {
-      connectorType,
-      displayName: displayConnectorName(connector),
-      credentialSetId
-    },
-    taxonomy: {
-      // Phase 1: catalog-based taxonomy/field contract.
-      // Later connector-specific services can replace this with live target DAM metaproperties.
-      fields: descriptorArray(connector.options),
-      mappingFields: descriptorArray(connector.mappingFields),
-      manifestColumns: descriptorArray(connector.manifestColumns),
-      metadata: connector.metadata ?? {}
-    },
-    connectorSchema: connector
-  };
-}
-
-async function uploadTaxonomyFile(file: File, description: string) {
-  const form = new FormData();
-  form.append("file", file);
-  form.append("description", description);
-
-  // Preferred endpoint from the backend patch.
-  let response = await fetch("/api/artifacts/taxonomies", {
-    method: "POST",
-    body: form
-  });
-
-  if (response.status === 404) {
-    // Fallback while backend patch is being applied.
-    const fallback = new FormData();
-    fallback.append("file", file);
-    fallback.append("kind", "Taxonomy");
-    fallback.append("description", description);
-
-    response = await fetch("/api/artifacts", {
-      method: "POST",
-      body: fallback
-    });
-  }
-
-  if (!response.ok) {
-    let message = `${response.status} ${response.statusText}`;
-
-    try {
-      const body = await response.json();
-      message = body?.error ?? JSON.stringify(body);
-    } catch {
-      try {
-        message = await response.text();
-      } catch {
-        // keep default
-      }
-    }
-
-    throw new Error(message);
-  }
-
-  return await response.json();
-}
-
 export function TaxonomyBuilder() {
   const [targets, setTargets] = useState<ConnectorDescriptor[]>([]);
   const [credentials, setCredentials] = useState<CredentialSetSummary[]>([]);
   const [targetType, setTargetType] = useState("");
   const [credentialSetId, setCredentialSetId] = useState("");
+  const [format, setFormat] = useState<ExportFormat>("excel");
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
   const [notice, setNotice] = useState<PageNotice | null>(null);
@@ -119,9 +178,9 @@ export function TaxonomyBuilder() {
     [credentials, targetType]
   );
 
-  const previewPayload = useMemo(
-    () => selectedTarget ? buildTaxonomyPayload(selectedTarget, credentialSetId || null) : null,
-    [selectedTarget, credentialSetId]
+  const taxonomyRows = useMemo(
+    () => selectedTarget ? buildRows(selectedTarget) : [],
+    [selectedTarget]
   );
 
   useEffect(() => {
@@ -164,20 +223,25 @@ export function TaxonomyBuilder() {
     setBuilding(true);
 
     try {
-      const payload = buildTaxonomyPayload(selectedTarget, credentialSetId || null);
       const connectorType = safeFilePart(connectorValue(selectedTarget));
       const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-      const fileName = `${connectorType}-taxonomy-${timestamp}.json`;
-      const file = new File(
-        [JSON.stringify(payload, null, 2)],
-        fileName,
-        { type: "application/json" }
-      );
 
-      const artifact = await uploadTaxonomyFile(
-        file,
-        `Generated by Taxonomy Builder from ${displayConnectorName(selectedTarget)}`
-      );
+      const file = format === "excel"
+        ? new File(
+          [buildExcelXml(selectedTarget, taxonomyRows)],
+          `${connectorType}-taxonomy-${timestamp}.xls`,
+          { type: "application/vnd.ms-excel" }
+        )
+        : new File(
+          [buildCsv(taxonomyRows)],
+          `${connectorType}-taxonomy-${timestamp}.csv`,
+          { type: "text/csv" }
+        );
+
+      const artifact = await api.uploadArtifact(file, {
+        kind: "Taxonomy",
+        description: `Generated by Taxonomy Builder from ${displayConnectorName(selectedTarget)}`
+      });
 
       setCreatedArtifact({
         artifactId: artifact.artifactId,
@@ -204,8 +268,7 @@ export function TaxonomyBuilder() {
         <div>
           <h1>Taxonomy Builder</h1>
           <p className="muted">
-            Create a taxonomy/metaproperty artifact for a target DAM. Phase 1 uses the connector catalog schema;
-            connector-specific live taxonomy pulls can be added behind this same page later.
+            Create a taxonomy/metaproperty artifact for a target DAM. Phase 1 exports the connector catalog field shape as CSV or Excel workbook.
           </p>
         </div>
       </div>
@@ -252,7 +315,18 @@ export function TaxonomyBuilder() {
                 ))}
               </select>
               <span className="helpText">
-                This catalog-based export does not call the target API yet, but the selected credential is recorded in the artifact.
+                Phase 1 does not call the target API yet; the selected credential is for traceability.
+              </span>
+            </label>
+
+            <label>
+              Format
+              <select value={format} onChange={event => setFormat(event.target.value as ExportFormat)}>
+                <option value="excel">Excel workbook (.xls)</option>
+                <option value="csv">CSV</option>
+              </select>
+              <span className="helpText">
+                Excel output contains multiple sheets. Live connector taxonomy pulls can later use this same page.
               </span>
             </label>
 
@@ -268,7 +342,7 @@ export function TaxonomyBuilder() {
 
               {createdArtifact && (
                 <>
-                  <a className="secondaryButton" href={`/api/artifacts/${encodeURIComponent(createdArtifact.artifactId)}/download`}>
+                  <a className="secondaryButton" href={api.artifactDownloadUrl(createdArtifact.artifactId)}>
                     Download Taxonomy
                   </a>
                   <a className="secondaryButton" href="/artifacts">
@@ -281,14 +355,22 @@ export function TaxonomyBuilder() {
         )}
       </Card>
 
-      {previewPayload && (
-        <Card title="Taxonomy Preview">
-          <p className="muted">
-            This is the JSON that will be saved as the taxonomy artifact.
-          </p>
-          <JsonBlock value={previewPayload} />
-        </Card>
-      )}
+      <Card title="Taxonomy Summary">
+        <div className="metricGrid compact">
+          <div className="metric">
+            <span>Rows</span>
+            <strong>{taxonomyRows.length}</strong>
+          </div>
+          <div className="metric">
+            <span>Connector</span>
+            <strong>{selectedTarget ? displayConnectorName(selectedTarget) : "None"}</strong>
+          </div>
+          <div className="metric">
+            <span>Format</span>
+            <strong>{format === "excel" ? "Excel" : "CSV"}</strong>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
