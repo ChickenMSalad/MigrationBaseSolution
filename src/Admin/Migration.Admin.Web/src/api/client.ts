@@ -101,26 +101,11 @@ export const api = {
       body: JSON.stringify(payload)
     }),
 
-  bindProjectCredentials: async (project: ProjectRecord, payload: BindProjectCredentialsRequest) => {
-    // No new backend store/pattern required: the existing project Settings bag already persists
-    // project context. The top-level values are included for forward compatibility; current
-    // backends that do not have those properties will ignore them and keep the settings values.
-    const settings = {
-      ...(project.settings ?? {}),
-      sourceCredentialSetId: payload.sourceCredentialSetId ?? null,
-      targetCredentialSetId: payload.targetCredentialSetId ?? null
-    } satisfies Record<string, string | null>;
-
-    return request<ProjectRecord>("/api/projects", {
-      method: "POST",
-      body: JSON.stringify({
-        ...project,
-        sourceCredentialSetId: payload.sourceCredentialSetId ?? null,
-        targetCredentialSetId: payload.targetCredentialSetId ?? null,
-        settings
-      })
-    });
-  },
+  bindProjectCredentials: (projectId: string, payload: BindProjectCredentialsRequest) =>
+    request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}/credentials`, {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    }),
 
   artifacts: (kind?: string) =>
     request<ArtifactRecord[]>(`/api/artifacts${queryString({ kind })}`),

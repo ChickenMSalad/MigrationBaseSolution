@@ -153,7 +153,7 @@ export function ProjectDetail() {
     setMessage(null);
 
     try {
-      const updated = await api.bindProjectCredentials(project, {
+      const updated = await api.bindProjectCredentials(projectId, {
         sourceCredentialSetId: sourceCredentialSetId || null,
         targetCredentialSetId: targetCredentialSetId || null
       });
