@@ -3,13 +3,13 @@
   "SourceType": "WebDam",
   "TargetType": "Bynder",
   "ManifestType": "Csv",
-  "ManifestPath": "C:/Workspace/MigrationBaseSolution/src/Migration.Hosts.GenericMigration.Console/Profiles/Manifests/webdam-to-bynder.ntara.csv",
-  "MappingProfilePath": "C:/Workspace/MigrationBaseSolution/src/Migration.Hosts.GenericMigration.Console/Profiles/Mappings/webdam-to-bynder.ntara.mapping.json",
+  "ManifestPath": "C:/Workspace/MigrationBaseSolutionRepo/src/Migration.Hosts.GenericMigration.Console/Profiles/Manifests/webdam-to-bynder.ntara.csv",
+  "MappingProfilePath": "C:/Workspace/MigrationBaseSolutionRepo/src/Migration.Hosts.GenericMigration.Console/Profiles/Mappings/webdam-to-bynder.ntara.mapping.json",
   "DryRun": false,
   "Parallelism": 1,
   "Settings": {
     "SourceBinaryMode": "PreferManifestPath",
-    "BinaryStagingDirectory": "C:/Workspace/MigrationBaseSolution/runs/webdam-to-bynder-ntara/webdam-binaries",
+    "BinaryStagingDirectory": "C:/Workspace/MigrationBaseSolutionRepo/runs/webdam-to-bynder-ntara/webdam-binaries",
     "ForceDownload": "false"
   }
 }
