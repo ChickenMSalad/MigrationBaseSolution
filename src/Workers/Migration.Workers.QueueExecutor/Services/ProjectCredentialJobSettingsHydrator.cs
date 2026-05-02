@@ -34,6 +34,8 @@ public sealed class ProjectCredentialJobSettingsHydrator
             credentialSetIdSettingNames: new[] { "targetCredentialSetId", "TargetCredentialSetId" },
             cancellationToken).ConfigureAwait(false);
 
+        HydrateMappingProfile(settings, job.MappingProfilePath);
+
         return new MigrationJobDefinition
         {
             JobName = job.JobName,
@@ -84,6 +86,25 @@ public sealed class ProjectCredentialJobSettingsHydrator
         }
 
         ApplyConnectorAliases(settings, role, connectorType);
+    }
+
+    private static void HydrateMappingProfile(IDictionary<string, string> settings, string? mappingProfilePath)
+    {
+        if (string.IsNullOrWhiteSpace(mappingProfilePath) || !File.Exists(mappingProfilePath))
+        {
+            return;
+        }
+
+        var json = File.ReadAllText(mappingProfilePath);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return;
+        }
+
+        // AzureBlobTargetConnector already understands these setting names.
+        SetIfMissing(settings, "MappingProfileJson", json);
+        SetIfMissing(settings, "MappingArtifactJson", json);
+        SetIfMissing(settings, "IntermediateStorageMappingJson", json);
     }
 
     private static void ApplyConnectorAliases(IDictionary<string, string> settings, string role, string connectorType)

@@ -19,146 +19,144 @@ public static class MappingBuilderEndpoints
             .WithTags("Mapping Builder");
 
         group.MapGet("/manifests/{artifactId}/columns", async (
-                string artifactId,
-                IArtifactStore artifacts,
-                CancellationToken cancellationToken) =>
+            string artifactId,
+            IArtifactStore artifacts,
+            CancellationToken cancellationToken) =>
+        {
+            var preview = await artifacts.PreviewManifestAsync(artifactId, take: 10, cancellationToken).ConfigureAwait(false);
+            return Results.Ok(new
             {
-                var preview = await artifacts.PreviewManifestAsync(artifactId, take: 10, cancellationToken).ConfigureAwait(false);
-                return Results.Ok(new
-                {
-                    preview.ArtifactId,
-                    preview.FileName,
-                    preview.Columns,
-                    preview.SampleRows
-                });
-            })
-            .WithSummary("Read manifest columns and sample rows for the mapping builder.");
+                preview.ArtifactId,
+                preview.FileName,
+                preview.Columns,
+                preview.SampleRows
+            });
+        })
+        .WithSummary("Read manifest columns and sample rows for the mapping builder.");
 
         group.MapPost("/mappings", async (
-                SaveMappingArtifactRequest request,
-                IArtifactStore artifacts,
-                CancellationToken cancellationToken) =>
+            SaveMappingArtifactRequest request,
+            IArtifactStore artifacts,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.ProfileName))
             {
-                if (string.IsNullOrWhiteSpace(request.ProfileName))
+                return Results.BadRequest(new { error = "profileName is required." });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.SourceType))
+            {
+                return Results.BadRequest(new { error = "sourceType is required." });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.TargetType))
+            {
+                return Results.BadRequest(new { error = "targetType is required." });
+            }
+
+            var mappingType = string.IsNullOrWhiteSpace(request.MappingType) ? "target" : request.MappingType.Trim();
+            if (!string.Equals(mappingType, "intermediate", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(mappingType, "target", StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.BadRequest(new { error = "mappingType must be either 'intermediate' or 'target'." });
+            }
+
+            var cleanedMappings = request.FieldMappings
+                .Where(x => !string.IsNullOrWhiteSpace(x.Source) && !string.IsNullOrWhiteSpace(x.Target))
+                .Select(x => new MappingBuilderFieldMap(
+                    x.Source.Trim(),
+                    x.Target.Trim(),
+                    string.IsNullOrWhiteSpace(x.Transform) ? null : x.Transform.Trim()))
+                .ToList();
+
+            if (string.Equals(mappingType, "target", StringComparison.OrdinalIgnoreCase) && cleanedMappings.Count == 0)
+            {
+                return Results.BadRequest(new { error = "At least one field mapping with source and target is required for target mappings." });
+            }
+
+            if (string.Equals(mappingType, "intermediate", StringComparison.OrdinalIgnoreCase) && request.IntermediateStorage is null)
+            {
+                return Results.BadRequest(new { error = "intermediateStorage is required for intermediate mappings." });
+            }
+
+            var requiredTargetFields = request.RequiredTargetFields
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var normalizedIntermediateStorage = request.IntermediateStorage is null
+                ? null
+                : NormalizeIntermediateStorage(request.IntermediateStorage);
+
+            var mappingProfile = new MappingProfileDocument(
+                request.ProfileName.Trim(),
+                request.SourceType.Trim(),
+                request.TargetType.Trim(),
+                mappingType,
+                cleanedMappings,
+                requiredTargetFields,
+                normalizedIntermediateStorage,
+                string.IsNullOrWhiteSpace(request.ManifestArtifactId) ? null : request.ManifestArtifactId.Trim(),
+                string.IsNullOrWhiteSpace(request.TargetArtifactId) ? null : request.TargetArtifactId.Trim());
+
+            var json = JsonSerializer.Serialize(mappingProfile, JsonOptions);
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            var fileName = string.IsNullOrWhiteSpace(request.FileName)
+                ? MakeSafeFileName($"{request.ProfileName.Trim()}.mapping.json")
+                : MakeSafeFileName(request.FileName.Trim());
+
+            if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                fileName += ".json";
+            }
+
+            var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["GeneratedBy"] = "MappingBuilder",
+                ["SourceType"] = mappingProfile.SourceType,
+                ["TargetType"] = mappingProfile.TargetType,
+                ["MappingType"] = mappingProfile.MappingType,
+                ["FieldMappingCount"] = cleanedMappings.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            };
+
+            if (!string.IsNullOrWhiteSpace(request.ManifestArtifactId))
+            {
+                metadata["ManifestArtifactId"] = request.ManifestArtifactId.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.TargetArtifactId))
+            {
+                metadata["TargetArtifactId"] = request.TargetArtifactId.Trim();
+            }
+
+            if (normalizedIntermediateStorage is not null)
+            {
+                metadata["IntermediateProvider"] = normalizedIntermediateStorage.Provider;
+                metadata["BinaryOnly"] = normalizedIntermediateStorage.BinaryOnly.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                metadata["BlobTagRuleCount"] = normalizedIntermediateStorage.TagRules.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                metadata["MetadataRuleCount"] = normalizedIntermediateStorage.MetadataRules.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                if (!string.IsNullOrWhiteSpace(normalizedIntermediateStorage.FolderPathField))
                 {
-                    return Results.BadRequest(new { error = "profileName is required." });
+                    metadata["FolderPathField"] = normalizedIntermediateStorage.FolderPathField;
                 }
+            }
 
-                if (string.IsNullOrWhiteSpace(request.SourceType))
-                {
-                    return Results.BadRequest(new { error = "sourceType is required." });
-                }
+            var artifact = await artifacts.SaveAsync(
+                stream,
+                fileName,
+                "application/json",
+                ArtifactKind.Mapping,
+                request.ProjectId,
+                string.IsNullOrWhiteSpace(request.Description) ? "Generated by Mapping Builder" : request.Description,
+                metadata,
+                cancellationToken).ConfigureAwait(false);
 
-                if (string.IsNullOrWhiteSpace(request.TargetType))
-                {
-                    return Results.BadRequest(new { error = "targetType is required." });
-                }
-
-                var mappingType = string.IsNullOrWhiteSpace(request.MappingType)
-                    ? "target"
-                    : request.MappingType.Trim();
-
-                if (!string.Equals(mappingType, "intermediate", StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(mappingType, "target", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Results.BadRequest(new { error = "mappingType must be either 'intermediate' or 'target'." });
-                }
-
-                var cleanedMappings = request.FieldMappings
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Source) && !string.IsNullOrWhiteSpace(x.Target))
-                    .Select(x => new MappingBuilderFieldMap(
-                        x.Source.Trim(),
-                        x.Target.Trim(),
-                        string.IsNullOrWhiteSpace(x.Transform) ? null : x.Transform.Trim()))
-                    .ToList();
-
-                if (string.Equals(mappingType, "target", StringComparison.OrdinalIgnoreCase) && cleanedMappings.Count == 0)
-                {
-                    return Results.BadRequest(new { error = "At least one field mapping with source and target is required for target mappings." });
-                }
-
-                if (string.Equals(mappingType, "intermediate", StringComparison.OrdinalIgnoreCase) && request.IntermediateStorage is null)
-                {
-                    return Results.BadRequest(new { error = "intermediateStorage is required for intermediate mappings." });
-                }
-
-                var requiredTargetFields = request.RequiredTargetFields
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Select(x => x.Trim())
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                var normalizedIntermediateStorage = request.IntermediateStorage is null
-                    ? null
-                    : NormalizeIntermediateStorage(request.IntermediateStorage);
-
-                var mappingProfile = new MappingProfileDocument(
-                    request.ProfileName.Trim(),
-                    request.SourceType.Trim(),
-                    request.TargetType.Trim(),
-                    mappingType,
-                    cleanedMappings,
-                    requiredTargetFields,
-                    normalizedIntermediateStorage,
-                    string.IsNullOrWhiteSpace(request.ManifestArtifactId) ? null : request.ManifestArtifactId.Trim(),
-                    string.IsNullOrWhiteSpace(request.TargetArtifactId) ? null : request.TargetArtifactId.Trim());
-
-                var json = JsonSerializer.Serialize(mappingProfile, JsonOptions);
-                await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-
-                var fileName = string.IsNullOrWhiteSpace(request.FileName)
-                    ? MakeSafeFileName($"{request.ProfileName.Trim()}.mapping.json")
-                    : MakeSafeFileName(request.FileName.Trim());
-
-                if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                {
-                    fileName += ".json";
-                }
-
-                var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["GeneratedBy"] = "MappingBuilder",
-                    ["SourceType"] = mappingProfile.SourceType,
-                    ["TargetType"] = mappingProfile.TargetType,
-                    ["MappingType"] = mappingProfile.MappingType,
-                    ["FieldMappingCount"] = cleanedMappings.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                };
-
-                if (!string.IsNullOrWhiteSpace(request.ManifestArtifactId))
-                {
-                    metadata["ManifestArtifactId"] = request.ManifestArtifactId.Trim();
-                }
-
-                if (!string.IsNullOrWhiteSpace(request.TargetArtifactId))
-                {
-                    metadata["TargetArtifactId"] = request.TargetArtifactId.Trim();
-                }
-
-                if (normalizedIntermediateStorage is not null)
-                {
-                    metadata["IntermediateProvider"] = normalizedIntermediateStorage.Provider;
-                    metadata["BinaryOnly"] = normalizedIntermediateStorage.BinaryOnly.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    metadata["BlobTagRuleCount"] = normalizedIntermediateStorage.TagRules.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    metadata["MetadataRuleCount"] = normalizedIntermediateStorage.MetadataRules.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                }
-
-                var artifact = await artifacts.SaveAsync(
-                    stream,
-                    fileName,
-                    "application/json",
-                    ArtifactKind.Mapping,
-                    request.ProjectId,
-                    string.IsNullOrWhiteSpace(request.Description) ? "Generated by Mapping Builder" : request.Description,
-                    metadata,
-                    cancellationToken).ConfigureAwait(false);
-
-                return Results.Created($"/api/artifacts/{artifact.ArtifactId}", new
-                {
-                    artifact,
-                    mappingProfile
-                });
-            })
-            .WithSummary("Save a mapping profile as a mapping artifact.");
+            return Results.Created($"/api/artifacts/{artifact.ArtifactId}", new { artifact, mappingProfile });
+        })
+        .WithSummary("Save a mapping profile as a mapping artifact.");
 
         return app;
     }
@@ -166,6 +164,19 @@ public static class MappingBuilderEndpoints
     private static IntermediateStorageMapping NormalizeIntermediateStorage(IntermediateStorageMapping value)
     {
         var binaryOnly = value.BinaryOnly;
+        var folderPathField = FirstNonEmpty(
+            value.FolderPathField,
+            value.FolderPathColumn,
+            value.FolderPathSource,
+            value.SourceFolderPathField,
+            value.SourceFolderColumn,
+            value.FolderColumn);
+
+        var folderPathMode = FirstNonEmpty(value.FolderPathMode, value.FolderMode, value.PathMode);
+        if (string.IsNullOrWhiteSpace(folderPathMode))
+        {
+            folderPathMode = string.IsNullOrWhiteSpace(folderPathField) ? "root" : "manifestColumn";
+        }
 
         return new IntermediateStorageMapping(
             string.IsNullOrWhiteSpace(value.Provider) ? "AzureBlob" : value.Provider.Trim(),
@@ -185,10 +196,10 @@ public static class MappingBuilderEndpoints
                                 ? "binaryWithMetadataJson"
                                 : "binaryOnly")
                 : value.StorageMode.Trim(),
-            string.IsNullOrWhiteSpace(value.FolderPathMode) ? "root" : value.FolderPathMode.Trim(),
-            string.IsNullOrWhiteSpace(value.FolderPathField) ? null : value.FolderPathField.Trim(),
+            folderPathMode.Trim(),
+            string.IsNullOrWhiteSpace(folderPathField) ? null : folderPathField.Trim(),
             binaryOnly
-                ? []
+                ? new List<BlobTagRule>()
                 : value.TagRules
                     .Where(x => !string.IsNullOrWhiteSpace(x.SourceField) && !string.IsNullOrWhiteSpace(x.TagName))
                     .Select(x => new BlobTagRule(
@@ -197,7 +208,7 @@ public static class MappingBuilderEndpoints
                         string.IsNullOrWhiteSpace(x.Transform) ? null : x.Transform.Trim()))
                     .ToList(),
             binaryOnly
-                ? []
+                ? new List<MetadataJsonRule>()
                 : value.MetadataRules
                     .Where(x => !string.IsNullOrWhiteSpace(x.SourceField) && !string.IsNullOrWhiteSpace(x.JsonPath))
                     .Select(x => new MetadataJsonRule(
@@ -205,6 +216,11 @@ public static class MappingBuilderEndpoints
                         x.JsonPath.Trim(),
                         string.IsNullOrWhiteSpace(x.Transform) ? null : x.Transform.Trim()))
                     .ToList());
+    }
+
+    private static string? FirstNonEmpty(params string?[] values)
+    {
+        return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim();
     }
 
     private static string MakeSafeFileName(string value)
@@ -255,7 +271,14 @@ public sealed record IntermediateStorageMapping(
     [property: JsonPropertyName("folderPathMode")] string? FolderPathMode,
     [property: JsonPropertyName("folderPathField")] string? FolderPathField,
     [property: JsonPropertyName("tagRules")] List<BlobTagRule> TagRules,
-    [property: JsonPropertyName("metadataRules")] List<MetadataJsonRule> MetadataRules);
+    [property: JsonPropertyName("metadataRules")] List<MetadataJsonRule> MetadataRules,
+    [property: JsonPropertyName("folderPathColumn")] string? FolderPathColumn = null,
+    [property: JsonPropertyName("folderPathSource")] string? FolderPathSource = null,
+    [property: JsonPropertyName("sourceFolderPathField")] string? SourceFolderPathField = null,
+    [property: JsonPropertyName("sourceFolderColumn")] string? SourceFolderColumn = null,
+    [property: JsonPropertyName("folderColumn")] string? FolderColumn = null,
+    [property: JsonPropertyName("folderMode")] string? FolderMode = null,
+    [property: JsonPropertyName("pathMode")] string? PathMode = null);
 
 public sealed record MappingProfileDocument(
     [property: JsonPropertyName("profileName")] string ProfileName,

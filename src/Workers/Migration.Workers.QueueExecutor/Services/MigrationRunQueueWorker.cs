@@ -44,7 +44,9 @@ public sealed class MigrationRunQueueWorker : BackgroundService
     {
         if (!_queueOptions.Provider.Equals("AzureQueue", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogWarning("Queue executor is idle because MigrationRunQueue:Provider is {Provider}. Set it to AzureQueue to process queued runs.", _queueOptions.Provider);
+            _logger.LogWarning(
+                "Queue executor is idle because MigrationRunQueue:Provider is {Provider}. Set it to AzureQueue to process queued runs.",
+                _queueOptions.Provider);
             return;
         }
 
@@ -87,14 +89,18 @@ public sealed class MigrationRunQueueWorker : BackgroundService
                 foreach (var message in response.Value)
                 {
                     stoppingToken.ThrowIfCancellationRequested();
+
                     var deleteMessage = false;
 
                     try
                     {
-                        var runMessage = DeserializeMessage(message.Body.ToString());
-                        if (runMessage is null || string.IsNullOrWhiteSpace(runMessage.RunId))
+                        if (!TryDeserializeMessage(message, out var runMessage, out var reason) || runMessage is null)
                         {
-                            _logger.LogWarning("Discarding malformed migration queue message {MessageId}.", message.MessageId);
+                            _logger.LogWarning(
+                                "Deleting malformed migration queue message {MessageId}. Reason={Reason}; DequeueCount={DequeueCount}.",
+                                message.MessageId,
+                                reason,
+                                message.DequeueCount);
                             deleteMessage = true;
                         }
                         else
@@ -108,7 +114,10 @@ public sealed class MigrationRunQueueWorker : BackgroundService
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed while processing queue message {MessageId}. The message will become visible again after the visibility timeout.", message.MessageId);
+                        _logger.LogError(
+                            ex,
+                            "Failed while processing queue message {MessageId}. The message will become visible again after the visibility timeout.",
+                            message.MessageId);
                     }
 
                     if (deleteMessage)
@@ -139,17 +148,88 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         return new QueueClient(_queueOptions.ConnectionString, _queueOptions.QueueName, options);
     }
 
-    private static QueuedMigrationRunMessage? DeserializeMessage(string body)
+    private static bool TryDeserializeMessage(
+        QueueMessage message,
+        out QueuedMigrationRunMessage? runMessage,
+        out string reason)
     {
+        runMessage = null;
+        reason = string.Empty;
+
+        var body = message.Body.ToString();
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            reason = "Message body was empty.";
+            return false;
+        }
+
+        if (TryDeserializeJson(body, out runMessage))
+        {
+            return HasUsableRunId(runMessage, out reason);
+        }
+
         try
         {
-            return JsonSerializer.Deserialize<QueuedMigrationRunMessage>(body, JsonOptions);
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(body));
+            if (string.IsNullOrWhiteSpace(decoded))
+            {
+                reason = "Base64-decoded message body was empty.";
+                return false;
+            }
+
+            if (TryDeserializeJson(decoded, out runMessage))
+            {
+                return HasUsableRunId(runMessage, out reason);
+            }
+        }
+        catch (FormatException)
+        {
+            // Not Base64. Fall through to final malformed result.
+        }
+        catch (ArgumentException)
+        {
+            // Defensive: malformed encoded payload. Fall through to final malformed result.
+        }
+
+        reason = "Message body was neither valid JSON nor Base64-encoded JSON.";
+        return false;
+    }
+
+    private static bool TryDeserializeJson(string json, out QueuedMigrationRunMessage? runMessage)
+    {
+        runMessage = null;
+
+        try
+        {
+            runMessage = JsonSerializer.Deserialize<QueuedMigrationRunMessage>(json, JsonOptions);
+            return runMessage is not null;
         }
         catch (JsonException)
         {
-            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(body));
-            return JsonSerializer.Deserialize<QueuedMigrationRunMessage>(decoded, JsonOptions);
+            return false;
         }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
+    }
+
+    private static bool HasUsableRunId(QueuedMigrationRunMessage? runMessage, out string reason)
+    {
+        if (runMessage is null)
+        {
+            reason = "Message JSON deserialized to null.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(runMessage.RunId))
+        {
+            reason = "Message JSON did not contain a runId.";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
     }
 
     private async Task<bool> ProcessRunMessageAsync(QueuedMigrationRunMessage message, CancellationToken cancellationToken)
@@ -219,6 +299,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Migration run {RunId} failed.", running.RunId);
+
             var failed = running with
             {
                 Status = AdminRunStatuses.Failed,
