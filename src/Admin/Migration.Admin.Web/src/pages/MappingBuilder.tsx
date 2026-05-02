@@ -242,7 +242,7 @@ export function MappingBuilder() {
           folderPathSource: mapToFolderPathColumn ? folderPathColumn || null : null,
           writeBlobTags: !binaryOnly && writeBlobTags,
           writeMetadataJson: !binaryOnly && writeMetadataJson,
-          metadataJsonPathTemplate: !binaryOnly && writeMetadataJson ? metadataJsonPathTemplate : null,
+          metadataJsonPathTemplate: !binaryOnly && writeMetadataJson ? metadataJsonPathTemplate : null, mapToFolderPathColumn, folderPathColumn: mapToFolderPathColumn ? folderPathColumn : null, preserveSourceFolderPath: mapToFolderPathColumn, sourceFolderPathField: mapToFolderPathColumn ? folderPathColumn : null,
           tagRules: binaryOnly ? [] : cleanTagRules,
           metadataRules: binaryOnly ? [] : cleanMetadataRules
         },
