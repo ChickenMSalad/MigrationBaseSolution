@@ -152,7 +152,6 @@ function defaultTargetName(source: string): string {
 function defaultBlobNameTemplate(columns: string[]): string {
   const fileName = columns.find(c => /file\s*name|filename|name/i.test(c));
   const assetId = columns.find(c => /asset\s*id|assetid|id/i.test(c));
-
   if (fileName) return `{${fileName}}`;
   if (assetId) return `{${assetId}}`;
   return "{assetId}";
@@ -160,25 +159,31 @@ function defaultBlobNameTemplate(columns: string[]): string {
 
 export function MappingBuilder() {
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
-  const [manifestArtifacts, setManifestArtifacts] = useState<ArtifactRecord[]>([]);
+  const [, setManifestArtifacts] = useState<ArtifactRecord[]>([]);
   const [taxonomyArtifacts, setTaxonomyArtifacts] = useState<ArtifactRecord[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedManifestArtifactId, setSelectedManifestArtifactId] = useState("");
   const [selectedTargetArtifactId, setSelectedTargetArtifactId] = useState("");
   const [mappingType, setMappingType] = useState<MappingType>("intermediate");
   const [preview, setPreview] = useState<ManifestPreview | null>(null);
+
   const [profileName, setProfileName] = useState("generated-mapping-profile");
   const [sourceType, setSourceType] = useState("LocalStorage");
   const [targetType, setTargetType] = useState("LocalStorage");
   const [fileName, setFileName] = useState("generated-mapping-profile.json");
   const [rows, setRows] = useState<MappingRow[]>([newRow()]);
+
   const [blobNameTemplate, setBlobNameTemplate] = useState("{assetId}");
   const [metadataJsonPathTemplate, setMetadataJsonPathTemplate] = useState("metadata/{assetId}.json");
+  const [mapToFolderPathColumn, setMapToFolderPathColumn] = useState(false);
+  const [folderPathColumn, setFolderPathColumn] = useState("");
+
   const [binaryOnly, setBinaryOnly] = useState(false);
   const [writeMetadataJson, setWriteMetadataJson] = useState(true);
   const [writeBlobTags, setWriteBlobTags] = useState(true);
   const [tagRules, setTagRules] = useState<TagRule[]>([newTagRule()]);
   const [metadataRules, setMetadataRules] = useState<MetadataRule[]>([newMetadataRule()]);
+
   const [bindToProject, setBindToProject] = useState(true);
   const [createdArtifact, setCreatedArtifact] = useState<ArtifactRecord | null>(null);
   const [saving, setSaving] = useState(false);
@@ -189,6 +194,11 @@ export function MappingBuilder() {
     () => projects.find(x => x.projectId === selectedProjectId),
     [projects, selectedProjectId]
   );
+
+  const hasProjectManifest = Boolean(selectedManifestArtifactId);
+  const manifestMissingMessage = selectedProjectId
+    ? "Selected project is missing a manifest artifact. Bind a manifest to the project before loading columns."
+    : "Select a project with a manifest artifact to load manifest columns.";
 
   const mappingProfile = useMemo(() => {
     const cleanRows = rows
@@ -221,10 +231,15 @@ export function MappingBuilder() {
         sourceType,
         targetType,
         mappingType,
+        manifestArtifactId: selectedManifestArtifactId || null,
         intermediateStorage: {
           provider: "AzureBlob",
           binaryOnly,
           blobNameTemplate,
+          mapToFolderPathColumn,
+          folderPathMode: mapToFolderPathColumn ? "manifestColumn" : "none",
+          folderPathColumn: mapToFolderPathColumn ? folderPathColumn || null : null,
+          folderPathSource: mapToFolderPathColumn ? folderPathColumn || null : null,
           writeBlobTags: !binaryOnly && writeBlobTags,
           writeMetadataJson: !binaryOnly && writeMetadataJson,
           metadataJsonPathTemplate: !binaryOnly && writeMetadataJson ? metadataJsonPathTemplate : null,
@@ -260,6 +275,8 @@ export function MappingBuilder() {
     selectedTargetArtifactId,
     binaryOnly,
     blobNameTemplate,
+    mapToFolderPathColumn,
+    folderPathColumn,
     writeBlobTags,
     writeMetadataJson,
     metadataJsonPathTemplate
@@ -273,6 +290,7 @@ export function MappingBuilder() {
         request<ProjectRecord[]>("/api/projects"),
         request<ArtifactRecord[]>("/api/artifacts")
       ]);
+
       const artifacts = artifactData ?? [];
       setProjects(projectData ?? []);
       setManifestArtifacts(artifacts.filter(x => isKind(x, "Manifest") || !artifactKind(x)));
@@ -287,18 +305,18 @@ export function MappingBuilder() {
   useEffect(() => { void loadInitial(); }, []);
 
   useEffect(() => {
-    if (!selectedProject) return;
+    if (!selectedProject) {
+      setSelectedManifestArtifactId("");
+      setSelectedTargetArtifactId("");
+      setPreview(null);
+      return;
+    }
 
     setSourceType(selectedProject.sourceType || sourceType);
     setTargetType(selectedProject.targetType || targetType);
-
-    if (selectedProject.manifestArtifactId) {
-      setSelectedManifestArtifactId(selectedProject.manifestArtifactId);
-    }
-
-    if (selectedProject.taxonomyArtifactId) {
-      setSelectedTargetArtifactId(selectedProject.taxonomyArtifactId);
-    }
+    setSelectedManifestArtifactId(selectedProject.manifestArtifactId ?? "");
+    setSelectedTargetArtifactId(selectedProject.taxonomyArtifactId ?? "");
+    setPreview(null);
 
     const suffix = mappingType === "intermediate" ? "intermediate-storage-mapping" : "target-mapping";
     const safeName = `${selectedProject.displayName || selectedProject.projectId}-${suffix}`
@@ -310,6 +328,7 @@ export function MappingBuilder() {
       setProfileName(safeName);
       setFileName(`${safeName}.json`);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProjectId, mappingType]);
 
@@ -326,6 +345,10 @@ export function MappingBuilder() {
         setRows(data.columns.map(c => newRow(c, defaultTargetName(c))));
         setTagRules(data.columns.slice(0, 5).map(c => newTagRule(c, defaultTargetName(c))));
         setMetadataRules(data.columns.map(c => newMetadataRule(c, defaultTargetName(c))));
+
+        if (mapToFolderPathColumn && folderPathColumn && !data.columns.includes(folderPathColumn)) {
+          setFolderPathColumn("");
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -360,6 +383,7 @@ export function MappingBuilder() {
     setSaving(true);
     setError(null);
     setCreatedArtifact(null);
+
     try {
       const response = await request<SaveMappingResponse>("/api/mapping-builder/mappings", {
         method: "POST",
@@ -398,7 +422,13 @@ export function MappingBuilder() {
   }
 
   const canSave = mappingType === "intermediate"
-    ? Boolean(profileName.trim() && blobNameTemplate.trim() && (binaryOnly || tagRules.some(r => r.sourceField.trim() && r.tagName.trim()) || metadataRules.some(r => r.sourceField.trim() && r.jsonPath.trim())))
+    ? Boolean(
+        profileName.trim() &&
+        blobNameTemplate.trim() &&
+        hasProjectManifest &&
+        (!mapToFolderPathColumn || folderPathColumn.trim()) &&
+        (binaryOnly || tagRules.some(r => r.sourceField.trim() && r.tagName.trim()) || metadataRules.some(r => r.sourceField.trim() && r.jsonPath.trim()))
+      )
     : mappingProfile.fieldMappings.length > 0;
 
   return (
@@ -434,18 +464,6 @@ export function MappingBuilder() {
             </select>
           </label>
 
-          {/*<label>*/}
-          {/*  Source manifest artifact*/}
-          {/*  <select value={selectedManifestArtifactId} onChange={(e) => setSelectedManifestArtifactId(e.target.value)}>*/}
-          {/*    <option value="">Select a manifest artifact</option>*/}
-          {/*    {manifestArtifacts.map(artifact => (*/}
-          {/*      <option key={artifact.artifactId} value={artifact.artifactId}>*/}
-          {/*        {artifact.fileName} ({artifact.artifactId})*/}
-          {/*      </option>*/}
-          {/*    ))}*/}
-          {/*  </select>*/}
-          {/*</label>*/}
-
           {mappingType === "target" && (
             <label>
               Target taxonomy/manifest artifact
@@ -461,7 +479,15 @@ export function MappingBuilder() {
           )}
         </div>
 
-        <button className="primary" disabled={!selectedManifestArtifactId} onClick={loadPreview}>
+        {!hasProjectManifest && (
+          <p className="muted">{manifestMissingMessage}</p>
+        )}
+
+        {hasProjectManifest && selectedProject && (
+          <p className="muted">Using the manifest artifact already bound to {selectedProject.displayName}.</p>
+        )}
+
+        <button className="primary" disabled={!hasProjectManifest} onClick={loadPreview}>
           Load Manifest Columns
         </button>
       </Card>
@@ -492,9 +518,18 @@ export function MappingBuilder() {
                 Blob name template
                 <input value={blobNameTemplate} onChange={(e) => setBlobNameTemplate(e.target.value)} placeholder="assets/{Asset ID}/{Filename}" />
               </label>
+
               <label>
                 Metadata JSON path template
                 <input disabled={binaryOnly || !writeMetadataJson} value={metadataJsonPathTemplate} onChange={(e) => setMetadataJsonPathTemplate(e.target.value)} placeholder="metadata/{assetId}.json" />
+              </label>
+
+              <label>
+                Folder path column
+                <select disabled={!mapToFolderPathColumn || !preview} value={folderPathColumn} onChange={(e) => setFolderPathColumn(e.target.value)}>
+                  <option value="">Select manifest column</option>
+                  {preview?.columns.map(column => <option key={column} value={column}>{column}</option>)}
+                </select>
               </label>
             </div>
 
@@ -502,10 +537,17 @@ export function MappingBuilder() {
               <input type="checkbox" checked={binaryOnly} onChange={(e) => setBinaryOnly(e.target.checked)} />
               Binary only; do not write blob tags or metadata JSON
             </label>
+
+            <label className="check">
+              <input type="checkbox" checked={mapToFolderPathColumn} onChange={(e) => setMapToFolderPathColumn(e.target.checked)} />
+              Map to Folder Path Column
+            </label>
+
             <label className="check">
               <input type="checkbox" disabled={binaryOnly} checked={writeBlobTags} onChange={(e) => setWriteBlobTags(e.target.checked)} />
               Store selected manifest values as Azure Blob index tags
             </label>
+
             <label className="check">
               <input type="checkbox" disabled={binaryOnly} checked={writeMetadataJson} onChange={(e) => setWriteMetadataJson(e.target.checked)} />
               Write selected manifest values to a metadata JSON sidecar
@@ -627,7 +669,6 @@ export function MappingBuilder() {
               </tbody>
             </table>
           </div>
-
           <button className="ghost" onClick={() => setRows(current => [...current, newRow()])}>+ Add mapping row</button>
         </Card>
       )}

@@ -1,0 +1,24 @@
+{
+  "runId": "webdam-to-azure-with-folders-20260502000410",
+  "jobName": "webdam-to-azure-with-folders::realrun::A03591DB51C0",
+  "workItemId": "165459391",
+  "status": "Succeeded",
+  "dryRun": false,
+  "startedUtc": null,
+  "completedUtc": "2026-05-02T00:04:22.8563979+00:00",
+  "updatedUtc": "2026-05-02T00:04:22.8563958+00:00",
+  "sourceAssetId": "165459391",
+  "targetAssetId": "azureblob:165459391_images.jpeg",
+  "message": "Uploaded binary and metadata sidecar: 165459391_images.jpeg; 165459391_metadata.json",
+  "lastError": null,
+  "checksum": null,
+  "attemptCount": 1,
+  "properties": {
+    "OriginalJobName": "webdam-to-azure-with-folders",
+    "ManifestFingerprint": "A03591DB51C0",
+    "ExecutionMode": "Live",
+    "ManifestPath": "C:\\Workspace\\MigrationBaseSolution\\.migration-control-plane\\artifacts\\artifact-20260501160637-18d9587b88b041c3ab9fcd9c683aae03\\webdam-manifest-20260501-160637.csv",
+    "ManifestRowId": "165459391"
+  },
+  "isTerminalSuccess": true
+}

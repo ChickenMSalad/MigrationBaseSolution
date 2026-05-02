@@ -1,0 +1,15 @@
+{
+  "runId": "webdam-to-azure-with-folders-20260502000410",
+  "jobName": "webdam-to-azure-with-folders::realrun::A03591DB51C0",
+  "sourceType": "WebDam",
+  "targetType": "AzureBlob",
+  "dryRun": false,
+  "startedUtc": "2026-05-02T00:04:10.2438429+00:00",
+  "completedUtc": "2026-05-02T00:04:34.2501277+00:00",
+  "status": "Succeeded",
+  "totalWorkItems": 30,
+  "succeeded": 30,
+  "failed": 0,
+  "skipped": 0,
+  "validationFailed": 0
+}

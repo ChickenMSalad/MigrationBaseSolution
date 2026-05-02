@@ -158,7 +158,10 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
     {
         var uniqueIdField = GetSetting(job, "AzureBlobUniqueIdField", "UniqueIdField") ?? _options.UniqueIdField;
         var fileNameField = GetSetting(job, "AzureBlobFileNameField", "FileNameField") ?? _options.FileNameField;
-        var folderPathField = GetSetting(job, "AzureBlobFolderPathField", "FolderPathField") ?? _options.SourceFolderPathField;
+        var folderPathField = FirstNonEmpty(
+            intermediateStorage?.FolderPathField,
+            GetSetting(job, "AzureBlobFolderPathField", "FolderPathField"),
+            _options.SourceFolderPathField);
 
         var uniqueId = FirstNonEmpty(
             GetValue(item, uniqueIdField),
@@ -185,10 +188,13 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
             _options.RootFolderPath,
             _options.FolderPath);
 
-        var preserveSourceFolderPath = intermediateStorage?.PreserveSourceFolderPath
-            ?? GetBool(job, _options.PreserveSourceFolderPath, "AzureBlobPreserveSourceFolderPath", "PreserveSourceFolderPath");
+        var mapToFolderPathColumn = intermediateStorage?.MapsToFolderPathColumn == true;
+        var preserveSourceFolderPath = mapToFolderPathColumn
+            || (intermediateStorage?.PreserveSourceFolderPath
+                ?? GetBool(job, _options.PreserveSourceFolderPath, "AzureBlobPreserveSourceFolderPath", "PreserveSourceFolderPath"));
+
         var sourceFolderPath = preserveSourceFolderPath
-            ? FirstNonEmpty(GetValue(item, folderPathField), item.SourceAsset?.Path)
+            ? FirstNonEmpty(GetValue(item, folderPathField), mapToFolderPathColumn ? null : item.SourceAsset?.Path)
             : null;
 
         var safeUniqueId = SanitizePathSegment(uniqueId);
@@ -465,8 +471,10 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
                 StorageMode = storageMode,
                 RootFolder = GetString(storage, "rootFolder", "rootFolderPath", "folderPath", "prefix"),
                 BinaryFileNameTemplate = GetString(storage, "binaryFileNameTemplate", "fileNameTemplate", "blobNameTemplate"),
-                MetadataFileNameTemplate = GetString(storage, "metadataFileNameTemplate", "metadataJsonFileNameTemplate", "sidecarFileNameTemplate"),
-                PreserveSourceFolderPath = GetBool(storage, "preserveSourceFolderPath", "preserveFolders", "preserveSourcePath")
+                MetadataFileNameTemplate = GetString(storage, "metadataFileNameTemplate", "metadataJsonFileNameTemplate", "sidecarFileNameTemplate", "metadataJsonPathTemplate"),
+                PreserveSourceFolderPath = GetBool(storage, "preserveSourceFolderPath", "preserveFolders", "preserveSourcePath"),
+                FolderPathMode = GetString(storage, "folderPathMode", "folderMode", "pathMode"),
+                FolderPathField = GetString(storage, "folderPathField", "folderPathColumn", "sourceFolderPathField", "sourceFolderColumn", "folderColumn")
             };
 
             profile.TagFields.AddRange(ReadFieldMappings(storage, "tagFields", "tags", "tagMappings", "blobTags"));
@@ -779,8 +787,16 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         public string? BinaryFileNameTemplate { get; init; }
         public string? MetadataFileNameTemplate { get; init; }
         public bool? PreserveSourceFolderPath { get; init; }
+        public string? FolderPathMode { get; init; }
+        public string? FolderPathField { get; init; }
         public List<FieldMapping> TagFields { get; } = new();
         public List<FieldMapping> MetadataFields { get; } = new();
+
+        public bool MapsToFolderPathColumn => !string.IsNullOrWhiteSpace(FolderPathField)
+            && (string.IsNullOrWhiteSpace(FolderPathMode)
+                || FolderPathMode.Equals("manifestColumn", StringComparison.OrdinalIgnoreCase)
+                || FolderPathMode.Equals("mapToFolderPathColumn", StringComparison.OrdinalIgnoreCase)
+                || FolderPathMode.Equals("column", StringComparison.OrdinalIgnoreCase));
 
         public bool WriteBlobTags => StorageMode.Equals("binaryWithTags", StringComparison.OrdinalIgnoreCase)
             || StorageMode.Equals("binaryWithTagsAndMetadataJson", StringComparison.OrdinalIgnoreCase)
