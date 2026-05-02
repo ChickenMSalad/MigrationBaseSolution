@@ -68,7 +68,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         }
 
         _logger.LogInformation(
-            "Migration queue executor started. Queue={QueueName}; ExecuteRuns={ExecuteRuns}; Base64Encoding=true; ServiceVersion=V2021_12_02",
+            "Migration queue executor started. Queue={QueueName}; ExecuteRuns={ExecuteRuns}; Encoding=ManualBase64WithLegacyJsonFallback.",
             _queueOptions.QueueName,
             _executorOptions.ExecuteRuns);
 
@@ -98,9 +98,11 @@ public sealed class MigrationRunQueueWorker : BackgroundService
                         if (!TryDeserializeMessage(message, out var runMessage) || runMessage is null || string.IsNullOrWhiteSpace(runMessage.RunId))
                         {
                             _logger.LogWarning(
-                                "Deleting malformed or empty migration queue message {MessageId}. DequeueCount={DequeueCount}.",
+                                "Deleting malformed or empty migration queue message {MessageId}. DequeueCount={DequeueCount}; BodyLength={BodyLength}; BodyPreview={BodyPreview}",
                                 message.MessageId,
-                                message.DequeueCount);
+                                message.DequeueCount,
+                                message.Body.ToString()?.Length ?? 0,
+                                Preview(message.Body.ToString()));
                             deleteMessage = true;
                         }
                         else
@@ -140,11 +142,8 @@ public sealed class MigrationRunQueueWorker : BackgroundService
 
     private QueueClient CreateQueueClient()
     {
-        var options = new QueueClientOptions(QueueClientOptions.ServiceVersion.V2021_12_02)
-        {
-            MessageEncoding = QueueMessageEncoding.Base64
-        };
-
+        // Keep SDK message encoding disabled. The publisher explicitly Base64-encodes the JSON body.
+        var options = new QueueClientOptions(QueueClientOptions.ServiceVersion.V2021_12_02);
         return new QueueClient(_queueOptions.ConnectionString, _queueOptions.QueueName, options);
     }
 
@@ -153,26 +152,21 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         runMessage = null;
 
         var body = message.Body.ToString();
-
         if (string.IsNullOrWhiteSpace(body))
         {
             return false;
         }
 
+        // Legacy/current fallback 1: raw JSON body.
         if (TryDeserializeJson(body, out runMessage))
         {
             return true;
         }
 
+        // Preferred queue contract: manually Base64-encoded JSON body.
         try
         {
             var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(body));
-
-            if (string.IsNullOrWhiteSpace(decoded))
-            {
-                return false;
-            }
-
             return TryDeserializeJson(decoded, out runMessage);
         }
         catch (FormatException)
@@ -189,10 +183,15 @@ public sealed class MigrationRunQueueWorker : BackgroundService
     {
         runMessage = null;
 
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return false;
+        }
+
         try
         {
             runMessage = JsonSerializer.Deserialize<QueuedMigrationRunMessage>(json, JsonOptions);
-            return runMessage is not null;
+            return runMessage is not null && !string.IsNullOrWhiteSpace(runMessage.RunId);
         }
         catch (JsonException)
         {
@@ -235,7 +234,6 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         try
         {
             var hydratedJob = await _credentialHydrator.HydrateAsync(running.Job, cancellationToken).ConfigureAwait(false);
-
             running = running with { Job = hydratedJob };
             await _store.SaveRunAsync(running, cancellationToken).ConfigureAwait(false);
 
@@ -282,5 +280,15 @@ public sealed class MigrationRunQueueWorker : BackgroundService
             await _store.SaveRunAsync(failed, CancellationToken.None).ConfigureAwait(false);
             return true;
         }
+    }
+
+    private static string Preview(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "<empty>";
+        }
+
+        return value.Length <= 80 ? value : value[..80];
     }
 }

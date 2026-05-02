@@ -1,7 +1,7 @@
+using System.Text;
 using System.Text.Json;
 using Azure;
 using Azure.Storage.Queues;
-using Azure.Storage.Queues.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Migration.ControlPlane.Models;
@@ -52,16 +52,18 @@ public sealed class AzureQueueMigrationRunQueue : IMigrationRunQueue
         };
 
         var json = JsonSerializer.Serialize(message, JsonOptions);
+        var queueBody = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
 
         try
         {
             _logger.LogInformation(
-                "Sending migration run queue message. Queue={QueueName}; RunId={RunId}; JsonLength={JsonLength}; Base64Encoding=true; ServiceVersion=V2021_12_02",
+                "Sending migration run queue message. Queue={QueueName}; RunId={RunId}; JsonLength={JsonLength}; EncodedLength={EncodedLength}; Encoding=ManualBase64.",
                 _options.QueueName,
                 run.RunId,
-                json.Length);
+                json.Length,
+                queueBody.Length);
 
-            await client.SendMessageAsync(json, cancellationToken).ConfigureAwait(false);
+            await client.SendMessageAsync(queueBody, cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation(
                 "Enqueued migration run {RunId} to Azure Storage Queue {QueueName}.",
@@ -72,24 +74,22 @@ public sealed class AzureQueueMigrationRunQueue : IMigrationRunQueue
         {
             _logger.LogError(
                 ex,
-                "Azure Storage Queue enqueue failed. Queue={QueueName}; Status={Status}; ErrorCode={ErrorCode}; Message={Message}; JsonLength={JsonLength}",
+                "Azure Storage Queue enqueue failed. Queue={QueueName}; Status={Status}; ErrorCode={ErrorCode}; Message={Message}; JsonLength={JsonLength}; EncodedLength={EncodedLength}.",
                 _options.QueueName,
                 ex.Status,
                 ex.ErrorCode,
                 ex.Message,
-                json.Length);
-
+                json.Length,
+                queueBody.Length);
             throw;
         }
     }
 
     private QueueClient CreateQueueClient()
     {
-        var options = new QueueClientOptions(QueueClientOptions.ServiceVersion.V2021_12_02)
-        {
-            MessageEncoding = QueueMessageEncoding.Base64
-        };
-
+        // Keep SDK message encoding disabled and explicitly send a Base64 string.
+        // This avoids producer/consumer drift between SDK auto-encoding, Azurite, and older queued messages.
+        var options = new QueueClientOptions(QueueClientOptions.ServiceVersion.V2021_12_02);
         return new QueueClient(_options.ConnectionString, _options.QueueName, options);
     }
 }
