@@ -60,7 +60,10 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         var intermediateStorage = ResolveIntermediateStorageProfile(job);
         var naming = ResolveBlobNaming(job, item, binary, intermediateStorage);
         var overwrite = GetBool(job, _options.Overwrite, "AzureBlobTargetOverwrite", "AzureBlobOverwrite", "Overwrite");
-        var writeSidecar = intermediateStorage?.WriteMetadataJson ?? GetBool(job, _options.WriteMetadataSidecar, "AzureBlobWriteMetadataSidecar", "WriteMetadataSidecar");
+        // Intermediate storage mappings now store searchable metadata as Azure Blob index tags.
+        // Do not create JSON sidecars for intermediate mappings; legacy/non-mapping runs keep existing behavior.
+        var writeSidecar = intermediateStorage is null
+            && GetBool(job, _options.WriteMetadataSidecar, "AzureBlobWriteMetadataSidecar", "WriteMetadataSidecar");
         var createContainer = GetBool(job, _options.CreateContainerIfMissing, "AzureBlobCreateContainerIfMissing", "CreateContainerIfMissing");
 
         var container = new BlobContainerClient(connectionString, containerName);
@@ -114,7 +117,7 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
             TargetAssetId = $"azureblob:{naming.BinaryBlobName}",
             Message = writeSidecar
                 ? $"Uploaded binary{(blobTags.Count > 0 ? ", tags" : string.Empty)} and metadata sidecar: {naming.BinaryBlobName}; {naming.MetadataBlobName}"
-                : $"Uploaded binary{(blobTags.Count > 0 ? " and tags" : string.Empty)}: {naming.BinaryBlobName}"
+                : $"Uploaded binary{(blobTags.Count > 0 ? $" and {blobTags.Count} tag(s)" : string.Empty)}: {naming.BinaryBlobName}"
         };
     }
 
@@ -192,7 +195,6 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         var preserveSourceFolderPath = mapToFolderPathColumn
             || (intermediateStorage?.PreserveSourceFolderPath
                 ?? GetBool(job, _options.PreserveSourceFolderPath, "AzureBlobPreserveSourceFolderPath", "PreserveSourceFolderPath"));
-
         var sourceFolderPath = preserveSourceFolderPath
             ? FirstNonEmpty(GetValue(item, folderPathField), mapToFolderPathColumn ? null : item.SourceAsset?.Path)
             : null;
@@ -336,17 +338,38 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
 
     private Dictionary<string, string> BuildBlobTags(MigrationJobDefinition job, AssetWorkItem item, IntermediateStorageProfile? intermediateStorage)
     {
-        if (intermediateStorage?.WriteBlobTags != true)
+        if (intermediateStorage is null || !intermediateStorage.WriteBlobTags)
         {
             return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         var tags = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var field in intermediateStorage.TagFields)
+
+        // Always include stable lookup tags first when possible. Azure Blob index tags are capped at 10.
+        AddBlobTagIfRoom(tags, "source_asset_id", item.SourceAsset?.SourceAssetId ?? item.Manifest.SourceAssetId ?? item.WorkItemId);
+        AddBlobTagIfRoom(tags, "migration_work_item", item.WorkItemId);
+
+        // Explicit tag mappings are written first. Fields previously selected for metadata JSON are now
+        // written as Azure Blob index tags so intermediate storage remains searchable without sidecars.
+        AddFieldMappingsAsTags(tags, item, intermediateStorage.TagFields);
+        AddFieldMappingsAsTags(tags, item, intermediateStorage.MetadataFields);
+
+        if (tags.Count >= 10 && (intermediateStorage.TagFields.Count + intermediateStorage.MetadataFields.Count) > 8)
+        {
+            _logger.LogWarning(
+                "Azure Blob index tags are limited to 10. Some tag/metadata mappings were skipped for work item {WorkItemId}.",
+                item.WorkItemId);
+        }
+
+        return tags;
+    }
+
+    private void AddFieldMappingsAsTags(IDictionary<string, string> tags, AssetWorkItem item, IEnumerable<FieldMapping> fields)
+    {
+        foreach (var field in fields)
         {
             if (tags.Count >= 10)
             {
-                _logger.LogWarning("Azure Blob index tags are limited to 10. Remaining tag mappings were skipped for work item {WorkItemId}.", item.WorkItemId);
                 break;
             }
 
@@ -356,10 +379,18 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
                 continue;
             }
 
-            AddBlobTag(tags, field.TargetName, value);
+            AddBlobTagIfRoom(tags, field.TargetName, value);
+        }
+    }
+
+    private void AddBlobTagIfRoom(IDictionary<string, string> tags, string key, string? value)
+    {
+        if (tags.Count >= 10 || string.IsNullOrWhiteSpace(value))
+        {
+            return;
         }
 
-        return tags;
+        AddBlobTag(tags, key, value);
     }
 
     private static Dictionary<string, object?> BuildMappedDocument(AssetWorkItem item, IEnumerable<FieldMapping> fields)
@@ -631,6 +662,8 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         {
             ["uniqueid"] = uniqueId,
             ["id"] = uniqueId,
+            ["assetid"] = uniqueId,
+            ["sourceassetid"] = uniqueId,
             ["filename"] = originalFileName,
             ["basename"] = SanitizePathSegment(basename),
             ["extension"] = extension.TrimStart('.'),
@@ -698,11 +731,49 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
     {
         if (string.IsNullOrWhiteSpace(name)) return null;
 
-        if (item.TargetPayload?.Fields.TryGetValue(name, out var fieldValue) == true && !string.IsNullOrWhiteSpace(fieldValue?.ToString())) return fieldValue.ToString();
-        if (item.Manifest.Columns.TryGetValue(name, out var manifestValue) && !string.IsNullOrWhiteSpace(manifestValue)) return manifestValue;
-        if (item.SourceAsset?.Metadata.TryGetValue(name, out var metadataValue) == true && !string.IsNullOrWhiteSpace(metadataValue)) return metadataValue;
+        if (TryGetStringValue(item.TargetPayload?.Fields, name, out var fieldValue)) return fieldValue;
+        if (TryGetStringValue(item.Manifest.Columns, name, out var manifestValue)) return manifestValue;
+        if (TryGetStringValue(item.SourceAsset?.Metadata, name, out var metadataValue)) return metadataValue;
 
         return null;
+    }
+
+    private static bool TryGetStringValue<TValue>(IDictionary<string, TValue>? values, string name, out string? value)
+    {
+        value = null;
+        if (values is null || string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
+        if (values.TryGetValue(name, out var exact) && !string.IsNullOrWhiteSpace(exact?.ToString()))
+        {
+            value = exact.ToString();
+            return true;
+        }
+
+        var normalizedName = NormalizeLookupName(name);
+        foreach (var entry in values)
+        {
+            if (!NormalizeLookupName(entry.Key).Equals(normalizedName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var text = entry.Value?.ToString();
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                value = text;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string NormalizeLookupName(string value)
+    {
+        return new string(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
     }
 
     private static string? GetSetting(MigrationJobDefinition job, params string[] names)
@@ -798,14 +869,11 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
                 || FolderPathMode.Equals("mapToFolderPathColumn", StringComparison.OrdinalIgnoreCase)
                 || FolderPathMode.Equals("column", StringComparison.OrdinalIgnoreCase));
 
-        public bool WriteBlobTags => StorageMode.Equals("binaryWithTags", StringComparison.OrdinalIgnoreCase)
-            || StorageMode.Equals("binaryWithTagsAndMetadataJson", StringComparison.OrdinalIgnoreCase)
-            || StorageMode.Equals("tags", StringComparison.OrdinalIgnoreCase);
+        public bool WriteBlobTags => !StorageMode.Equals("binaryOnly", StringComparison.OrdinalIgnoreCase);
 
-        public bool WriteMetadataJson => StorageMode.Equals("binaryWithMetadataJson", StringComparison.OrdinalIgnoreCase)
-            || StorageMode.Equals("binaryWithTagsAndMetadataJson", StringComparison.OrdinalIgnoreCase)
-            || StorageMode.Equals("metadataJson", StringComparison.OrdinalIgnoreCase)
-            || StorageMode.Equals("json", StringComparison.OrdinalIgnoreCase);
+        // Intermediate storage no longer writes metadata JSON sidecars. Metadata fields are represented
+        // as Azure Blob index tags in BuildBlobTags instead.
+        public bool WriteMetadataJson => false;
     }
 
     private sealed record FieldMapping(string SourceField, string TargetName);
