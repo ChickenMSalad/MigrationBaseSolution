@@ -61,6 +61,7 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         }
 
         var queue = CreateQueueClient();
+
         if (_queueOptions.CreateIfMissing)
         {
             await queue.CreateIfNotExistsAsync(cancellationToken: stoppingToken).ConfigureAwait(false);
@@ -94,12 +95,11 @@ public sealed class MigrationRunQueueWorker : BackgroundService
 
                     try
                     {
-                        if (!TryDeserializeMessage(message, out var runMessage, out var reason) || runMessage is null)
+                        if (!TryDeserializeMessage(message, out var runMessage) || runMessage is null || string.IsNullOrWhiteSpace(runMessage.RunId))
                         {
                             _logger.LogWarning(
-                                "Deleting malformed migration queue message {MessageId}. Reason={Reason}; DequeueCount={DequeueCount}.",
+                                "Deleting malformed or empty migration queue message {MessageId}. DequeueCount={DequeueCount}.",
                                 message.MessageId,
-                                reason,
                                 message.DequeueCount);
                             deleteMessage = true;
                         }
@@ -148,51 +148,41 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         return new QueueClient(_queueOptions.ConnectionString, _queueOptions.QueueName, options);
     }
 
-    private static bool TryDeserializeMessage(
-        QueueMessage message,
-        out QueuedMigrationRunMessage? runMessage,
-        out string reason)
+    private static bool TryDeserializeMessage(QueueMessage message, out QueuedMigrationRunMessage? runMessage)
     {
         runMessage = null;
-        reason = string.Empty;
 
         var body = message.Body.ToString();
+
         if (string.IsNullOrWhiteSpace(body))
         {
-            reason = "Message body was empty.";
             return false;
         }
 
         if (TryDeserializeJson(body, out runMessage))
         {
-            return HasUsableRunId(runMessage, out reason);
+            return true;
         }
 
         try
         {
             var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(body));
+
             if (string.IsNullOrWhiteSpace(decoded))
             {
-                reason = "Base64-decoded message body was empty.";
                 return false;
             }
 
-            if (TryDeserializeJson(decoded, out runMessage))
-            {
-                return HasUsableRunId(runMessage, out reason);
-            }
+            return TryDeserializeJson(decoded, out runMessage);
         }
         catch (FormatException)
         {
-            // Not Base64. Fall through to final malformed result.
+            return false;
         }
         catch (ArgumentException)
         {
-            // Defensive: malformed encoded payload. Fall through to final malformed result.
+            return false;
         }
-
-        reason = "Message body was neither valid JSON nor Base64-encoded JSON.";
-        return false;
     }
 
     private static bool TryDeserializeJson(string json, out QueuedMigrationRunMessage? runMessage)
@@ -208,33 +198,12 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         {
             return false;
         }
-        catch (NotSupportedException)
-        {
-            return false;
-        }
-    }
-
-    private static bool HasUsableRunId(QueuedMigrationRunMessage? runMessage, out string reason)
-    {
-        if (runMessage is null)
-        {
-            reason = "Message JSON deserialized to null.";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(runMessage.RunId))
-        {
-            reason = "Message JSON did not contain a runId.";
-            return false;
-        }
-
-        reason = string.Empty;
-        return true;
     }
 
     private async Task<bool> ProcessRunMessageAsync(QueuedMigrationRunMessage message, CancellationToken cancellationToken)
     {
         var run = await _store.GetRunAsync(message.RunId, cancellationToken).ConfigureAwait(false);
+
         if (run is null)
         {
             _logger.LogWarning("Run control record {RunId} was not found.", message.RunId);
@@ -266,10 +235,12 @@ public sealed class MigrationRunQueueWorker : BackgroundService
         try
         {
             var hydratedJob = await _credentialHydrator.HydrateAsync(running.Job, cancellationToken).ConfigureAwait(false);
+
             running = running with { Job = hydratedJob };
             await _store.SaveRunAsync(running, cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("Executing migration run {RunId} ({JobName}).", running.RunId, running.JobName);
+
             var summary = await _runner.RunAsync(hydratedJob, cancellationToken).ConfigureAwait(false);
 
             var completed = running with
