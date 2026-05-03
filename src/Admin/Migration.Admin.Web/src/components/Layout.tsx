@@ -1,4 +1,4 @@
-import { Activity, Amphora, Boxes, FileSpreadsheet, FolderKanban, GitBranch, Home, KeyRound, Map, PlugZap, Tags } from "lucide-react";
+import { Activity, Amphora, Boxes, FileSpreadsheet, FolderKanban, Home, KeyRound, Map, PlugZap, Tags } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const nav = [
@@ -28,7 +28,6 @@ export function Layout() {
         <nav>
           {nav.map((item) => {
             const Icon = item.icon;
-
             return (
               <NavLink
                 key={item.to}
@@ -36,16 +35,14 @@ export function Layout() {
                 end={item.end}
                 className={({ isActive }) => isActive ? "navItem active" : "navItem"}
               >
-                <Icon size={18} />
-                {item.label}
+                <Icon size={20} />
+                <span>{item.label}</span>
               </NavLink>
             );
           })}
         </nav>
 
-        <div className="sidebarFooter">
-          <GitBranch size={15} /> API-driven shell
-        </div>
+        <div className="sidebarFooter">API-driven shell</div>
       </aside>
 
       <main className="main">

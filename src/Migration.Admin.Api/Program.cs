@@ -8,6 +8,7 @@ using Migration.ControlPlane.Services;
 using Migration.GenericRuntime.Registration;
 using Migration.Orchestration.Abstractions;
 using Migration.Orchestration.Extensions;
+using Migration.Infrastructure.Taxonomy;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddMigrationOrchestration(builder.Configuration);
 builder.Services.AddGenericMigrationRuntime(builder.Configuration);
 builder.Services.AddMigrationControlPlane(builder.Configuration);
+builder.Services.AddTaxonomyBuilder(builder.Configuration);
 
 var app = builder.Build();
 
@@ -286,9 +288,10 @@ app.MapGet("/debug/config", (IConfiguration configuration, IWebHostEnvironment e
 
 // These extensions already include their /api route prefix internally.
 // Keep them on app, not on the /api group, to avoid /api/api routes.
-app.MapArtifactEndpoints();
-app.MapControlPlaneDeleteEndpoints();
-app.MapMappingBuilderEndpoints();
-app.MapManifestBuilderEndpoints();
+app.MapArtifactEndpoints(); 
+app.MapControlPlaneDeleteEndpoints(); 
+app.MapMappingBuilderEndpoints(); 
+app.MapManifestBuilderEndpoints(); 
+app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
