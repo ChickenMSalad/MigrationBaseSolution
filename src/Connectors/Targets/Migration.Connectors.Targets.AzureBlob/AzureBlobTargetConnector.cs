@@ -431,23 +431,59 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         tags[sanitizedKey] = sanitizedValue;
     }
 
-    private string SafeBlobTagValue(string value)
+    private static string SafeBlobTagValue(string value)
     {
-        var sanitized = value.Replace("\r", " ").Replace("\n", " ").Trim();
-        sanitized = new string(sanitized.Select(ch => ch <= 127 ? ch : '?').ToArray());
-        return sanitized.Length <= 256 ? sanitized : sanitized[..256];
+        return NormalizeBlobIndexTag(value, maxLength: 256, fallback: string.Empty);
     }
 
     private static string SafeBlobTagKey(string key)
     {
-        var sb = new StringBuilder(key.Length);
-        foreach (var ch in key)
+        return NormalizeBlobIndexTag(key, maxLength: 128, fallback: "tag");
+    }
+
+    private static string NormalizeBlobIndexTag(string? value, int maxLength, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
         {
-            sb.Append(char.IsLetterOrDigit(ch) || ch is '_' or '-' or '.' or '/' or ':' or '=' ? ch : '_');
+            return fallback;
         }
 
-        var sanitized = sb.ToString().Trim('_');
-        return sanitized.Length <= 128 ? sanitized : sanitized[..128];
+        var sb = new StringBuilder(value.Length);
+        var previousWasSpace = false;
+
+        foreach (var ch in value.Trim())
+        {
+            var normalized = IsAllowedBlobIndexTagChar(ch) ? ch : ' ';
+
+            if (char.IsWhiteSpace(normalized))
+            {
+                if (!previousWasSpace)
+                {
+                    sb.Append(' ');
+                    previousWasSpace = true;
+                }
+
+                continue;
+            }
+
+            sb.Append(normalized);
+            previousWasSpace = false;
+        }
+
+        var result = sb.ToString().Trim();
+
+        if (string.IsNullOrWhiteSpace(result))
+        {
+            result = fallback;
+        }
+
+        return result.Length <= maxLength ? result : result[..maxLength].Trim();
+    }
+
+    private static bool IsAllowedBlobIndexTagChar(char ch)
+    {
+        return char.IsLetterOrDigit(ch)
+            || ch is ' ' or '+' or '-' or '.' or '/' or ':' or '=' or '_';
     }
 
     private async Task<Stream> OpenBinaryStreamAsync(string sourceUri, CancellationToken cancellationToken)
