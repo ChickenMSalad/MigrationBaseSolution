@@ -1,0 +1,12 @@
+{
+  "eventId": "ccfe124449c04b76adaab2ab82ca7f29",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459198",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Animals/Dogs/puppy-facts-960x540.jpg; Animals/Dogs/metadata_165459198.json",
+  "timestampUtc": "2026-05-02T23:30:54.7082987+00:00",
+  "properties": {}
+}

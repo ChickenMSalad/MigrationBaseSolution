@@ -1,0 +1,15 @@
+{
+  "projectId": "project-20260502224934-0e19e19ac0334af3bf6a0e9071b30f19",
+  "displayName": "WebDamToAzure",
+  "sourceType": "WebDam",
+  "targetType": "AzureBlob",
+  "manifestType": "Csv",
+  "createdUtc": "2026-05-02T22:49:34.6252635+00:00",
+  "updatedUtc": "2026-05-02T22:55:52.7638389+00:00",
+  "manifestArtifactId": "artifact-20260501160637-18d9587b88b041c3ab9fcd9c683aae03",
+  "mappingArtifactId": "artifact-20260502225552-a5fcaad367ab415e97f9d09a7193a77b",
+  "settings": {
+    "sourceCredentialSetId": "cred-20260430223703-73ea84a71fd84393b7963227b160a632",
+    "targetCredentialSetId": "cred-20260501171009-e1257f5fbd50421b93e447ba0da153a1"
+  }
+}

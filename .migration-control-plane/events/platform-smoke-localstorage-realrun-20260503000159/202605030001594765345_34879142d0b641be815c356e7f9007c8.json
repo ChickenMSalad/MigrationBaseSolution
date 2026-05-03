@@ -1,0 +1,12 @@
+{
+  "eventId": "34879142d0b641be815c356e7f9007c8",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "ManifestLoaded",
+  "workItemId": null,
+  "completed": 0,
+  "total": 30,
+  "message": "Loaded 30 manifest rows.",
+  "timestampUtc": "2026-05-03T00:01:59.4765345+00:00",
+  "properties": {}
+}

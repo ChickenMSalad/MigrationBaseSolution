@@ -1,0 +1,12 @@
+{
+  "eventId": "1540db71bce74eda94837ba212be7d4c",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459274",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Helmet 3.jpeg; Outdoors/Bikes/metadata_165459274.json",
+  "timestampUtc": "2026-05-02T23:30:57.8993133+00:00",
+  "properties": {}
+}

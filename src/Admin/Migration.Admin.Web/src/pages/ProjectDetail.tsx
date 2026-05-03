@@ -52,6 +52,7 @@ export function ProjectDetail() {
   const [sourceCredentialSetId, setSourceCredentialSetId] = useState("");
   const [targetCredentialSetId, setTargetCredentialSetId] = useState("");
   const [dryRun, setDryRun] = useState(false);
+  const [forceRerun, setForceRerun] = useState(false);
   const [parallelism, setParallelism] = useState(1);
 
   const [loading, setLoading] = useState(true);
@@ -191,11 +192,13 @@ export function ProjectDetail() {
         mappingArtifactId: mappingArtifactId || null,
         dryRun,
         parallelism,
-        settings: {
-          ...(project.settings ?? {}),
-          sourceCredentialSetId,
-          targetCredentialSetId
-        }
+    settings: {
+      ...(project.settings ?? {}),
+      sourceCredentialSetId,
+      targetCredentialSetId,
+      ForceRerun: forceRerun ? "true" : "false"
+    }
+
       });
 
       openRun(run.runId);
@@ -311,6 +314,7 @@ export function ProjectDetail() {
           <label>Mapping profile path override<input value={mappingProfilePath} onChange={(e) => setMappingProfilePath(e.target.value)} placeholder="Optional when a mapping artifact is selected" /></label>
           <label>Parallelism<input type="number" min={1} value={parallelism} onChange={(e) => setParallelism(Number(e.target.value || 1))} /></label>
           <label className="check"><input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} /> Dry run</label>
+    <label className="check"><input type="checkbox" checked={forceRerun} onChange={e => setForceRerun(e.target.checked)} /> Force re-run completed work items</label>
         </div>
 
         {missingCredentials && (

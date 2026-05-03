@@ -1,0 +1,12 @@
+{
+  "eventId": "043181e38f3a4c13a13f4dbd83358559",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSucceeded",
+  "workItemId": "165459275",
+  "completed": 14,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Marketing Materials - josh-nuttall-5UQoVk8_d-4-unsplash.jpeg; Outdoors/Bikes/metadata/165459275.json",
+  "timestampUtc": "2026-05-03T00:02:08.6670857+00:00",
+  "properties": {}
+}

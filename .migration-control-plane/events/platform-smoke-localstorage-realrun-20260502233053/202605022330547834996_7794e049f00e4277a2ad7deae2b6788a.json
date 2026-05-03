@@ -1,0 +1,12 @@
+{
+  "eventId": "7794e049f00e4277a2ad7deae2b6788a",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSucceeded",
+  "workItemId": "165459253",
+  "completed": 3,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Animals/Cows/WhatsApp-Image-2025-09-10-at-5.14.48-PM.jpeg; Animals/Cows/metadata_165459253.json",
+  "timestampUtc": "2026-05-02T23:30:54.7834996+00:00",
+  "properties": {}
+}

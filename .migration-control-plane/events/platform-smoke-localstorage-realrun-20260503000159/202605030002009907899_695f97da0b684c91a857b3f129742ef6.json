@@ -1,0 +1,12 @@
+{
+  "eventId": "695f97da0b684c91a857b3f129742ef6",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSucceeded",
+  "workItemId": "165459201",
+  "completed": 3,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Animals/Dogs/BwL2586BtvBPywasXXtzwA-1000-80.jpeg; Animals/Dogs/metadata/165459201.json",
+  "timestampUtc": "2026-05-03T00:02:00.9907899+00:00",
+  "properties": {}
+}

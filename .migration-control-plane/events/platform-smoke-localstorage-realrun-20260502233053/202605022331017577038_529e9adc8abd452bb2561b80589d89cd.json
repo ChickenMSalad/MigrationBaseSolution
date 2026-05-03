@@ -1,0 +1,12 @@
+{
+  "eventId": "529e9adc8abd452bb2561b80589d89cd",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSucceeded",
+  "workItemId": "165459287",
+  "completed": 25,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Product Photo-tiffany-nutt-0ClfreiNppM-unsplash (1).jpeg; Outdoors/Bikes/metadata_165459287.json",
+  "timestampUtc": "2026-05-02T23:31:01.7577038+00:00",
+  "properties": {}
+}

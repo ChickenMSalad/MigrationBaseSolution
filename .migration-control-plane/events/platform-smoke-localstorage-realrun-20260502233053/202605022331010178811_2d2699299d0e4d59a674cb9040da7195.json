@@ -1,0 +1,12 @@
+{
+  "eventId": "2d2699299d0e4d59a674cb9040da7195",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459284",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Product Photo-howard-bouchevereau-BRDO4C-0h_s-unsplash.jpeg; Outdoors/Bikes/metadata_165459284.json",
+  "timestampUtc": "2026-05-02T23:31:01.0178811+00:00",
+  "properties": {}
+}

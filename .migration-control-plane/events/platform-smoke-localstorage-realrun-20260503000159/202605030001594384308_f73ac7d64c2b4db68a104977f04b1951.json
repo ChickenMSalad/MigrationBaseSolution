@@ -1,0 +1,12 @@
+{
+  "eventId": "f73ac7d64c2b4db68a104977f04b1951",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "RunStarted",
+  "workItemId": null,
+  "completed": null,
+  "total": null,
+  "message": "Starting migration job \u0027platform-smoke-localstorage-realrun\u0027.",
+  "timestampUtc": "2026-05-03T00:01:59.4384308+00:00",
+  "properties": {}
+}

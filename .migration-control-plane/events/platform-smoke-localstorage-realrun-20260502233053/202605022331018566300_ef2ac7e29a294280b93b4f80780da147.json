@@ -1,0 +1,12 @@
+{
+  "eventId": "ef2ac7e29a294280b93b4f80780da147",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459290",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/small-User Manual 2.jpeg; Outdoors/Bikes/metadata_165459290.json",
+  "timestampUtc": "2026-05-02T23:31:01.85663+00:00",
+  "properties": {}
+}

@@ -1,0 +1,12 @@
+{
+  "eventId": "15c25602d9ea4ab191fd5294640f6f2b",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459291",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/small-Wheels 1.jpeg; Outdoors/Bikes/metadata/165459291.json",
+  "timestampUtc": "2026-05-03T00:02:13.8364461+00:00",
+  "properties": {}
+}

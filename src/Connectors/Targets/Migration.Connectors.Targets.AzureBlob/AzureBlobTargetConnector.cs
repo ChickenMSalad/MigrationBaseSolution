@@ -62,8 +62,9 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         var overwrite = GetBool(job, _options.Overwrite, "AzureBlobTargetOverwrite", "AzureBlobOverwrite", "Overwrite");
         // Intermediate storage mappings now store searchable metadata as Azure Blob index tags.
         // Do not create JSON sidecars for intermediate mappings; legacy/non-mapping runs keep existing behavior.
-        var writeSidecar = intermediateStorage is null
-            && GetBool(job, _options.WriteMetadataSidecar, "AzureBlobWriteMetadataSidecar", "WriteMetadataSidecar");
+        //var writeSidecar = intermediateStorage is null
+        //    && GetBool(job, _options.WriteMetadataSidecar, "AzureBlobWriteMetadataSidecar", "WriteMetadataSidecar");
+        var writeSidecar = intermediateStorage?.WriteMetadataJson == true;
         var createContainer = GetBool(job, _options.CreateContainerIfMissing, "AzureBlobCreateContainerIfMissing", "CreateContainerIfMissing");
 
         var container = new BlobContainerClient(connectionString, containerName);
@@ -206,11 +207,20 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         var metadataTemplate = FirstNonEmpty(intermediateStorage?.MetadataFileNameTemplate, GetSetting(job, "AzureBlobMetadataFileNameTemplate", "MetadataFileNameTemplate"), _options.MetadataFileNameTemplate) ?? "{uniqueid}.metadata.json";
 
         var binaryFileName = SanitizePathSegment(ApplyTemplate(binaryTemplate, tokens));
-        var metadataFileName = SanitizePathSegment(ApplyTemplate(metadataTemplate, tokens));
-        if (!metadataFileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        //var metadataFileName = SanitizePathSegment(ApplyTemplate(metadataTemplate, tokens));
+        //if (!metadataFileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        //{
+        //    metadataFileName += ".json";
+        //}
+
+        var metadataRelativePath = ApplyTemplate(metadataTemplate, tokens);
+        if (!metadataRelativePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
         {
-            metadataFileName += ".json";
+            metadataRelativePath += ".json";
         }
+
+        var metadataBlobNamePart = CombinePath(metadataRelativePath) ?? SanitizePathSegment(metadataRelativePath);
+        var metadataFileName = LastPathSegment(metadataBlobNamePart);
 
         var blobFolder = CombinePath(rootFolder, sourceFolderPath);
 
@@ -221,7 +231,8 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
             BinaryFileName = binaryFileName,
             MetadataFileName = metadataFileName,
             BinaryBlobName = CombinePath(blobFolder, binaryFileName) ?? binaryFileName,
-            MetadataBlobName = CombinePath(blobFolder, metadataFileName) ?? metadataFileName,
+            //MetadataBlobName = CombinePath(blobFolder, metadataFileName) ?? metadataFileName,
+            MetadataBlobName = CombinePath(blobFolder, metadataBlobNamePart) ?? metadataBlobNamePart,
             FolderPath = blobFolder ?? string.Empty
         };
     }
@@ -349,12 +360,11 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         AddBlobTagIfRoom(tags, "source_asset_id", item.SourceAsset?.SourceAssetId ?? item.Manifest.SourceAssetId ?? item.WorkItemId);
         AddBlobTagIfRoom(tags, "migration_work_item", item.WorkItemId);
 
-        // Explicit tag mappings are written first. Fields previously selected for metadata JSON are now
-        // written as Azure Blob index tags so intermediate storage remains searchable without sidecars.
+        // Only explicit blob tag mappings are written as Azure Blob index tags.
+        // Metadata JSON mappings are written to the sidecar document when enabled.
         AddFieldMappingsAsTags(tags, item, intermediateStorage.TagFields);
-        AddFieldMappingsAsTags(tags, item, intermediateStorage.MetadataFields);
 
-        if (tags.Count >= 10 && (intermediateStorage.TagFields.Count + intermediateStorage.MetadataFields.Count) > 8)
+        if (tags.Count >= 10 && intermediateStorage.TagFields.Count > 8)
         {
             _logger.LogWarning(
                 "Azure Blob index tags are limited to 10. Some tag/metadata mappings were skipped for work item {WorkItemId}.",
@@ -505,11 +515,15 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
                 MetadataFileNameTemplate = GetString(storage, "metadataFileNameTemplate", "metadataJsonFileNameTemplate", "sidecarFileNameTemplate", "metadataJsonPathTemplate"),
                 PreserveSourceFolderPath = GetBool(storage, "preserveSourceFolderPath", "preserveFolders", "preserveSourcePath"),
                 FolderPathMode = GetString(storage, "folderPathMode", "folderMode", "pathMode"),
-                FolderPathField = GetString(storage, "folderPathField", "folderPathColumn", "sourceFolderPathField", "sourceFolderColumn", "folderColumn")
+                FolderPathField = GetString(storage, "folderPathField", "folderPathColumn", "sourceFolderPathField", "sourceFolderColumn", "folderColumn"),
+                WriteBlobTags = GetBool(storage, "writeBlobTags", "writeTags", "writeBlobIndexTags")
+                    ?? !storageMode.Equals("binaryOnly", StringComparison.OrdinalIgnoreCase),
+                WriteMetadataJson = GetBool(storage, "writeMetadataJson", "writeMetadataSidecar", "writeSidecarJson")
+                    ?? storageMode.Contains("metadata", StringComparison.OrdinalIgnoreCase)
             };
 
-            profile.TagFields.AddRange(ReadFieldMappings(storage, "tagFields", "tags", "tagMappings", "blobTags"));
-            profile.MetadataFields.AddRange(ReadFieldMappings(storage, "metadataFields", "metadataMappings", "jsonMetadataFields", "sidecarFields"));
+            profile.TagFields.AddRange(ReadFieldMappings(storage, "tagRules", "tagFields", "tags", "tagMappings", "blobTags"));
+            profile.MetadataFields.AddRange(ReadFieldMappings(storage, "metadataRules", "metadataFields", "metadataMappings", "jsonMetadataFields", "sidecarFields"));
 
             return profile;
         }
@@ -547,7 +561,7 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
 
                 var sourceField = GetString(element, "sourceField", "source", "manifestField", "field", "column", "name");
                 var targetName = FirstNonEmpty(
-                    GetString(element, "targetName", "targetField", "tagName", "jsonName", "metadataName", "name", "as"),
+                    GetString(element, "targetName", "targetField", "tagName", "jsonPath", "jsonName", "metadataName", "name", "as"),
                     sourceField);
 
                 if (!string.IsNullOrWhiteSpace(sourceField) && !string.IsNullOrWhiteSpace(targetName))
@@ -788,6 +802,12 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
         return null;
     }
 
+    private static string LastPathSegment(string value)
+    {
+        var normalized = value.Replace('\\', '/').Trim('/');
+        var lastSlash = normalized.LastIndexOf('/');
+        return lastSlash >= 0 ? normalized[(lastSlash + 1)..] : normalized;
+    }
     private static bool GetBool(MigrationJobDefinition job, bool defaultValue, params string[] names)
     {
         var configured = GetSetting(job, names);
@@ -869,11 +889,8 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
                 || FolderPathMode.Equals("mapToFolderPathColumn", StringComparison.OrdinalIgnoreCase)
                 || FolderPathMode.Equals("column", StringComparison.OrdinalIgnoreCase));
 
-        public bool WriteBlobTags => !StorageMode.Equals("binaryOnly", StringComparison.OrdinalIgnoreCase);
-
-        // Intermediate storage no longer writes metadata JSON sidecars. Metadata fields are represented
-        // as Azure Blob index tags in BuildBlobTags instead.
-        public bool WriteMetadataJson => false;
+        public bool WriteBlobTags { get; init; }
+        public bool WriteMetadataJson { get; init; }
     }
 
     private sealed record FieldMapping(string SourceField, string TargetName);

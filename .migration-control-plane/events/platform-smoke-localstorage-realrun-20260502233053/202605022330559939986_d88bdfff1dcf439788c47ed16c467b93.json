@@ -1,0 +1,12 @@
+{
+  "eventId": "d88bdfff1dcf439788c47ed16c467b93",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSucceeded",
+  "workItemId": "165459385",
+  "completed": 6,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Home/Kitchen/download (1).jpeg; Home/Kitchen/metadata_165459385.json",
+  "timestampUtc": "2026-05-02T23:30:55.9939986+00:00",
+  "properties": {}
+}

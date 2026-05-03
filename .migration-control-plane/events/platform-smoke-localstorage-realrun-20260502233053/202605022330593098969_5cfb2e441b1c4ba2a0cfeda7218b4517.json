@@ -1,0 +1,12 @@
+{
+  "eventId": "5cfb2e441b1c4ba2a0cfeda7218b4517",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459278",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Marketing Materials - michal-wichrzynski-hDHFJolKMXw-unsplash.jpeg; Outdoors/Bikes/metadata_165459278.json",
+  "timestampUtc": "2026-05-02T23:30:59.3098969+00:00",
+  "properties": {}
+}

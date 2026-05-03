@@ -1,0 +1,12 @@
+{
+  "eventId": "294090e2bc2b4ca8ab6f518ce793fb88",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSucceeded",
+  "workItemId": "165459280",
+  "completed": 17,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Marketing Materials - paul-okrema-CszrR4zJy6o-unsplash.jpeg; Outdoors/Bikes/metadata_165459280.json",
+  "timestampUtc": "2026-05-02T23:30:59.2518802+00:00",
+  "properties": {}
+}

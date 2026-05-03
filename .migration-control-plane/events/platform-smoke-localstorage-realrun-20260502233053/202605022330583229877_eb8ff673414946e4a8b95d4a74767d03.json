@@ -1,0 +1,12 @@
+{
+  "eventId": "eb8ff673414946e4a8b95d4a74767d03",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSucceeded",
+  "workItemId": "165459276",
+  "completed": 15,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/Bynder Bike Logo.png; Outdoors/Bikes/metadata_165459276.json",
+  "timestampUtc": "2026-05-02T23:30:58.3229877+00:00",
+  "properties": {}
+}

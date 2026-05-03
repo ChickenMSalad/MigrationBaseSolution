@@ -1,0 +1,12 @@
+{
+  "eventId": "84072c9c43d144fb9aea58f013193c20",
+  "runId": "platform-smoke-localstorage-realrun-20260502235111",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "RunCompleted",
+  "workItemId": null,
+  "completed": 30,
+  "total": 30,
+  "message": "Completed in 0:00:00.3640016. Succeeded=0; Failed=0; ValidationFailed=0; Skipped=30.",
+  "timestampUtc": "2026-05-02T23:51:11.7402976+00:00",
+  "properties": {}
+}

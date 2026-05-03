@@ -1,0 +1,12 @@
+{
+  "eventId": "2222fac942614fd6a07f4640b0b58ea9",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSucceeded",
+  "workItemId": "165459203",
+  "completed": 4,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Animals/Dogs/shutterstock_1290320698-1-scaled.jpg; Animals/Dogs/metadata/165459203.json",
+  "timestampUtc": "2026-05-03T00:02:01.4894714+00:00",
+  "properties": {}
+}

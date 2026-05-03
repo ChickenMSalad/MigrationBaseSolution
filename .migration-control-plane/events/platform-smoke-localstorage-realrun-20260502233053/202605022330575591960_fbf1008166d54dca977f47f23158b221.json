@@ -1,0 +1,12 @@
+{
+  "eventId": "fbf1008166d54dca977f47f23158b221",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459391",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Home/Kitchen/images.jpeg; Home/Kitchen/metadata_165459391.json",
+  "timestampUtc": "2026-05-02T23:30:57.559196+00:00",
+  "properties": {}
+}

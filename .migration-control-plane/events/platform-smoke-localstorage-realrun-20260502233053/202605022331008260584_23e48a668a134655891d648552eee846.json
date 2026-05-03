@@ -1,0 +1,12 @@
+{
+  "eventId": "23e48a668a134655891d648552eee846",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459286",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Product Photo-seyi-ariyo-pq8hvbowUV0-unsplash.jpeg; Outdoors/Bikes/metadata_165459286.json",
+  "timestampUtc": "2026-05-02T23:31:00.8260584+00:00",
+  "properties": {}
+}

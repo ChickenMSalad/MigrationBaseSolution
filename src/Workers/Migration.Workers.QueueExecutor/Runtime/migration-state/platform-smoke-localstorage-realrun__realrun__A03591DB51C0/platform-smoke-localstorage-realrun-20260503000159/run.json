@@ -1,0 +1,15 @@
+{
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun::realrun::A03591DB51C0",
+  "sourceType": "WebDam",
+  "targetType": "AzureBlob",
+  "dryRun": false,
+  "startedUtc": "2026-05-03T00:01:59.4376306+00:00",
+  "completedUtc": "2026-05-03T00:02:14.8853782+00:00",
+  "status": "CompletedWithFailures",
+  "totalWorkItems": 30,
+  "succeeded": 24,
+  "failed": 6,
+  "skipped": 0,
+  "validationFailed": 0
+}

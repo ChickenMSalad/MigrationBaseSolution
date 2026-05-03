@@ -1,0 +1,12 @@
+{
+  "eventId": "5835b36d4ae045f6989bafc55671a605",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459283",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Marketing Materials - tom-austin-tYPYimorhr4-unsplash.jpeg; Outdoors/Bikes/metadata/165459283.json",
+  "timestampUtc": "2026-05-03T00:02:11.7510357+00:00",
+  "properties": {}
+}

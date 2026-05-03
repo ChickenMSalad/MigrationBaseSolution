@@ -1,0 +1,12 @@
+{
+  "eventId": "c7e30295d5554edb945a2b27c88a165a",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459277",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Marketing Materials - linda-xu-wolwSgRH3XI-unsplash.jpeg; Outdoors/Bikes/metadata_165459277.json",
+  "timestampUtc": "2026-05-02T23:30:59.022344+00:00",
+  "properties": {}
+}

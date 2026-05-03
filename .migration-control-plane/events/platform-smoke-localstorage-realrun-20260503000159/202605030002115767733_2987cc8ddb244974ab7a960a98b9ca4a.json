@@ -1,0 +1,12 @@
+{
+  "eventId": "2987cc8ddb244974ab7a960a98b9ca4a",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "SourceReadCompleted",
+  "workItemId": "165459283",
+  "completed": null,
+  "total": 30,
+  "message": "Source asset loaded.",
+  "timestampUtc": "2026-05-03T00:02:11.5767733+00:00",
+  "properties": {}
+}

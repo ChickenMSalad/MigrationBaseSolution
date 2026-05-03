@@ -1,0 +1,12 @@
+{
+  "eventId": "9abf576ea8e249f0a762de822ca2907a",
+  "runId": "platform-smoke-localstorage-realrun-20260502235111",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemSkipped",
+  "workItemId": "165459253",
+  "completed": null,
+  "total": 30,
+  "message": "Skipped; work item already succeeded in real-run state store.",
+  "timestampUtc": "2026-05-02T23:51:11.4448695+00:00",
+  "properties": {}
+}

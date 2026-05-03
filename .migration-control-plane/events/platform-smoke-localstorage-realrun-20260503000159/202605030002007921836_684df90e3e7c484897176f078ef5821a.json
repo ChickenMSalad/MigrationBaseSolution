@@ -1,0 +1,12 @@
+{
+  "eventId": "684df90e3e7c484897176f078ef5821a",
+  "runId": "platform-smoke-localstorage-realrun-20260503000159",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "WorkItemStarted",
+  "workItemId": "165459202",
+  "completed": null,
+  "total": 30,
+  "message": "Processing work item.",
+  "timestampUtc": "2026-05-03T00:02:00.7921836+00:00",
+  "properties": {}
+}

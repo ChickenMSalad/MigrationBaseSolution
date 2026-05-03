@@ -197,7 +197,7 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
         await ReportAsync(runId, job, MigrationProgressEvents.WorkItemStarted, workItemId, null, total, "Processing work item.", cancellationToken).ConfigureAwait(false);
 
         var existingState = await _stateStore.GetWorkItemAsync(stateJobName, workItemId, cancellationToken).ConfigureAwait(false);
-        if (_options.ResumeCompletedWorkItems && !job.DryRun)
+        if (_options.ResumeCompletedWorkItems && !job.DryRun && !ShouldForceRerun(job))
         {
             if (existingState?.IsTerminalSuccess == true)
             {
@@ -345,6 +345,20 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
         }
     }
 
+    private static bool ShouldForceRerun(MigrationJobDefinition job)
+    {
+        return TryGetBoolSetting(job, "ForceRerun")
+            || TryGetBoolSetting(job, "ForceReRun")
+            || TryGetBoolSetting(job, "IgnoreCompletedWorkItems")
+            || TryGetBoolSetting(job, "RerunCompletedWorkItems");
+    }
+
+    private static bool TryGetBoolSetting(MigrationJobDefinition job, string key)
+    {
+        return job.Settings.TryGetValue(key, out var value)
+            && bool.TryParse(value, out var parsed)
+            && parsed;
+    }
     private static string GetStateWorkItemId(ManifestRow row) =>
         !string.IsNullOrWhiteSpace(row.SourceAssetId)
             ? row.SourceAssetId

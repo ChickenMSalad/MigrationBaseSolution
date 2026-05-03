@@ -1,0 +1,12 @@
+{
+  "eventId": "6b5e41bad29f4a0d91925ab782179bf9",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459285",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Product Photo-max-whitehead-yS8AH4mZ9u4-unsplash.jpeg; Outdoors/Bikes/metadata_165459285.json",
+  "timestampUtc": "2026-05-02T23:31:01.2229156+00:00",
+  "properties": {}
+}

@@ -1,0 +1,12 @@
+{
+  "eventId": "bad4988ba0a54fe5919595c268f57ac6",
+  "runId": "platform-smoke-localstorage-realrun-20260502233053",
+  "jobName": "platform-smoke-localstorage-realrun",
+  "eventName": "TargetUpsertCompleted",
+  "workItemId": "165459281",
+  "completed": null,
+  "total": 30,
+  "message": "Uploaded binary, tags and metadata sidecar: Outdoors/Bikes/large-Marketing Materials - rizki-yulian-ZBM9h6Es6IA-unsplash.jpeg; Outdoors/Bikes/metadata_165459281.json",
+  "timestampUtc": "2026-05-02T23:31:00.0973403+00:00",
+  "properties": {}
+}
