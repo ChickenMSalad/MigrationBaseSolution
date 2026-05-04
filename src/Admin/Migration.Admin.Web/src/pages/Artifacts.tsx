@@ -8,13 +8,15 @@ const artifactKindNames: Record<string, string> = {
   "0": "Other",
   "1": "Manifest",
   "2": "Mapping",
-  "3": "Taxonomy",
+  "3": "Report",
   "4": "Staging",
+  "5": "Taxonomy",
   other: "Other",
   manifest: "Manifest",
   mapping: "Mapping",
-  taxonomy: "Taxonomy",
-  staging: "Staging"
+  report: "Report",
+  staging: "Staging",
+  taxonomy: "Taxonomy"
 };
 
 function displayArtifactKind(artifact: ArtifactRecord) {
@@ -43,7 +45,6 @@ export function Artifacts() {
   async function loadArtifacts() {
     setLoading(true);
     setError(null);
-
     try {
       setArtifacts(await api.artifacts());
     } catch (err) {
@@ -65,9 +66,8 @@ export function Artifacts() {
     setUploading(true);
     setError(null);
     setMessage(null);
-
     try {
-      await api.uploadArtifact(file, { kind: artifactType });
+      await api.uploadArtifact(artifactType, file);
       setMessage("Artifact uploaded.");
       setFile(null);
       await loadArtifacts();
@@ -80,7 +80,6 @@ export function Artifacts() {
 
   async function deleteArtifact(artifactId: string) {
     const confirmed = window.confirm("Delete this artifact? This cannot be undone.");
-
     if (!confirmed) {
       return;
     }
@@ -88,7 +87,6 @@ export function Artifacts() {
     setDeletingId(artifactId);
     setError(null);
     setMessage(null);
-
     try {
       await api.deleteArtifact(artifactId);
       setMessage("Artifact deleted.");
@@ -101,19 +99,17 @@ export function Artifacts() {
   }
 
   return (
-    <div className="pageStack">
-      <div className="pageHeader">
-        <div>
-          <h1>Artifacts</h1>
-          <p className="muted">Upload, download, and manage artifacts for migration projects.</p>
-        </div>
-      </div>
+    <>
+      <header className="page-header">
+        <h1>Artifacts</h1>
+        <p>Upload, download, and manage artifacts for migration projects.</p>
+      </header>
 
       {error && <LoadingError message={error} />}
-      {message && <div className="successBanner">{message}</div>}
+      {message && <p className="success-message">{message}</p>}
 
       <Card title="Upload Artifact">
-        <div className="formGrid wide">
+        <div className="form-grid">
           <label>
             Type
             <select value={artifactType} onChange={event => setArtifactType(event.target.value)}>
@@ -128,27 +124,22 @@ export function Artifacts() {
             File
             <input type="file" onChange={event => setFile(event.target.files?.[0] ?? null)} />
           </label>
+        </div>
 
-          <div className="buttonRow">
-            <button
-              type="button"
-              className="primaryButton"
-              onClick={() => void uploadArtifact()}
-              disabled={!file || uploading}
-            >
-              {uploading ? "Uploading…" : "Upload"}
-            </button>
-          </div>
+        <div className="form-actions">
+          <button type="button" onClick={() => void uploadArtifact()} disabled={!file || uploading}>
+            {uploading ? "Uploading…" : "Upload"}
+          </button>
         </div>
       </Card>
 
       <Card title="Stored Artifacts">
         {loading ? (
-          <p className="muted">Loading artifacts…</p>
+          <p>Loading artifacts…</p>
         ) : artifacts.length === 0 ? (
-          <EmptyState title="No artifacts uploaded yet" />
+          <EmptyState title="No artifacts yet" message="Upload a manifest, mapping, or taxonomy artifact to get started." />
         ) : (
-          <div className="tableWrap">
+          <div className="table-wrap">
             <table>
               <thead>
                 <tr>
@@ -165,19 +156,17 @@ export function Artifacts() {
                     <td>{displayArtifactKind(artifact)}</td>
                     <td>{artifact.fileName}</td>
                     <td>{formatDate(artifactUploaded(artifact))}</td>
-                    <td><small>{artifact.artifactId}</small></td>
+                    <td>{artifact.artifactId}</td>
                     <td>
-                      <div className="inlineActions">
-                        <a href={api.artifactDownloadUrl(artifact.artifactId)}>Download</a>
-                        <button
-                          type="button"
-                          className="dangerButton"
-                          onClick={() => void deleteArtifact(artifact.artifactId)}
-                          disabled={deletingId === artifact.artifactId}
-                        >
-                          {deletingId === artifact.artifactId ? "Deleting…" : "Delete"}
-                        </button>
-                      </div>
+                      <a href={api.artifactDownloadUrl(artifact.artifactId)}>Download</a>{" "}
+                      <button
+                        type="button"
+                        className="danger-button"
+                        onClick={() => void deleteArtifact(artifact.artifactId)}
+                        disabled={deletingId === artifact.artifactId}
+                      >
+                        {deletingId === artifact.artifactId ? "Deleting…" : "Delete"}
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -186,6 +175,6 @@ export function Artifacts() {
           </div>
         )}
       </Card>
-    </div>
+    </>
   );
 }

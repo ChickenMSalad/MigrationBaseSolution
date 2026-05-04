@@ -12,10 +12,7 @@ namespace Migration.Admin.Api.Endpoints;
 public static class TaxonomyBuilderEndpoints
 {
     private static readonly HttpClient Http = new();
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = true
-    };
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
     public static IEndpointRouteBuilder MapTaxonomyBuilderEndpoints(this IEndpointRouteBuilder app)
     {
@@ -73,7 +70,6 @@ public static class TaxonomyBuilderEndpoints
 
             var workbookXml = BuildWorkbook(snapshot, request.IncludeOptions, request.IncludeRaw);
             await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(workbookXml));
-
             var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName)
                 ? $"{targetKind}-taxonomy-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xls"
                 : request.FileName.Trim());
@@ -121,29 +117,39 @@ public static class TaxonomyBuilderEndpoints
         BuildTaxonomyArtifactRequest request,
         CancellationToken cancellationToken)
     {
-        var baseUrl = FirstValue(credential.Values, "baseUrl", "url", "domain", "bynderDomain");
-        var token = FirstValue(credential.Values, "accessToken", "apiToken", "token", "bearerToken");
-
+        var baseUrl = FirstValue(credential.Values, "BaseUrl", "baseUrl", "url", "domain", "bynderDomain");
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            throw new InvalidOperationException("Bynder credentials require baseUrl, url, domain, or bynderDomain.");
+            throw new InvalidOperationException("Bynder credentials require BaseUrl.");
         }
 
-        if (string.IsNullOrWhiteSpace(token))
+        var bearerToken = await ResolveBynderBearerTokenAsync(baseUrl, credential.Values, cancellationToken).ConfigureAwait(false);
+        var endpoints = new[]
         {
-            throw new InvalidOperationException("Bynder credentials require accessToken, apiToken, token, or bearerToken.");
+            "/api/v4/metaproperties/",
+            "/api/v4/metaproperties"
+        };
+
+        string? json = null;
+        HttpResponseMessage? lastResponse = null;
+
+        foreach (var endpoint in endpoints)
+        {
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, endpoint));
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+            httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            lastResponse = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
+            json = await lastResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            if (lastResponse.IsSuccessStatusCode)
+            {
+                break;
+            }
         }
 
-        var uri = CombineUrl(baseUrl, "/api/v4/metaproperties/");
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        using var response = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
-        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        if (lastResponse is null || !lastResponse.IsSuccessStatusCode || json is null)
         {
-            throw new HttpRequestException($"Bynder metaproperties request failed: {(int)response.StatusCode} {response.ReasonPhrase}. {json}");
+            throw new HttpRequestException($"Bynder metaproperties request failed: {(int?)lastResponse?.StatusCode} {lastResponse?.ReasonPhrase}. {json}");
         }
 
         var root = JsonNode.Parse(json) ?? new JsonArray();
@@ -172,22 +178,94 @@ public static class TaxonomyBuilderEndpoints
                 Text(obj, "description", "helpText"),
                 JsonSerializer.Serialize(obj, JsonOptions)));
 
-            if (request.IncludeOptions)
+            if (!request.IncludeOptions)
             {
-                foreach (var option in ExtractOptionObjects(obj, "options", "values", "propertyOptions"))
-                {
-                    options.Add(new TaxonomyOption(
-                        id,
-                        Text(option, "id", "uuid", "name"),
-                        Text(option, "name", "label", "value"),
-                        Text(option, "label", "name", "value"),
-                        Bool(option, new[] { "active", "isActive", "enabled" }, defaultValue: true),
-                        JsonSerializer.Serialize(option, JsonOptions)));
-                }
+                continue;
+            }
+
+            foreach (var option in ExtractOptionObjects(obj, "options", "values", "propertyOptions"))
+            {
+                options.Add(new TaxonomyOption(
+                    id,
+                    Text(option, "id", "uuid", "name"),
+                    Text(option, "name", "label", "value"),
+                    Text(option, "label", "name", "value"),
+                    Bool(option, new[] { "active", "isActive", "enabled" }, defaultValue: true),
+                    JsonSerializer.Serialize(option, JsonOptions)));
             }
         }
 
         return new TaxonomySnapshot("Bynder", fields, options, json);
+    }
+
+    private static async Task<string> ResolveBynderBearerTokenAsync(
+        string baseUrl,
+        IReadOnlyDictionary<string, string> values,
+        CancellationToken cancellationToken)
+    {
+        // Allow already-issued bearer tokens for local troubleshooting, but prefer the legacy-console OAuth shape.
+        var existingToken = FirstValue(values, "AccessToken", "accessToken", "BearerToken", "bearerToken", "Token", "token");
+        if (!string.IsNullOrWhiteSpace(existingToken) && !LooksLikePlaceholder(existingToken))
+        {
+            return existingToken;
+        }
+
+        var clientId = FirstValue(values, "ClientId", "clientId", "client_id");
+        var clientSecret = FirstValue(values, "ClientSecret", "clientSecret", "client_secret");
+        var scopes = FirstValue(values, "Scopes", "scopes", "Scope", "scope");
+
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+        {
+            throw new InvalidOperationException("Bynder credentials require ClientId and ClientSecret. The old ConsumerKey/Token OAuth1 shape is not supported for Taxonomy Builder.");
+        }
+
+        var tokenEndpoints = new[]
+        {
+            "/v6/authentication/oauth2/token",
+            "/api/v4/oauth2/token",
+            "/oauth2/token"
+        };
+
+        var formValues = new List<KeyValuePair<string, string>>
+        {
+            new("grant_type", "client_credentials"),
+            new("client_id", clientId),
+            new("client_secret", clientSecret)
+        };
+
+        if (!string.IsNullOrWhiteSpace(scopes))
+        {
+            formValues.Add(new KeyValuePair<string, string>("scope", scopes));
+        }
+
+        string? lastBody = null;
+        HttpResponseMessage? lastResponse = null;
+
+        foreach (var endpoint in tokenEndpoints)
+        {
+            using var content = new FormUrlEncodedContent(formValues);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, CombineUrl(baseUrl, endpoint))
+            {
+                Content = content
+            };
+            httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            lastResponse = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
+            lastBody = await lastResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            if (!lastResponse.IsSuccessStatusCode)
+            {
+                continue;
+            }
+
+            var tokenRoot = JsonNode.Parse(lastBody) as JsonObject;
+            var accessToken = tokenRoot is null ? string.Empty : Text(tokenRoot, "access_token", "accessToken", "token");
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                return accessToken;
+            }
+        }
+
+        throw new HttpRequestException($"Bynder OAuth token request failed: {(int?)lastResponse?.StatusCode} {lastResponse?.ReasonPhrase}. {lastBody}");
     }
 
     private static async Task<TaxonomySnapshot> ReadCloudinaryTaxonomyAsync(
@@ -198,16 +276,13 @@ public static class TaxonomyBuilderEndpoints
         var cloudName = FirstValue(credential.Values, "cloudName", "cloud_name");
         var apiKey = FirstValue(credential.Values, "apiKey", "api_key");
         var apiSecret = FirstValue(credential.Values, "apiSecret", "api_secret", "secret");
-
         if (string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
         {
             throw new InvalidOperationException("Cloudinary credentials require cloudName, apiKey, and apiSecret.");
         }
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"https://api.cloudinary.com/v1_1/{Uri.EscapeDataString(cloudName)}/metadata_fields");
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue(
-            "Basic",
-            Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:{apiSecret}")));
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:{apiSecret}")));
         httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         using var response = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
@@ -218,10 +293,7 @@ public static class TaxonomyBuilderEndpoints
         }
 
         var root = JsonNode.Parse(json) ?? new JsonObject();
-        var fieldNodes = root is JsonObject rootObj && rootObj["metadata_fields"] is JsonArray arr
-            ? arr
-            : AsArray(root);
-
+        var fieldNodes = root is JsonObject rootObj && rootObj["metadata_fields"] is JsonArray arr ? arr : AsArray(root);
         var fields = new List<TaxonomyField>();
         var options = new List<TaxonomyOption>();
 
@@ -243,18 +315,20 @@ public static class TaxonomyBuilderEndpoints
                 Text(obj, "description", "help_text"),
                 JsonSerializer.Serialize(obj, JsonOptions)));
 
-            if (request.IncludeOptions)
+            if (!request.IncludeOptions)
             {
-                foreach (var option in ExtractOptionObjects(obj, "datasource", "values", "options"))
-                {
-                    options.Add(new TaxonomyOption(
-                        id,
-                        Text(option, "external_id", "id", "value"),
-                        Text(option, "value", "label", "name"),
-                        Text(option, "label", "value", "name"),
-                        Bool(option, new[] { "active", "enabled" }, defaultValue: true),
-                        JsonSerializer.Serialize(option, JsonOptions)));
-                }
+                continue;
+            }
+
+            foreach (var option in ExtractOptionObjects(obj, "datasource", "values", "options"))
+            {
+                options.Add(new TaxonomyOption(
+                    id,
+                    Text(option, "external_id", "id", "value"),
+                    Text(option, "value", "label", "name"),
+                    Text(option, "label", "value", "name"),
+                    Bool(option, new[] { "active", "enabled" }, defaultValue: true),
+                    JsonSerializer.Serialize(option, JsonOptions)));
             }
         }
 
@@ -268,12 +342,10 @@ public static class TaxonomyBuilderEndpoints
     {
         var baseUrl = FirstValue(credential.Values, "baseUrl", "url", "tenantUrl", "aprimoBaseUrl");
         var token = FirstValue(credential.Values, "accessToken", "token", "bearerToken");
-
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
             throw new InvalidOperationException("Aprimo credentials require baseUrl, url, tenantUrl, or aprimoBaseUrl.");
         }
-
         if (string.IsNullOrWhiteSpace(token))
         {
             throw new InvalidOperationException("Aprimo credentials require accessToken, token, or bearerToken.");
@@ -288,13 +360,11 @@ public static class TaxonomyBuilderEndpoints
 
         string? json = null;
         HttpResponseMessage? lastResponse = null;
-
         foreach (var endpoint in endpoints)
         {
             using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, endpoint));
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
             lastResponse = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
             json = await lastResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             if (lastResponse.IsSuccessStatusCode)
@@ -331,18 +401,20 @@ public static class TaxonomyBuilderEndpoints
                 Text(obj, "description", "helpText"),
                 JsonSerializer.Serialize(obj, JsonOptions)));
 
-            if (request.IncludeOptions)
+            if (!request.IncludeOptions)
             {
-                foreach (var option in ExtractOptionObjects(obj, "options", "values", "listValues", "allowedValues"))
-                {
-                    options.Add(new TaxonomyOption(
-                        id,
-                        Text(option, "id", "value", "name"),
-                        Text(option, "value", "name", "label"),
-                        Text(option, "label", "name", "value"),
-                        Bool(option, new[] { "active", "isActive", "enabled" }, defaultValue: true),
-                        JsonSerializer.Serialize(option, JsonOptions)));
-                }
+                continue;
+            }
+
+            foreach (var option in ExtractOptionObjects(obj, "options", "values", "listValues", "allowedValues"))
+            {
+                options.Add(new TaxonomyOption(
+                    id,
+                    Text(option, "id", "value", "name"),
+                    Text(option, "value", "name", "label"),
+                    Text(option, "label", "name", "value"),
+                    Bool(option, new[] { "active", "isActive", "enabled" }, defaultValue: true),
+                    JsonSerializer.Serialize(option, JsonOptions)));
             }
         }
 
@@ -360,7 +432,6 @@ public static class TaxonomyBuilderEndpoints
         {
             return node as JsonArray;
         }
-
         foreach (var key in keys)
         {
             if (obj[key] is JsonArray arr)
@@ -368,7 +439,6 @@ public static class TaxonomyBuilderEndpoints
                 return arr;
             }
         }
-
         return null;
     }
 
@@ -413,7 +483,6 @@ public static class TaxonomyBuilderEndpoints
                 }
             }
         }
-
         return string.Empty;
     }
 
@@ -432,14 +501,12 @@ public static class TaxonomyBuilderEndpoints
                 {
                     return boolValue;
                 }
-
                 if (bool.TryParse(value.ToString(), out var parsed))
                 {
                     return parsed;
                 }
             }
         }
-
         return defaultValue;
     }
 
@@ -458,8 +525,13 @@ public static class TaxonomyBuilderEndpoints
                 return value.Trim();
             }
         }
-
         return string.Empty;
+    }
+
+    private static bool LooksLikePlaceholder(string value)
+    {
+        return value.StartsWith("your-", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("********", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? NormalizeTargetKind(string targetType)
@@ -497,16 +569,12 @@ public static class TaxonomyBuilderEndpoints
 
         if (includeRaw)
         {
-            sheets.Append(Worksheet("Raw", new[] { "Target", "Json" },
-                new[] { new[] { snapshot.TargetType, snapshot.RawJson } }));
+            sheets.Append(Worksheet("Raw", new[] { "Target", "Json" }, new[] { new[] { snapshot.TargetType, snapshot.RawJson } }));
         }
 
         return "<?xml version=\"1.0\"?>" +
                "<?mso-application progid=\"Excel.Sheet\"?>" +
-               "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" " +
-               "xmlns:o=\"urn:schemas-microsoft-com:office:office\" " +
-               "xmlns:x=\"urn:schemas-microsoft-com:office:excel\" " +
-               "xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\">" +
+               "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\">" +
                sheets +
                "</Workbook>";
     }
@@ -524,7 +592,7 @@ public static class TaxonomyBuilderEndpoints
         return builder.ToString();
     }
 
-    private static string Row(IEnumerable<string> cells)
+    private static string Row(IEnumerable<string?> cells)
     {
         return "<Row>" + string.Concat(cells.Select(cell => $"<Cell><Data ss:Type=\"String\">{Xml(cell)}</Data></Cell>")) + "</Row>";
     }
