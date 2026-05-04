@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-
 import { api, connectorValue, displayConnectorName } from "../api/client";
 import { Card } from "../components/Card";
 import { LoadingError } from "../components/LoadingError";
-import type { ArtifactRecord, ConnectorDescriptor, CredentialSetSummary } from "../types/api";
+import type { ArtifactRecord, ConnectorDescriptor, CredentialSetSummary, ProjectRecord } from "../types/api";
 
 type NoticeKind = "success" | "error" | "info";
 
@@ -12,7 +11,17 @@ type PageNotice = {
   message: string;
 };
 
-type TaxonomyBuildResponse = {
+type BuildTaxonomyArtifactRequest = {
+  targetType: string;
+  credentialSetId: string;
+  includeOptions: boolean;
+  includeRaw: boolean;
+  projectId?: string | null;
+  fileName?: string | null;
+  description?: string | null;
+};
+
+type BuildTaxonomyArtifactResponse = {
   artifact: ArtifactRecord;
   targetType: string;
   fieldCount: number;
@@ -20,80 +29,163 @@ type TaxonomyBuildResponse = {
   fileName: string;
 };
 
-function noticeClassName(kind: NoticeKind) {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {})
+    }
+  });
+
+  if (!response.ok) {
+    let message = `${response.status} ${response.statusText}`;
+
+    try {
+      const body = await response.json();
+      message = body?.error ?? body?.message ?? JSON.stringify(body);
+    } catch {
+      try {
+        message = await response.text();
+      } catch {
+        // keep default
+      }
+    }
+
+    throw new Error(message);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return (await response.json()) as T;
+}
+
+function normalizeTargetKind(value: string | null | undefined): string {
+  const text = String(value ?? "").trim().toLowerCase();
+
+  if (text.includes("bynder")) return "bynder";
+  if (text.includes("cloudinary")) return "cloudinary";
+  if (text.includes("aprimo")) return "aprimo";
+
+  return text;
+}
+
+function targetKindForConnector(connector: ConnectorDescriptor | null | undefined): string {
+  return normalizeTargetKind(
+    `${connector?.type ?? ""} ${connector?.name ?? ""} ${connector?.displayName ?? ""}`
+  );
+}
+
+function targetKindForCredential(credential: CredentialSetSummary): string {
+  return normalizeTargetKind(credential.connectorType);
+}
+
+function isSupportedTaxonomyTarget(connector: ConnectorDescriptor): boolean {
+  const kind = targetKindForConnector(connector);
+  return kind === "bynder" || kind === "cloudinary" || kind === "aprimo";
+}
+
+function optionKey(connector: ConnectorDescriptor): string {
+  return connectorValue(connector) || displayConnectorName(connector);
+}
+
+function safeFilePart(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "taxonomy";
+}
+
+function buildDefaultFileName(targetType: string): string {
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
+
+  return `${safeFilePart(targetType)}-taxonomy-${timestamp}.xls`;
+}
+
+function noticeClassName(kind: NoticeKind): string {
   return `taxonomyNotice taxonomyNotice--${kind}`;
 }
 
-function sameConnectorType(a: string | undefined | null, b: string | undefined | null) {
-  return String(a ?? "").trim().toLowerCase() === String(b ?? "").trim().toLowerCase();
-}
-
-function targetSupportsTaxonomy(target: ConnectorDescriptor) {
-  const value = connectorValue(target).toLowerCase();
-  return value.includes("bynder") || value.includes("cloudinary") || value.includes("aprimo");
-}
-
-async function readError(response: Response) {
-  try {
-    const body = await response.json();
-    return body?.error ?? body?.message ?? JSON.stringify(body);
-  } catch {
-    try {
-      return await response.text();
-    } catch {
-      return `${response.status} ${response.statusText}`;
-    }
-  }
+async function buildTaxonomy(payload: BuildTaxonomyArtifactRequest) {
+  return request<BuildTaxonomyArtifactResponse>("/api/taxonomy-builder/build", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }
 
 export function TaxonomyBuilder() {
   const [targets, setTargets] = useState<ConnectorDescriptor[]>([]);
   const [credentials, setCredentials] = useState<CredentialSetSummary[]>([]);
+  const [projects, setProjects] = useState<ProjectRecord[]>([]);
+
   const [targetType, setTargetType] = useState("");
   const [credentialSetId, setCredentialSetId] = useState("");
+  const [projectId, setProjectId] = useState("");
   const [includeOptions, setIncludeOptions] = useState(true);
   const [includeRaw, setIncludeRaw] = useState(true);
+  const [fileName, setFileName] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
   const [notice, setNotice] = useState<PageNotice | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<TaxonomyBuildResponse | null>(null);
-
-  const taxonomyTargets = useMemo(
-    () => targets.filter(targetSupportsTaxonomy),
-    [targets]
-  );
+  const [result, setResult] = useState<BuildTaxonomyArtifactResponse | null>(null);
 
   const selectedTarget = useMemo(
-    () => taxonomyTargets.find(target => sameConnectorType(connectorValue(target), targetType)) ?? null,
-    [taxonomyTargets, targetType]
+    () => targets.find(target => optionKey(target) === targetType) ?? null,
+    [targets, targetType]
   );
 
-  const matchingCredentials = useMemo(
-    () => credentials.filter(credential =>
-      credential.connectorRole?.toLowerCase() === "target" &&
-      sameConnectorType(credential.connectorType, targetType)),
-    [credentials, targetType]
+  const selectedTargetKind = useMemo(
+    () => targetKindForConnector(selectedTarget),
+    [selectedTarget]
   );
+
+  const targetCredentials = useMemo(
+    () => credentials.filter(credential => credential.connectorRole?.toLowerCase() === "target"),
+    [credentials]
+  );
+
+  const matchingCredentials = useMemo(() => {
+    if (!selectedTargetKind) {
+      return targetCredentials;
+    }
+
+    const exact = targetCredentials.filter(
+      credential => targetKindForCredential(credential) === selectedTargetKind
+    );
+
+    return exact.length > 0 ? exact : targetCredentials;
+  }, [selectedTargetKind, targetCredentials]);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       setError(null);
+
       try {
-        const [connectorResult, credentialResult] = await Promise.all([
+        const [connectorResult, credentialResult, projectResult] = await Promise.all([
           api.connectors(),
-          api.credentials()
+          api.credentials(),
+          api.projects()
         ]);
 
-        const availableTargets = connectorResult.targets ?? [];
-        const taxonomyCapableTargets = availableTargets.filter(targetSupportsTaxonomy);
+        const supportedTargets = (connectorResult.targets ?? []).filter(isSupportedTaxonomyTarget);
 
-        setTargets(availableTargets);
-        setCredentials(credentialResult);
+        setTargets(supportedTargets);
+        setCredentials(credentialResult ?? []);
+        setProjects(projectResult ?? []);
 
-        if (taxonomyCapableTargets.length > 0) {
-          setTargetType(connectorValue(taxonomyCapableTargets[0]));
+        if (!targetType && supportedTargets.length > 0) {
+          const firstTargetType = optionKey(supportedTargets[0]);
+          setTargetType(firstTargetType);
+          setFileName(buildDefaultFileName(firstTargetType));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
@@ -103,65 +195,77 @@ export function TaxonomyBuilder() {
     }
 
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    setCredentialSetId(matchingCredentials[0]?.credentialSetId ?? "");
+    setCredentialSetId("");
     setResult(null);
     setNotice(null);
-  }, [targetType, matchingCredentials]);
 
-  async function buildTaxonomyArtifact() {
+    if (targetType) {
+      setFileName(buildDefaultFileName(targetType));
+    }
+  }, [targetType]);
+
+  useEffect(() => {
+    if (!credentialSetId && matchingCredentials.length === 1) {
+      setCredentialSetId(matchingCredentials[0].credentialSetId);
+    }
+  }, [credentialSetId, matchingCredentials]);
+
+  async function buildArtifact() {
     setError(null);
     setNotice(null);
     setResult(null);
 
     if (!selectedTarget) {
-      setNotice({ kind: "error", message: "Choose Bynder, Cloudinary, or Aprimo first." });
+      setNotice({ kind: "error", message: "Choose a target connector first." });
       return;
     }
 
     if (!credentialSetId) {
-      setNotice({ kind: "error", message: "Choose a target credential set first." });
+      setNotice({ kind: "error", message: "Choose target credentials before building the taxonomy workbook." });
       return;
     }
 
     setBuilding(true);
+
     try {
-      const response = await fetch("/api/taxonomy-builder/build", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetType,
-          credentialSetId,
-          includeOptions,
-          includeRaw
-        })
+      const response = await buildTaxonomy({
+        targetType,
+        credentialSetId,
+        includeOptions,
+        includeRaw,
+        projectId: projectId || null,
+        fileName: fileName.trim() || null,
+        description: `Generated by Taxonomy Builder from ${displayConnectorName(selectedTarget)}`
       });
 
-      if (!response.ok) {
-        throw new Error(await readError(response));
-      }
-
-      const buildResult = await response.json() as TaxonomyBuildResponse;
-      setResult(buildResult);
+      setResult(response);
       setNotice({
         kind: "success",
-        message: `Created ${buildResult.fileName} with ${buildResult.fieldCount} fields and ${buildResult.optionCount} options.`
+        message: `Taxonomy artifact created: ${response.fileName}.`
       });
     } catch (err) {
       setNotice({
         kind: "error",
-        message: `Failed to build taxonomy workbook: ${err instanceof Error ? err.message : String(err)}`
+        message: `Failed to build taxonomy artifact: ${err instanceof Error ? err.message : String(err)}`
       });
     } finally {
       setBuilding(false);
     }
   }
 
+  const canBuild = Boolean(selectedTarget && credentialSetId && !building);
+  const usingFallbackCredentials =
+    Boolean(selectedTargetKind) &&
+    targetCredentials.length > 0 &&
+    targetCredentials.every(credential => targetKindForCredential(credential) !== selectedTargetKind);
+
   return (
-    <div className="page taxonomyBuilderPage">
-      <div className="pageTitle">
+    <div className="pageStack taxonomyBuilderPage">
+      <div className="pageHeader">
         <div>
           <h1>Taxonomy Builder</h1>
           <p>
@@ -171,126 +275,168 @@ export function TaxonomyBuilder() {
       </div>
 
       {error && <LoadingError message={error} />}
-      {notice && <div className={noticeClassName(notice.kind)}>{notice.message}</div>}
 
-      <div className="formGrid">
-        <Card title="Build Taxonomy Workbook">
-          {loading ? (
-            <p className="muted">Loading target connectors…</p>
-          ) : taxonomyTargets.length === 0 ? (
-            <p className="muted">No Bynder, Cloudinary, or Aprimo target connectors are registered.</p>
-          ) : (
-            <div className="formGrid">
-              <label>
-                Target connector
-                <select
-                  value={targetType}
-                  onChange={event => setTargetType(event.target.value)}
-                >
-                  {taxonomyTargets.map(target => (
-                    <option key={connectorValue(target)} value={connectorValue(target)}>
+      {notice && (
+        <div className={noticeClassName(notice.kind)}>
+          {notice.message}
+        </div>
+      )}
+
+      {loading ? (
+        <Card>
+          <p>Loading taxonomy builder inputs…</p>
+        </Card>
+      ) : targets.length === 0 ? (
+        <Card title="No supported target connectors">
+          <p>
+            Taxonomy Builder currently supports Bynder, Cloudinary, and Aprimo target connectors.
+            None are registered in the connector catalog.
+          </p>
+        </Card>
+      ) : (
+        <Card
+          title="Build Taxonomy Workbook"
+          subtitle="Choose a target system and a target credential set. The backend will call the target API and save the result under Artifacts."
+        >
+          <div className="formGrid">
+            <label>
+              Target connector
+              <select
+                value={targetType}
+                onChange={event => setTargetType(event.target.value)}
+                disabled={building}
+              >
+                {targets.map(target => {
+                  const value = optionKey(target);
+                  return (
+                    <option key={value} value={value}>
                       {displayConnectorName(target)}
                     </option>
-                  ))}
-                </select>
-              </label>
+                  );
+                })}
+              </select>
+            </label>
 
-              <label>
-                Target credentials
-                <select
-                  value={credentialSetId}
-                  onChange={event => setCredentialSetId(event.target.value)}
-                >
-                  <option value="">Choose credentials</option>
-                  {matchingCredentials.map(credential => (
-                    <option key={credential.credentialSetId} value={credential.credentialSetId}>
-                      {credential.displayName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="checkboxRow">
-                <input
-                  type="checkbox"
-                  checked={includeOptions}
-                  onChange={event => setIncludeOptions(event.target.checked)}
-                />
-                Include controlled values / options
-              </label>
-
-              <label className="checkboxRow">
-                <input
-                  type="checkbox"
-                  checked={includeRaw}
-                  onChange={event => setIncludeRaw(event.target.checked)}
-                />
-                Include raw response sheet
-              </label>
-
-              <button
-                className="primaryButton"
-                type="button"
-                onClick={() => void buildTaxonomyArtifact()}
-                disabled={building || !selectedTarget || !credentialSetId}
+            <label>
+              Target credentials
+              <select
+                value={credentialSetId}
+                onChange={event => setCredentialSetId(event.target.value)}
+                disabled={building || matchingCredentials.length === 0}
               >
-                {building ? "Building…" : "Build Excel Taxonomy Artifact"}
-              </button>
+                <option value="">Choose target credentials</option>
+                {matchingCredentials.map(credential => (
+                  <option key={credential.credentialSetId} value={credential.credentialSetId}>
+                    {credential.displayName} ({credential.connectorType})
+                  </option>
+                ))}
+              </select>
+            </label>
 
-              {matchingCredentials.length === 0 && targetType && (
-                <p className="muted">
-                  No target credential sets match this connector type. Create target credentials first, then return here.
-                </p>
-              )}
-            </div>
-          )}
-        </Card>
+            <label>
+              Project binding (optional)
+              <select
+                value={projectId}
+                onChange={event => setProjectId(event.target.value)}
+                disabled={building}
+              >
+                <option value="">Do not bind to a project</option>
+                {projects.map(project => (
+                  <option key={project.projectId} value={project.projectId}>
+                    {project.displayName} ({project.sourceType} → {project.targetType})
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <Card title="Output">
-          {result ? (
-            <div className="stack">
-              <dl className="detailsList">
-                <div>
-                  <dt>File</dt>
-                  <dd>{result.fileName}</dd>
-                </div>
-                <div>
-                  <dt>Target</dt>
-                  <dd>{result.targetType}</dd>
-                </div>
-                <div>
-                  <dt>Fields</dt>
-                  <dd>{result.fieldCount}</dd>
-                </div>
-                <div>
-                  <dt>Options</dt>
-                  <dd>{result.optionCount}</dd>
-                </div>
-                <div>
-                  <dt>Artifact ID</dt>
-                  <dd><code>{result.artifact.artifactId}</code></dd>
-                </div>
-              </dl>
+            <label>
+              File name
+              <input
+                value={fileName}
+                onChange={event => setFileName(event.target.value)}
+                disabled={building}
+                placeholder="bynder-taxonomy.xls"
+              />
+            </label>
+          </div>
 
-              <div className="buttonRow">
-                <a
-                  className="primaryButton"
-                  href={`/api/artifacts/${encodeURIComponent(result.artifact.artifactId)}`}
-                >
-                  Download Excel
-                </a>
-                <a className="secondaryButton" href="/artifacts">
-                  View in Artifacts
-                </a>
-              </div>
-            </div>
-          ) : (
-            <p className="muted">
-              The workbook will be saved as a Taxonomy artifact and will include Fields, Options, and optional Raw sheets.
+          {matchingCredentials.length === 0 && (
+            <p className="helpText">
+              No target credential sets are saved yet. Create target credentials first, then return here.
             </p>
           )}
+
+          {usingFallbackCredentials && (
+            <p className="helpText">
+              No credentials exactly match this target connector type, so all target credential sets are shown.
+              Choose the set that belongs to this target.
+            </p>
+          )}
+
+          <div className="buttonRow">
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={includeOptions}
+                onChange={event => setIncludeOptions(event.target.checked)}
+                disabled={building}
+              />
+              Include controlled values / options
+            </label>
+
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={includeRaw}
+                onChange={event => setIncludeRaw(event.target.checked)}
+                disabled={building}
+              />
+              Include raw response sheet
+            </label>
+          </div>
+
+          <div className="buttonRow">
+            <button
+              type="button"
+              className="primaryButton"
+              onClick={() => void buildArtifact()}
+              disabled={!canBuild}
+            >
+              {building ? "Building…" : "Build Excel Taxonomy Artifact"}
+            </button>
+          </div>
         </Card>
-      </div>
+      )}
+
+      {result && (
+        <Card title="Created Taxonomy Artifact">
+          <div className="detailGrid">
+            <span>Artifact ID</span>
+            <strong>{result.artifact.artifactId}</strong>
+
+            <span>Target</span>
+            <strong>{result.targetType}</strong>
+
+            <span>File</span>
+            <strong>{result.fileName}</strong>
+
+            <span>Fields</span>
+            <strong>{result.fieldCount}</strong>
+
+            <span>Options</span>
+            <strong>{result.optionCount}</strong>
+          </div>
+
+          <div className="buttonRow">
+            <a className="secondaryButton" href={api.artifactDownloadUrl(result.artifact.artifactId)}>
+              Download Taxonomy
+            </a>
+            <a className="secondaryButton" href="/artifacts">
+              View in Artifacts
+            </a>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
