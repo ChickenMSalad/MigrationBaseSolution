@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -12,7 +13,10 @@ namespace Migration.Admin.Api.Endpoints;
 public static class TaxonomyBuilderEndpoints
 {
     private static readonly HttpClient Http = new();
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
 
     public static IEndpointRouteBuilder MapTaxonomyBuilderEndpoints(this IEndpointRouteBuilder app)
     {
@@ -68,16 +72,12 @@ public static class TaxonomyBuilderEndpoints
                 return Results.BadRequest(new { error = ex.Message });
             }
 
-            var workbookXml = BuildWorkbook(snapshot, request.IncludeOptions, request.IncludeRaw);
-            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(workbookXml));
-            var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName)
-                ? $"{targetKind}-taxonomy-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xls"
+            var workbook = BuildWorkbook(snapshot, request.IncludeOptions, request.IncludeRaw);
+            var fileName = NormalizeXlsxFileName(string.IsNullOrWhiteSpace(request.FileName)
+                ? $"{targetKind}-taxonomy-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xlsx"
                 : request.FileName.Trim());
 
-            if (!fileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))
-            {
-                fileName += ".xls";
-            }
+            await using var stream = new MemoryStream(workbook, writable: false);
 
             var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -91,7 +91,7 @@ public static class TaxonomyBuilderEndpoints
             var artifact = await artifactStore.SaveAsync(
                 stream,
                 fileName,
-                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 ArtifactKind.Taxonomy,
                 request.ProjectId,
                 string.IsNullOrWhiteSpace(request.Description)
@@ -124,6 +124,7 @@ public static class TaxonomyBuilderEndpoints
         }
 
         var bearerToken = await ResolveBynderBearerTokenAsync(baseUrl, credential.Values, cancellationToken).ConfigureAwait(false);
+
         var endpoints = new[]
         {
             "/api/v4/metaproperties/",
@@ -132,7 +133,6 @@ public static class TaxonomyBuilderEndpoints
 
         string? json = null;
         HttpResponseMessage? lastResponse = null;
-
         foreach (var endpoint in endpoints)
         {
             using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, endpoint));
@@ -152,50 +152,148 @@ public static class TaxonomyBuilderEndpoints
             throw new HttpRequestException($"Bynder metaproperties request failed: {(int?)lastResponse?.StatusCode} {lastResponse?.ReasonPhrase}. {json}");
         }
 
-        var root = JsonNode.Parse(json) ?? new JsonArray();
+        var root = JsonNode.Parse(json) ?? new JsonObject();
         var fields = new List<TaxonomyField>();
         var options = new List<TaxonomyOption>();
+        var optionSheets = new List<TaxonomyOptionSheet>();
 
-        foreach (var item in AsArray(root))
+        foreach (var property in EnumerateBynderMetaProperties(root))
         {
-            if (item is not JsonObject obj)
-            {
-                continue;
-            }
-
-            var id = Text(obj, "id", "uuid", "name", "propertyId");
-            var name = Text(obj, "name", "propertyName", "technicalName", "id");
-            var label = Text(obj, "label", "displayName", "name", "propertyName");
-            var type = Text(obj, "type", "inputType", "fieldType");
-
-            fields.Add(new TaxonomyField(
-                id,
-                name,
-                label,
-                type,
-                Bool(obj, "required", "isRequired", "mandatory"),
-                Bool(obj, "isMultiselect", "multiSelect", "multiselect", "multiple"),
-                Text(obj, "description", "helpText"),
-                JsonSerializer.Serialize(obj, JsonOptions)));
+            var field = ToBynderField(property);
+            fields.Add(field);
 
             if (!request.IncludeOptions)
             {
                 continue;
             }
 
-            foreach (var option in ExtractOptionObjects(obj, "options", "values", "propertyOptions"))
+            var fieldOptions = ExtractBynderOptions(property)
+                .Select(option => ToBynderOption(field.Name, option))
+                .Where(option => !string.IsNullOrWhiteSpace(option.OptionId) || !string.IsNullOrWhiteSpace(option.Name) || !string.IsNullOrWhiteSpace(option.Label))
+                .ToList();
+
+            if (fieldOptions.Count == 0)
             {
-                options.Add(new TaxonomyOption(
-                    id,
-                    Text(option, "id", "uuid", "name"),
-                    Text(option, "name", "label", "value"),
-                    Text(option, "label", "name", "value"),
-                    Bool(option, new[] { "active", "isActive", "enabled" }, defaultValue: true),
-                    JsonSerializer.Serialize(option, JsonOptions)));
+                continue;
             }
+
+            options.AddRange(fieldOptions);
+            optionSheets.Add(new TaxonomyOptionSheet(field.Name, field.Label, fieldOptions));
         }
 
-        return new TaxonomySnapshot("Bynder", fields, options, json);
+        return new TaxonomySnapshot("Bynder", fields, options, optionSheets, json);
+    }
+
+    private static IEnumerable<JsonObject> EnumerateBynderMetaProperties(JsonNode root)
+    {
+        if (root is JsonArray array)
+        {
+            foreach (var item in array.OfType<JsonObject>())
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        if (root is not JsonObject obj)
+        {
+            yield break;
+        }
+
+        if (obj["metaproperties"] is JsonArray metapropertiesArray)
+        {
+            foreach (var item in metapropertiesArray.OfType<JsonObject>())
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        if (obj["metaproperties"] is JsonObject metapropertiesObject)
+        {
+            foreach (var item in metapropertiesObject.Select(kvp => kvp.Value).OfType<JsonObject>())
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        if (obj["data"] is JsonArray dataArray)
+        {
+            foreach (var item in dataArray.OfType<JsonObject>())
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        if (obj["data"] is JsonObject dataObject)
+        {
+            foreach (var item in dataObject.Select(kvp => kvp.Value).OfType<JsonObject>())
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        // Bynder v4 returns an object keyed by metaproperty name.
+        foreach (var item in obj.Select(kvp => kvp.Value).OfType<JsonObject>())
+        {
+            yield return item;
+        }
+    }
+
+    private static TaxonomyField ToBynderField(JsonObject obj)
+    {
+        return new TaxonomyField(
+            FieldId: Text(obj, "id", "uuid", "propertyId"),
+            Name: Text(obj, "name", "propertyName", "technicalName", "id"),
+            Label: Text(obj, "label", "displayName", "name", "propertyName"),
+            Type: Text(obj, "type", "inputType", "fieldType"),
+            Required: Bool(obj, "isRequired", "required", "mandatory"),
+            MultiValue: Bool(obj, "isMultiselect", "isMultiSelect", "multiSelect", "multiselect", "multiple"),
+            Description: Text(obj, "description", "helpText"),
+            RawJson: JsonSerializer.Serialize(obj, JsonOptions),
+            BynderColumns: BynderMetaPropertyColumns.From(obj));
+    }
+
+    private static IEnumerable<JsonObject> ExtractBynderOptions(JsonObject field)
+    {
+        foreach (var key in new[] { "options", "values", "propertyOptions" })
+        {
+            var node = field[key];
+            if (node is JsonArray array)
+            {
+                foreach (var item in array.OfType<JsonObject>())
+                {
+                    yield return item;
+                }
+            }
+            else if (node is JsonObject obj)
+            {
+                foreach (var item in obj.Select(kvp => kvp.Value).OfType<JsonObject>())
+                {
+                    yield return item;
+                }
+            }
+        }
+    }
+
+    private static TaxonomyOption ToBynderOption(string fieldName, JsonObject obj)
+    {
+        return new TaxonomyOption(
+            FieldId: fieldName,
+            OptionId: Text(obj, "id", "uuid", "optionId"),
+            Name: Text(obj, "name", "value", "id"),
+            Label: Text(obj, "label", "displayName", "name", "value"),
+            Active: Bool(obj, new[] { "isSelectable", "selectable", "active", "isActive", "enabled" }, defaultValue: true),
+            RawJson: JsonSerializer.Serialize(obj, JsonOptions),
+            BynderColumns: BynderOptionColumns.From(obj));
     }
 
     private static async Task<string> ResolveBynderBearerTokenAsync(
@@ -203,7 +301,6 @@ public static class TaxonomyBuilderEndpoints
         IReadOnlyDictionary<string, string> values,
         CancellationToken cancellationToken)
     {
-        // Allow already-issued bearer tokens for local troubleshooting, but prefer the legacy-console OAuth shape.
         var existingToken = FirstValue(values, "AccessToken", "accessToken", "BearerToken", "bearerToken", "Token", "token");
         if (!string.IsNullOrWhiteSpace(existingToken) && !LooksLikePlaceholder(existingToken))
         {
@@ -240,7 +337,6 @@ public static class TaxonomyBuilderEndpoints
 
         string? lastBody = null;
         HttpResponseMessage? lastResponse = null;
-
         foreach (var endpoint in tokenEndpoints)
         {
             using var content = new FormUrlEncodedContent(formValues);
@@ -276,6 +372,7 @@ public static class TaxonomyBuilderEndpoints
         var cloudName = FirstValue(credential.Values, "cloudName", "cloud_name");
         var apiKey = FirstValue(credential.Values, "apiKey", "api_key");
         var apiSecret = FirstValue(credential.Values, "apiSecret", "api_secret", "secret");
+
         if (string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
         {
             throw new InvalidOperationException("Cloudinary credentials require cloudName, apiKey, and apiSecret.");
@@ -297,30 +394,26 @@ public static class TaxonomyBuilderEndpoints
         var fields = new List<TaxonomyField>();
         var options = new List<TaxonomyOption>();
 
-        foreach (var item in fieldNodes)
+        foreach (var item in fieldNodes.OfType<JsonObject>())
         {
-            if (item is not JsonObject obj)
-            {
-                continue;
-            }
-
-            var id = Text(obj, "external_id", "id", "name");
+            var id = Text(item, "external_id", "id", "name");
             fields.Add(new TaxonomyField(
                 id,
-                Text(obj, "external_id", "name", "id"),
-                Text(obj, "label", "display_name", "external_id", "name"),
-                Text(obj, "type"),
-                Bool(obj, "mandatory", "required"),
-                IsMultiValueCloudinaryField(obj),
-                Text(obj, "description", "help_text"),
-                JsonSerializer.Serialize(obj, JsonOptions)));
+                Text(item, "external_id", "name", "id"),
+                Text(item, "label", "display_name", "external_id", "name"),
+                Text(item, "type"),
+                Bool(item, "mandatory", "required"),
+                IsMultiValueCloudinaryField(item),
+                Text(item, "description", "help_text"),
+                JsonSerializer.Serialize(item, JsonOptions),
+                null));
 
             if (!request.IncludeOptions)
             {
                 continue;
             }
 
-            foreach (var option in ExtractOptionObjects(obj, "datasource", "values", "options"))
+            foreach (var option in ExtractOptionObjects(item, "datasource", "values", "options"))
             {
                 options.Add(new TaxonomyOption(
                     id,
@@ -328,11 +421,12 @@ public static class TaxonomyBuilderEndpoints
                     Text(option, "value", "label", "name"),
                     Text(option, "label", "value", "name"),
                     Bool(option, new[] { "active", "enabled" }, defaultValue: true),
-                    JsonSerializer.Serialize(option, JsonOptions)));
+                    JsonSerializer.Serialize(option, JsonOptions),
+                    null));
             }
         }
 
-        return new TaxonomySnapshot("Cloudinary", fields, options, json);
+        return new TaxonomySnapshot("Cloudinary", fields, options, new List<TaxonomyOptionSheet>(), json);
     }
 
     private static async Task<TaxonomySnapshot> ReadAprimoTaxonomyAsync(
@@ -340,15 +434,17 @@ public static class TaxonomyBuilderEndpoints
         BuildTaxonomyArtifactRequest request,
         CancellationToken cancellationToken)
     {
-        var baseUrl = FirstValue(credential.Values, "baseUrl", "url", "tenantUrl", "aprimoBaseUrl");
-        var token = FirstValue(credential.Values, "accessToken", "token", "bearerToken");
+        var baseUrl = FirstValue(credential.Values, "baseUrl", "BaseUrl", "url", "tenantUrl", "aprimoBaseUrl");
+        var token = FirstValue(credential.Values, "accessToken", "AccessToken", "token", "bearerToken");
+
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            throw new InvalidOperationException("Aprimo credentials require baseUrl, url, tenantUrl, or aprimoBaseUrl.");
+            throw new InvalidOperationException("Aprimo credentials require baseUrl, BaseUrl, url, tenantUrl, or aprimoBaseUrl.");
         }
+
         if (string.IsNullOrWhiteSpace(token))
         {
-            throw new InvalidOperationException("Aprimo credentials require accessToken, token, or bearerToken.");
+            throw new InvalidOperationException("Aprimo credentials require accessToken, AccessToken, token, or bearerToken.");
         }
 
         var endpoints = new[]
@@ -365,6 +461,7 @@ public static class TaxonomyBuilderEndpoints
             using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, endpoint));
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
             lastResponse = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
             json = await lastResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             if (lastResponse.IsSuccessStatusCode)
@@ -383,30 +480,26 @@ public static class TaxonomyBuilderEndpoints
         var fields = new List<TaxonomyField>();
         var options = new List<TaxonomyOption>();
 
-        foreach (var item in fieldNodes)
+        foreach (var item in fieldNodes.OfType<JsonObject>())
         {
-            if (item is not JsonObject obj)
-            {
-                continue;
-            }
-
-            var id = Text(obj, "id", "fieldName", "name");
+            var id = Text(item, "id", "fieldName", "name");
             fields.Add(new TaxonomyField(
                 id,
-                Text(obj, "fieldName", "name", "id"),
-                Text(obj, "label", "localizedLabel", "displayName", "name", "fieldName"),
-                Text(obj, "dataType", "type", "fieldType"),
-                Bool(obj, "required", "isRequired", "mandatory"),
-                Bool(obj, "multiValue", "isMultiValue", "allowMultipleValues", "multiple"),
-                Text(obj, "description", "helpText"),
-                JsonSerializer.Serialize(obj, JsonOptions)));
+                Text(item, "fieldName", "name", "id"),
+                Text(item, "label", "localizedLabel", "displayName", "name", "fieldName"),
+                Text(item, "dataType", "type", "fieldType"),
+                Bool(item, "required", "isRequired", "mandatory"),
+                Bool(item, "multiValue", "isMultiValue", "allowMultipleValues", "multiple"),
+                Text(item, "description", "helpText"),
+                JsonSerializer.Serialize(item, JsonOptions),
+                null));
 
             if (!request.IncludeOptions)
             {
                 continue;
             }
 
-            foreach (var option in ExtractOptionObjects(obj, "options", "values", "listValues", "allowedValues"))
+            foreach (var option in ExtractOptionObjects(item, "options", "values", "listValues", "allowedValues"))
             {
                 options.Add(new TaxonomyOption(
                     id,
@@ -414,16 +507,135 @@ public static class TaxonomyBuilderEndpoints
                     Text(option, "value", "name", "label"),
                     Text(option, "label", "name", "value"),
                     Bool(option, new[] { "active", "isActive", "enabled" }, defaultValue: true),
-                    JsonSerializer.Serialize(option, JsonOptions)));
+                    JsonSerializer.Serialize(option, JsonOptions),
+                    null));
             }
         }
 
-        return new TaxonomySnapshot("Aprimo", fields, options, json);
+        return new TaxonomySnapshot("Aprimo", fields, options, new List<TaxonomyOptionSheet>(), json);
+    }
+
+    private static byte[] BuildWorkbook(TaxonomySnapshot snapshot, bool includeOptions, bool includeRaw)
+    {
+        var sheets = string.Equals(snapshot.TargetType, "Bynder", StringComparison.OrdinalIgnoreCase)
+            ? BuildBynderLegacySheets(snapshot, includeOptions, includeRaw)
+            : BuildGenericSheets(snapshot, includeOptions, includeRaw);
+
+        return XlsxWorkbookWriter.Write(sheets);
+    }
+
+    private static List<WorkbookSheet> BuildBynderLegacySheets(TaxonomySnapshot snapshot, bool includeOptions, bool includeRaw)
+    {
+        var usedSheetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var sheets = new List<WorkbookSheet>
+        {
+            new(
+                MakeUniqueSheetName("MetaProperties", usedSheetNames),
+                BynderMetaPropertyColumns.Headers,
+                snapshot.Fields.Select(field => (field.BynderColumns ?? BynderMetaPropertyColumns.From(field)).ToCells()))
+        };
+
+        if (includeOptions)
+        {
+            foreach (var optionSheet in snapshot.OptionSheets)
+            {
+                var sheetBaseName = string.IsNullOrWhiteSpace(optionSheet.Name) ? optionSheet.Label : optionSheet.Name;
+                sheets.Add(new WorkbookSheet(
+                    MakeUniqueSheetName(sheetBaseName, usedSheetNames),
+                    BynderOptionColumns.Headers,
+                    optionSheet.Options.Select(option => (option.BynderColumns ?? BynderOptionColumns.From(option)).ToCells())));
+            }
+        }
+
+        if (includeRaw)
+        {
+            sheets.Add(BuildRawSheet(snapshot, usedSheetNames));
+        }
+
+        return sheets;
+    }
+
+    private static List<WorkbookSheet> BuildGenericSheets(TaxonomySnapshot snapshot, bool includeOptions, bool includeRaw)
+    {
+        var usedSheetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var sheets = new List<WorkbookSheet>
+        {
+            new(
+                MakeUniqueSheetName("Fields", usedSheetNames),
+                new[] { "FieldId", "Name", "Label", "Type", "Required", "MultiValue", "Description" },
+                snapshot.Fields.Select(x => new[]
+                {
+                    x.FieldId,
+                    x.Name,
+                    x.Label,
+                    x.Type,
+                    x.Required.ToString(CultureInfo.InvariantCulture),
+                    x.MultiValue.ToString(CultureInfo.InvariantCulture),
+                    x.Description
+                }))
+        };
+
+        if (includeOptions)
+        {
+            sheets.Add(new WorkbookSheet(
+                MakeUniqueSheetName("Options", usedSheetNames),
+                new[] { "FieldId", "OptionId", "Name", "Label", "Active" },
+                snapshot.Options.Select(x => new[]
+                {
+                    x.FieldId,
+                    x.OptionId,
+                    x.Name,
+                    x.Label,
+                    x.Active.ToString(CultureInfo.InvariantCulture)
+                })));
+        }
+
+        if (includeRaw)
+        {
+            sheets.Add(BuildRawSheet(snapshot, usedSheetNames));
+        }
+
+        return sheets;
+    }
+
+    private static WorkbookSheet BuildRawSheet(TaxonomySnapshot snapshot, HashSet<string> usedSheetNames)
+    {
+        const int excelCellLimit = 32767;
+        const int chunkSize = 30000;
+        var rows = new List<string[]>();
+        var raw = snapshot.RawJson ?? string.Empty;
+
+        if (raw.Length <= excelCellLimit)
+        {
+            rows.Add(new[] { snapshot.TargetType, "1", raw });
+        }
+        else
+        {
+            var part = 1;
+            for (var offset = 0; offset < raw.Length; offset += chunkSize)
+            {
+                var length = Math.Min(chunkSize, raw.Length - offset);
+                rows.Add(new[] { snapshot.TargetType, part.ToString(CultureInfo.InvariantCulture), raw.Substring(offset, length) });
+                part++;
+            }
+        }
+
+        return new WorkbookSheet(
+            MakeUniqueSheetName("Raw", usedSheetNames),
+            new[] { "Target", "Part", "Json" },
+            rows);
     }
 
     private static JsonArray AsArray(JsonNode node)
     {
-        return node as JsonArray ?? new JsonArray(node);
+        if (node is JsonArray array)
+        {
+            return array;
+        }
+
+        var result = new JsonArray();
+        result.Add(node.DeepClone());
+        return result;
     }
 
     private static JsonArray? FindFirstArray(JsonNode node, params string[] keys)
@@ -432,6 +644,7 @@ public static class TaxonomyBuilderEndpoints
         {
             return node as JsonArray;
         }
+
         foreach (var key in keys)
         {
             if (obj[key] is JsonArray arr)
@@ -439,6 +652,7 @@ public static class TaxonomyBuilderEndpoints
                 return arr;
             }
         }
+
         return null;
     }
 
@@ -483,7 +697,14 @@ public static class TaxonomyBuilderEndpoints
                 }
             }
         }
+
         return string.Empty;
+    }
+
+    private static string Text(JsonObject obj, string[] keys, string defaultValue)
+    {
+        var text = Text(obj, keys);
+        return string.IsNullOrWhiteSpace(text) ? defaultValue : text;
     }
 
     private static bool Bool(JsonObject obj, params string[] keys)
@@ -497,16 +718,23 @@ public static class TaxonomyBuilderEndpoints
         {
             if (obj[key] is JsonValue value)
             {
-                if (value.TryGetValue<bool>(out var boolValue))
+                if (value.TryGetValue(out bool boolValue))
                 {
                     return boolValue;
                 }
+
                 if (bool.TryParse(value.ToString(), out var parsed))
                 {
                     return parsed;
                 }
+
+                if (int.TryParse(value.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var intValue))
+                {
+                    return intValue != 0;
+                }
             }
         }
+
         return defaultValue;
     }
 
@@ -525,13 +753,13 @@ public static class TaxonomyBuilderEndpoints
                 return value.Trim();
             }
         }
+
         return string.Empty;
     }
 
     private static bool LooksLikePlaceholder(string value)
     {
-        return value.StartsWith("your-", StringComparison.OrdinalIgnoreCase) ||
-               value.Equals("********", StringComparison.OrdinalIgnoreCase);
+        return value.StartsWith("your-", StringComparison.OrdinalIgnoreCase) || value.Equals("********", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? NormalizeTargetKind(string targetType)
@@ -548,53 +776,428 @@ public static class TaxonomyBuilderEndpoints
         return baseUrl.TrimEnd('/') + "/" + path.TrimStart('/');
     }
 
-    private static string MakeSafeFileName(string value)
+    private static string NormalizeXlsxFileName(string value)
     {
         var invalid = Path.GetInvalidFileNameChars();
         var safe = new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
-        return string.IsNullOrWhiteSpace(safe) ? $"taxonomy-{Guid.NewGuid():N}.xls" : safe;
-    }
-
-    private static string BuildWorkbook(TaxonomySnapshot snapshot, bool includeOptions, bool includeRaw)
-    {
-        var sheets = new StringBuilder();
-        sheets.Append(Worksheet("Fields", new[] { "FieldId", "Name", "Label", "Type", "Required", "MultiValue", "Description" },
-            snapshot.Fields.Select(x => new[] { x.FieldId, x.Name, x.Label, x.Type, x.Required.ToString(), x.MultiValue.ToString(), x.Description })));
-
-        if (includeOptions)
+        if (string.IsNullOrWhiteSpace(safe))
         {
-            sheets.Append(Worksheet("Options", new[] { "FieldId", "OptionId", "Name", "Label", "Active" },
-                snapshot.Options.Select(x => new[] { x.FieldId, x.OptionId, x.Name, x.Label, x.Active.ToString() })));
+            safe = $"taxonomy-{Guid.NewGuid():N}.xlsx";
         }
 
-        if (includeRaw)
+        if (safe.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
         {
-            sheets.Append(Worksheet("Raw", new[] { "Target", "Json" }, new[] { new[] { snapshot.TargetType, snapshot.RawJson } }));
+            return safe;
         }
 
-        return "<?xml version=\"1.0\"?>" +
-               "<?mso-application progid=\"Excel.Sheet\"?>" +
-               "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\">" +
-               sheets +
-               "</Workbook>";
-    }
-
-    private static string Worksheet(string name, string[] headers, IEnumerable<string[]> rows)
-    {
-        var builder = new StringBuilder();
-        builder.Append($"<Worksheet ss:Name=\"{Xml(name)}\"><Table>");
-        builder.Append(Row(headers));
-        foreach (var row in rows)
+        if (safe.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))
         {
-            builder.Append(Row(row));
+            return safe[..^4] + ".xlsx";
         }
-        builder.Append("</Table></Worksheet>");
-        return builder.ToString();
+
+        return safe + ".xlsx";
     }
 
-    private static string Row(IEnumerable<string?> cells)
+    private static string MakeUniqueSheetName(string? requestedName, HashSet<string> usedSheetNames)
     {
-        return "<Row>" + string.Concat(cells.Select(cell => $"<Cell><Data ss:Type=\"String\">{Xml(cell)}</Data></Cell>")) + "</Row>";
+        var baseName = SanitizeSheetName(requestedName);
+        if (string.IsNullOrWhiteSpace(baseName))
+        {
+            baseName = "Sheet";
+        }
+
+        if (usedSheetNames.Add(baseName))
+        {
+            return baseName;
+        }
+
+        for (var index = 2; index < 10_000; index++)
+        {
+            var suffix = $"_{index}";
+            var maxBaseLength = Math.Max(1, 31 - suffix.Length);
+            var candidateBase = baseName.Length > maxBaseLength ? baseName[..maxBaseLength] : baseName;
+            var candidate = candidateBase + suffix;
+
+            if (usedSheetNames.Add(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException("Unable to generate a unique Excel sheet name.");
+    }
+
+    private static string SanitizeSheetName(string? requestedName)
+    {
+        var name = string.IsNullOrWhiteSpace(requestedName) ? "Sheet" : requestedName.Trim();
+        var invalid = new HashSet<char>(new[] { ':', '\\', '/', '?', '*', '[', ']' });
+        var sanitized = new string(name.Select(ch => invalid.Contains(ch) || char.IsControl(ch) ? '_' : ch).ToArray());
+        sanitized = sanitized.Trim(' ', '\'');
+        return sanitized.Length <= 31 ? sanitized : sanitized[..31];
+    }
+
+    private sealed record WorkbookSheet(string Name, string[] Headers, IEnumerable<string[]> Rows);
+
+    private sealed record TaxonomySnapshot(
+        string TargetType,
+        List<TaxonomyField> Fields,
+        List<TaxonomyOption> Options,
+        List<TaxonomyOptionSheet> OptionSheets,
+        string RawJson);
+
+    private sealed record TaxonomyField(
+        string FieldId,
+        string Name,
+        string Label,
+        string Type,
+        bool Required,
+        bool MultiValue,
+        string Description,
+        string RawJson,
+        BynderMetaPropertyColumns? BynderColumns);
+
+    private sealed record TaxonomyOption(
+        string FieldId,
+        string OptionId,
+        string Name,
+        string Label,
+        bool Active,
+        string RawJson,
+        BynderOptionColumns? BynderColumns);
+
+    private sealed record TaxonomyOptionSheet(string Name, string Label, List<TaxonomyOption> Options);
+
+    private sealed record BynderMetaPropertyColumns(
+        string Id,
+        string Name,
+        string Label,
+        string IsMultiSelect,
+        string IsRequired,
+        string IsFilterable,
+        string IsMainfilter,
+        string IsEditable,
+        string ZIndex,
+        string IsDisplayField,
+        string IsMultiFilter,
+        string ShowInGridView,
+        string ShowInListView,
+        string IsApiField,
+        string ShowInDuplicateView,
+        string Type,
+        string IsSearchable,
+        string IsDrilldown,
+        string UseDependencies)
+    {
+        public static readonly string[] Headers =
+        {
+            "Id",
+            "Name",
+            "Label",
+            "IsMultiSelect",
+            "IsRequired",
+            "IsFilterable",
+            "IsMainfilter",
+            "IsEditable",
+            "ZIndex",
+            "IsDisplayField",
+            "IsMultiFilter",
+            "ShowInGridView",
+            "ShowInListView",
+            "IsApiField",
+            "ShowInDuplicateView",
+            "Type",
+            "IsSearchable",
+            "IsDrilldown",
+            "UseDependencies"
+        };
+
+        public static BynderMetaPropertyColumns From(JsonObject obj)
+        {
+            return new BynderMetaPropertyColumns(
+                Text(obj, "id", "uuid", "propertyId"),
+                Text(obj, "name", "propertyName", "technicalName", "id"),
+                Text(obj, "label", "displayName", "name", "propertyName"),
+                BoolText(obj, "isMultiselect", "isMultiSelect", "multiSelect", "multiselect", "multiple"),
+                BoolText(obj, "isRequired", "required", "mandatory"),
+                BoolText(obj, "isFilterable", "filterable"),
+                BoolText(obj, "isMainfilter", "isMainFilter", "mainfilter", "mainFilter"),
+                BoolText(obj, "isEditable", "editable"),
+                Text(obj, new[] { "zIndex", "zindex", "sortOrder", "order" }, "0"),
+                BoolText(obj, "isDisplayField", "displayField"),
+                BoolText(obj, "isMultiFilter", "multiFilter"),
+                BoolText(obj, "showInGridView", "gridView"),
+                BoolText(obj, "showInListView", "listView"),
+                BoolText(obj, "isApiField", "apiField"),
+                BoolText(obj, "showInDuplicateView", "duplicateView"),
+                Text(obj, "type", "inputType", "fieldType"),
+                BoolText(obj, "isSearchable", "searchable"),
+                BoolText(obj, "isDrilldown", "drilldown"),
+                BoolText(obj, "useDependencies", "usesDependencies"));
+        }
+
+        public static BynderMetaPropertyColumns From(TaxonomyField field)
+        {
+            return new BynderMetaPropertyColumns(
+                field.FieldId,
+                field.Name,
+                field.Label,
+                field.MultiValue.ToString(CultureInfo.InvariantCulture),
+                field.Required.ToString(CultureInfo.InvariantCulture),
+                "False",
+                "False",
+                "False",
+                "0",
+                "False",
+                "False",
+                "False",
+                "False",
+                "False",
+                "False",
+                field.Type,
+                "False",
+                "False",
+                "False");
+        }
+
+        public string[] ToCells()
+        {
+            return new[]
+            {
+                Id,
+                Name,
+                Label,
+                IsMultiSelect,
+                IsRequired,
+                IsFilterable,
+                IsMainfilter,
+                IsEditable,
+                ZIndex,
+                IsDisplayField,
+                IsMultiFilter,
+                ShowInGridView,
+                ShowInListView,
+                IsApiField,
+                ShowInDuplicateView,
+                Type,
+                IsSearchable,
+                IsDrilldown,
+                UseDependencies
+            };
+        }
+    }
+
+    private sealed record BynderOptionColumns(
+        string Id,
+        string Name,
+        string Label,
+        string ZIndex,
+        string IsSelectable,
+        string LinkedOptionIds)
+    {
+        public static readonly string[] Headers =
+        {
+            "Id",
+            "Name",
+            "Label",
+            "ZIndex",
+            "IsSelectable",
+            "LinkedOptionIds"
+        };
+
+        public static BynderOptionColumns From(JsonObject obj)
+        {
+            return new BynderOptionColumns(
+                Text(obj, "id", "uuid", "optionId"),
+                Text(obj, "name", "value", "id"),
+                Text(obj, "label", "displayName", "name", "value"),
+                Text(obj, new[] { "zIndex", "zindex", "sortOrder", "order" }, "1"),
+                BoolText(obj, "isSelectable", "selectable", "active", "isActive", "enabled"),
+                ReadLinkedOptionIds(obj));
+        }
+
+        public static BynderOptionColumns From(TaxonomyOption option)
+        {
+            return new BynderOptionColumns(
+                option.OptionId,
+                option.Name,
+                option.Label,
+                "1",
+                option.Active.ToString(CultureInfo.InvariantCulture),
+                string.Empty);
+        }
+
+        public string[] ToCells()
+        {
+            return new[] { Id, Name, Label, ZIndex, IsSelectable, LinkedOptionIds };
+        }
+    }
+
+    private static string BoolText(JsonObject obj, params string[] keys)
+    {
+        return Bool(obj, keys, defaultValue: false).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string ReadLinkedOptionIds(JsonObject obj)
+    {
+        foreach (var key in new[] { "linkedOptionIds", "linked_option_ids", "linkedOptions", "dependencies" })
+        {
+            var node = obj[key];
+            if (node is JsonArray arr)
+            {
+                return string.Join(",", arr.Select(item => item?.ToString()).Where(value => !string.IsNullOrWhiteSpace(value)));
+            }
+
+            if (node is JsonValue value)
+            {
+                return value.ToString();
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static class XlsxWorkbookWriter
+    {
+        public static byte[] Write(IReadOnlyList<WorkbookSheet> sheets)
+        {
+            using var stream = new MemoryStream();
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                AddEntry(archive, "[Content_Types].xml", ContentTypesXml(sheets.Count));
+                AddEntry(archive, "_rels/.rels", RootRelationshipsXml());
+                AddEntry(archive, "xl/workbook.xml", WorkbookXml(sheets));
+                AddEntry(archive, "xl/_rels/workbook.xml.rels", WorkbookRelationshipsXml(sheets.Count));
+                AddEntry(archive, "xl/styles.xml", StylesXml());
+
+                for (var i = 0; i < sheets.Count; i++)
+                {
+                    AddEntry(archive, $"xl/worksheets/sheet{i + 1}.xml", WorksheetXml(sheets[i]));
+                }
+            }
+
+            return stream.ToArray();
+        }
+
+        private static void AddEntry(ZipArchive archive, string path, string content)
+        {
+            var entry = archive.CreateEntry(path, CompressionLevel.Optimal);
+            using var writer = new StreamWriter(entry.Open(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            writer.Write(content);
+        }
+
+        private static string ContentTypesXml(int sheetCount)
+        {
+            var worksheets = new StringBuilder();
+            for (var i = 1; i <= sheetCount; i++)
+            {
+                worksheets.Append($"<Override PartName=\"/xl/worksheets/sheet{i}.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>");
+            }
+
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
+                   "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">" +
+                   "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>" +
+                   "<Default Extension=\"xml\" ContentType=\"application/xml\"/>" +
+                   "<Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>" +
+                   "<Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>" +
+                   worksheets +
+                   "</Types>";
+        }
+
+        private static string RootRelationshipsXml()
+        {
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
+                   "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">" +
+                   "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/>" +
+                   "</Relationships>";
+        }
+
+        private static string WorkbookXml(IReadOnlyList<WorkbookSheet> sheets)
+        {
+            var builder = new StringBuilder();
+            builder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+            builder.Append("<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets>");
+
+            for (var i = 0; i < sheets.Count; i++)
+            {
+                builder.Append($"<sheet name=\"{Xml(sheets[i].Name)}\" sheetId=\"{i + 1}\" r:id=\"rId{i + 1}\"/>");
+            }
+
+            builder.Append("</sheets></workbook>");
+            return builder.ToString();
+        }
+
+        private static string WorkbookRelationshipsXml(int sheetCount)
+        {
+            var builder = new StringBuilder();
+            builder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+            builder.Append("<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">");
+
+            for (var i = 1; i <= sheetCount; i++)
+            {
+                builder.Append($"<Relationship Id=\"rId{i}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet{i}.xml\"/>");
+            }
+
+            builder.Append($"<Relationship Id=\"rId{sheetCount + 1}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>");
+            builder.Append("</Relationships>");
+            return builder.ToString();
+        }
+
+        private static string StylesXml()
+        {
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
+                   "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">" +
+                   "<fonts count=\"2\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font><font><b/><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts>" +
+                   "<fills count=\"1\"><fill><patternFill patternType=\"none\"/></fill></fills>" +
+                   "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>" +
+                   "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>" +
+                   "<cellXfs count=\"2\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/><xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/></cellXfs>" +
+                   "<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>" +
+                   "</styleSheet>";
+        }
+
+        private static string WorksheetXml(WorkbookSheet sheet)
+        {
+            var rows = new List<string[]> { sheet.Headers };
+            rows.AddRange(sheet.Rows);
+
+            var builder = new StringBuilder();
+            builder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+            builder.Append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>");
+
+            for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+            {
+                var excelRowNumber = rowIndex + 1;
+                builder.Append($"<row r=\"{excelRowNumber}\">");
+
+                var row = rows[rowIndex];
+                for (var colIndex = 0; colIndex < row.Length; colIndex++)
+                {
+                    var cellRef = CellReference(colIndex, excelRowNumber);
+                    var style = rowIndex == 0 ? " s=\"1\"" : string.Empty;
+                    builder.Append($"<c r=\"{cellRef}\" t=\"inlineStr\"{style}><is><t xml:space=\"preserve\">{Xml(row[colIndex])}</t></is></c>");
+                }
+
+                builder.Append("</row>");
+            }
+
+            builder.Append("</sheetData></worksheet>");
+            return builder.ToString();
+        }
+
+        private static string CellReference(int zeroBasedColumnIndex, int rowNumber)
+        {
+            var dividend = zeroBasedColumnIndex + 1;
+            var columnName = string.Empty;
+
+            while (dividend > 0)
+            {
+                var modulo = (dividend - 1) % 26;
+                columnName = Convert.ToChar('A' + modulo) + columnName;
+                dividend = (dividend - modulo) / 26;
+            }
+
+            return columnName + rowNumber.ToString(CultureInfo.InvariantCulture);
+        }
     }
 
     private static string Xml(string? value)
@@ -622,27 +1225,3 @@ public sealed record BuildTaxonomyArtifactResponse(
     int FieldCount,
     int OptionCount,
     string FileName);
-
-internal sealed record TaxonomySnapshot(
-    string TargetType,
-    List<TaxonomyField> Fields,
-    List<TaxonomyOption> Options,
-    string RawJson);
-
-internal sealed record TaxonomyField(
-    string FieldId,
-    string Name,
-    string Label,
-    string Type,
-    bool Required,
-    bool MultiValue,
-    string Description,
-    string RawJson);
-
-internal sealed record TaxonomyOption(
-    string FieldId,
-    string OptionId,
-    string Name,
-    string Label,
-    bool Active,
-    string RawJson);
