@@ -13,6 +13,10 @@ public sealed class KnownConnectorCatalog : IConnectorCatalog
         _sources = new[]
         {
             CreateWebDamSourceDescriptor(),
+            CreateAzureBlobSourceDescriptor(),
+            CreateS3SourceDescriptor(),
+            CreateSitecoreSourceDescriptor(),
+            CreateAemSourceDescriptor(),
             CreateLocalStorageSourceDescriptor()
         };
 
@@ -20,6 +24,8 @@ public sealed class KnownConnectorCatalog : IConnectorCatalog
         {
             CreateBynderTargetDescriptor(),
             CreateAzureBlobTargetDescriptor(),
+            CreateCloudinaryTargetDescriptor(),
+            CreateAprimoTargetDescriptor(),
             CreateLocalStorageTargetDescriptor()
         };
 
@@ -33,13 +39,7 @@ public sealed class KnownConnectorCatalog : IConnectorCatalog
                 SupportedExtensions = { ".csv" },
                 Options =
                 {
-                    new ConnectorOptionDescriptor
-                    {
-                        Name = "ManifestPath",
-                        DisplayName = "Manifest path",
-                        Required = true,
-                        Description = "Path to the CSV manifest file."
-                    }
+                    new ConnectorOptionDescriptor { Name = "ManifestPath", DisplayName = "Manifest path", Required = true, Description = "Path to the CSV manifest file." }
                 }
             },
             new ManifestProviderDescriptor
@@ -50,311 +50,307 @@ public sealed class KnownConnectorCatalog : IConnectorCatalog
                 SupportedExtensions = { ".xlsx", ".xlsm" },
                 Options =
                 {
-                    new ConnectorOptionDescriptor
-                    {
-                        Name = "ManifestPath",
-                        DisplayName = "Manifest path",
-                        Required = true,
-                        Description = "Path to the Excel manifest file."
-                    },
-                    new ConnectorOptionDescriptor
-                    {
-                        Name = "WorksheetName",
-                        DisplayName = "Worksheet name",
-                        Required = false,
-                        Description = "Optional worksheet name. If omitted, the first worksheet is used."
-                    },
-                    new ConnectorOptionDescriptor
-                    {
-                        Name = "HeaderRow",
-                        DisplayName = "Header row",
-                        Required = false,
-                        DefaultValue = "1"
-                    },
-                    new ConnectorOptionDescriptor
-                    {
-                        Name = "FirstDataRow",
-                        DisplayName = "First data row",
-                        Required = false,
-                        DefaultValue = "2"
-                    }
+                    new ConnectorOptionDescriptor { Name = "ManifestPath", DisplayName = "Manifest path", Required = true, Description = "Path to the Excel manifest file." },
+                    new ConnectorOptionDescriptor { Name = "WorksheetName", DisplayName = "Worksheet name", Required = false, Description = "Optional worksheet name. If omitted, the first worksheet is used." },
+                    new ConnectorOptionDescriptor { Name = "HeaderRow", DisplayName = "Header row", Required = false, DefaultValue = "1" },
+                    new ConnectorOptionDescriptor { Name = "FirstDataRow", DisplayName = "First data row", Required = false, DefaultValue = "2" }
                 }
             }
         };
     }
 
-    public IReadOnlyList<ConnectorDescriptor> GetSources()
-    {
-        return _sources;
-    }
+    public IReadOnlyList<ConnectorDescriptor> GetSources() => _sources;
+    public IReadOnlyList<ConnectorDescriptor> GetTargets() => _targets;
+    public IReadOnlyList<ManifestProviderDescriptor> GetManifestProviders() => _manifestProviders;
+    public IReadOnlyList<ConnectorDescriptor> GetAll() => _sources.Concat(_targets).ToList();
+    public ConnectorDescriptor? Find(string type) => GetAll().FirstOrDefault(x => x.Type.Equals(type, StringComparison.OrdinalIgnoreCase));
 
-    public IReadOnlyList<ConnectorDescriptor> GetTargets()
+    private static ConnectorDescriptor CreateWebDamSourceDescriptor() => new()
     {
-        return _targets;
-    }
-
-    public IReadOnlyList<ManifestProviderDescriptor> GetManifestProviders()
-    {
-        return _manifestProviders;
-    }
-
-    public IReadOnlyList<ConnectorDescriptor> GetAll()
-    {
-        return _sources.Concat(_targets).ToList();
-    }
-
-    public ConnectorDescriptor? Find(string type)
-    {
-        return GetAll().FirstOrDefault(x =>
-            x.Type.Equals(type, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static ConnectorDescriptor CreateWebDamSourceDescriptor()
-    {
-        return new ConnectorDescriptor
+        Type = "WebDam",
+        DisplayName = "WebDam",
+        Direction = ConnectorDirections.Source,
+        Kind = "Source",
+        Description = "Reads metadata and binaries from WebDam using either a WebDam asset id or a pre-staged binary path.",
+        Capabilities = { ConnectorCapabilities.ReadAsset, ConnectorCapabilities.ReadBinary, ConnectorCapabilities.ReadMetadata, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Credentials =
         {
-            Type = "WebDam",
-            DisplayName = "WebDam",
-            Direction = ConnectorDirections.Source,
-            Kind = "Source",
-            Description = "Reads metadata and binaries from WebDam using either a WebDam asset id or a pre-staged binary path.",
-            Capabilities =
-            {
-                ConnectorCapabilities.ReadAsset,
-                ConnectorCapabilities.ReadBinary,
-                ConnectorCapabilities.DryRun,
-                ConnectorCapabilities.Resume,
-                ConnectorCapabilities.Preflight
-            },
-            Credentials =
-            {
-                new CredentialDescriptor { Name = "BaseUrl", DisplayName = "Base URL", ConfigurationKey = "WebDam:BaseUrl", Required = true, Secret = false },
-                new CredentialDescriptor { Name = "ClientId", DisplayName = "Client ID", ConfigurationKey = "WebDam:ClientId", Required = true, Secret = true },
-                new CredentialDescriptor { Name = "ClientSecret", DisplayName = "Client Secret", ConfigurationKey = "WebDam:ClientSecret", Required = true, Secret = true },
-                new CredentialDescriptor { Name = "RefreshToken", DisplayName = "Refresh Token", ConfigurationKey = "WebDam:RefreshToken", Required = false, Secret = true },
-                new CredentialDescriptor { Name = "AccessToken", DisplayName = "Access Token", ConfigurationKey = "WebDam:AccessToken", Required = false, Secret = true },
-                new CredentialDescriptor { Name = "Username", DisplayName = "Username", ConfigurationKey = "WebDam:Username", Required = false, Secret = true },
-                new CredentialDescriptor { Name = "Password", DisplayName = "Password", ConfigurationKey = "WebDam:Password", Required = false, Secret = true }
-            },
-            Options =
-            {
-                new ConnectorOptionDescriptor { Name = "SourceBinaryMode", DisplayName = "Source binary mode", Required = false, DefaultValue = "PreferManifestPath" },
-                new ConnectorOptionDescriptor { Name = "BinaryStagingDirectory", DisplayName = "Binary staging directory", Required = false },
-                new ConnectorOptionDescriptor { Name = "ForceDownload", DisplayName = "Force download", Required = false, DefaultValue = "false" },
-                new ConnectorOptionDescriptor { Name = "WorksheetName", DisplayName = "Excel worksheet name", Required = false },
-                new ConnectorOptionDescriptor { Name = "HeaderRow", DisplayName = "Header row", Required = false, DefaultValue = "1" },
-                new ConnectorOptionDescriptor { Name = "FirstDataRow", DisplayName = "First data row", Required = false, DefaultValue = "2" }
-            },
-            ManifestColumns =
-            {
-                "webdam_id",
-                "webdamId",
-                "WebDamId",
-                "SourceAssetId",
-                "AssetId",
-                "asset_id",
-                "Id",
-                "id",
-                "SourcePath",
-                "sourcePath",
-                "FilePath",
-                "filePath",
-                "DownloadUrl",
-                "downloadUrl",
-                "SourceUri",
-                "sourceUri",
-                "Url",
-                "url"
-            },
-            Metadata =
-            {
-                ["SupportedBinaryModes"] = "PreferManifestPath,WebDamDownloadOnly,ManifestPathOnly,StagedOnly",
-                ["PreferredProofJob"] = "Profiles/Jobs/webdam-to-bynder.ntara.json"
-            }
-        };
-    }
-
-    private static ConnectorDescriptor CreateBynderTargetDescriptor()
-    {
-        return new ConnectorDescriptor
-        {
-            Type = "Bynder",
-            DisplayName = "Bynder",
-            Direction = ConnectorDirections.Target,
-            Kind = "Target",
-            Description = "Uploads binaries and stamps tags/metaproperties into Bynder.",
-            Capabilities =
-            {
-                ConnectorCapabilities.UpsertAsset,
-                ConnectorCapabilities.WriteMetadata,
-                ConnectorCapabilities.DryRun,
-                ConnectorCapabilities.Resume,
-                ConnectorCapabilities.Preflight
-            },
-            Credentials =
-            {
-                new CredentialDescriptor { Name = "BaseUrl", DisplayName = "Base URL", ConfigurationKey = "Bynder:Client:BaseUrl", Required = true, Secret = false },
-                new CredentialDescriptor { Name = "ConsumerKey", DisplayName = "Consumer Key", ConfigurationKey = "Bynder:Client:ConsumerKey", Required = true, Secret = true },
-                new CredentialDescriptor { Name = "ConsumerSecret", DisplayName = "Consumer Secret", ConfigurationKey = "Bynder:Client:ConsumerSecret", Required = true, Secret = true },
-                new CredentialDescriptor { Name = "Token", DisplayName = "Token", ConfigurationKey = "Bynder:Client:Token", Required = true, Secret = true },
-                new CredentialDescriptor { Name = "TokenSecret", DisplayName = "Token Secret", ConfigurationKey = "Bynder:Client:TokenSecret", Required = true, Secret = true }
-            },
-            Options =
-            {
-                new ConnectorOptionDescriptor { Name = "BrandStoreId", DisplayName = "Brand Store ID", Required = true },
-                new ConnectorOptionDescriptor { Name = "ValidateMetaproperties", DisplayName = "Validate metaproperties", Required = false, DefaultValue = "true" }
-            },
-            MappingFields =
-            {
-                "name",
-                "description",
-                "tags",
-                "keywords",
-                "meta:<Bynder metaproperty display name>",
-                "<Bynder metaproperty display name>"
-            },
-            Metadata =
-            {
-                ["ReservedFields"] = "id,mediaId,assetId,bynderId,name,filename,fileName,originalFileName,description,tags,keywords,sourceUri,downloadUrl,url,filePath,path",
-                ["MetapropertyConvention"] = "Mapping target names should match Bynder metaproperty display names, or use meta:<display name>."
-            }
-        };
-    }
-
-    private static ConnectorDescriptor CreateAzureBlobTargetDescriptor()
-    {
-        return new ConnectorDescriptor
-        {
-            Type = "AzureBlob",
-            DisplayName = "Azure Blob Storage",
-            Direction = ConnectorDirections.Target,
-            Kind = "Target",
-            Description = "Writes DAM binaries to Azure Blob Storage, preserving source folder paths and optional JSON metadata sidecars.",
-            Capabilities =
-            {
-                ConnectorCapabilities.UpsertAsset,
-                ConnectorCapabilities.WriteMetadata,
-                ConnectorCapabilities.DryRun,
-                ConnectorCapabilities.Resume,
-                ConnectorCapabilities.Preflight
-            },
-            Credentials =
-            {
-                new CredentialDescriptor { Name = "ConnectionString", DisplayName = "Connection string", ConfigurationKey = "AzureBlobTarget:ConnectionString", Required = true, Secret = true },
-                new CredentialDescriptor { Name = "ContainerName", DisplayName = "Container name", ConfigurationKey = "AzureBlobTarget:ContainerName", Required = true, Secret = false }
-            },
-            Options =
-            {
-                new ConnectorOptionDescriptor { Name = "RootFolderPath", DisplayName = "Root folder path", Required = false, Description = "Optional prefix before the preserved DAM folder path, such as webdam-export/ntara." },
-                new ConnectorOptionDescriptor { Name = "PreserveSourceFolderPath", DisplayName = "Preserve source folder path", Required = false, DefaultValue = "true", AllowedValues = { "true", "false" } },
-                new ConnectorOptionDescriptor { Name = "SourceFolderPathField", DisplayName = "Source folder path field", Required = false, DefaultValue = "Folder Path" },
-                new ConnectorOptionDescriptor { Name = "UniqueIdField", DisplayName = "Unique ID field", Required = false, DefaultValue = "webdam_id" },
-                new ConnectorOptionDescriptor { Name = "FileNameField", DisplayName = "File name field", Required = false, DefaultValue = "File Name" },
-                new ConnectorOptionDescriptor { Name = "BinaryFileNameTemplate", DisplayName = "Binary filename template", Required = false, DefaultValue = "{uniqueid}_{filename}" },
-                new ConnectorOptionDescriptor { Name = "WriteMetadataSidecar", DisplayName = "Write metadata sidecar", Required = false, DefaultValue = "true", AllowedValues = { "true", "false" } },
-                new ConnectorOptionDescriptor { Name = "MetadataFileNameTemplate", DisplayName = "Metadata filename template", Required = false, DefaultValue = "{uniqueid}_metadata.json" },
-                new ConnectorOptionDescriptor { Name = "MetadataSidecarMode", DisplayName = "Metadata sidecar mode", Required = false, DefaultValue = "All", AllowedValues = { "All", "MappedOnly", "ManifestOnly", "SourceEnvelopeOnly", "None" } },
-                new ConnectorOptionDescriptor { Name = "MetadataIncludeColumns", DisplayName = "Metadata include columns", Required = false },
-                new ConnectorOptionDescriptor { Name = "MetadataExcludeColumns", DisplayName = "Metadata exclude columns", Required = false },
-                new ConnectorOptionDescriptor { Name = "Overwrite", DisplayName = "Overwrite existing blobs", Required = false, DefaultValue = "false", AllowedValues = { "true", "false" } }
-            },
-            MappingFields =
-            {
-                "FileName",
-                "AssetName",
-                "FolderPath",
-                "<metadata field name>"
-            },
-            Metadata =
-            {
-                ["DefaultBinaryName"] = "{uniqueid}_{filename}",
-                ["DefaultMetadataName"] = "{uniqueid}_metadata.json",
-                ["DefaultLayout"] = "{RootFolderPath}/{Folder Path}/{webdam_id}_{File Name}; {RootFolderPath}/{Folder Path}/{webdam_id}_metadata.json"
-            }
-        };
-    }
-
-    private static ConnectorDescriptor CreateLocalStorageSourceDescriptor()
-    {
-        return new ConnectorDescriptor
-        {
-            Type = "LocalStorage",
-            DisplayName = "Local Storage",
-            Direction = ConnectorDirections.Source,
-            Kind = "Source",
-            Description = "Reads binaries from local or network file-system paths supplied by the manifest.",
-            Capabilities =
-        {
-            ConnectorCapabilities.ReadAsset,
-            ConnectorCapabilities.ReadBinary,
-            ConnectorCapabilities.DryRun,
-            ConnectorCapabilities.Resume,
-            ConnectorCapabilities.Preflight
+            Credential("BaseUrl", "Base URL", "WebDam:BaseUrl", true, false),
+            Credential("ClientId", "Client ID", "WebDam:ClientId", true),
+            Credential("ClientSecret", "Client Secret", "WebDam:ClientSecret", true),
+            Credential("RefreshToken", "Refresh Token", "WebDam:RefreshToken", false),
+            Credential("AccessToken", "Access Token", "WebDam:AccessToken", false),
+            Credential("Username", "Username", "WebDam:Username", false),
+            Credential("Password", "Password", "WebDam:Password", false)
         },
-            Options =
+        Options =
         {
-            new ConnectorOptionDescriptor { Name = "LocalStorageSourceRootDirectory", DisplayName = "Source root directory", Required = false },
-            new ConnectorOptionDescriptor { Name = "RequireExistingFile", DisplayName = "Require existing file", Required = false, DefaultValue = "true" }
+            Option("SourceBinaryMode", "Source binary mode", false, "PreferManifestPath"),
+            Option("BinaryStagingDirectory", "Binary staging directory"),
+            Option("ForceDownload", "Force download", false, "false")
         },
-            ManifestColumns =
-        {
-            "SourceAssetId", "sourceAssetId", "AssetId", "assetId", "id", "Id",
-            "SourcePath", "sourcePath", "FilePath", "filePath", "Path", "path",
-            "LocalPath", "localPath", "SourceUri", "sourceUri",
-            "FileName", "fileName", "filename", "OriginalFileName", "originalFileName"
-        },
-            Metadata =
-        {
-            ["PathBehavior"] = "Relative paths are resolved under LocalStorage:Source:RootDirectory or job setting LocalStorageSourceRootDirectory. Absolute paths are used as-is."
-        }
-        };
-    }
+        ManifestColumns = { "webdam_id", "webdamId", "WebDamId", "SourceAssetId", "AssetId", "asset_id", "Id", "id", "SourcePath", "sourcePath", "FilePath", "filePath", "DownloadUrl", "downloadUrl", "SourceUri", "sourceUri", "Url", "url" },
+        Metadata = { ["SupportedBinaryModes"] = "PreferManifestPath,WebDamDownloadOnly,ManifestPathOnly,StagedOnly" }
+    };
 
-
-    private static ConnectorDescriptor CreateLocalStorageTargetDescriptor()
+    private static ConnectorDescriptor CreateAzureBlobSourceDescriptor() => new()
     {
-        return new ConnectorDescriptor
+        Type = "AzureBlob",
+        DisplayName = "Azure Blob Storage",
+        Direction = ConnectorDirections.Source,
+        Kind = "Source",
+        Description = "Reads staged binaries from Azure Blob Storage. Manifest rows can provide BlobName, SourcePath, SourceUri, or Url.",
+        Capabilities = { ConnectorCapabilities.ReadAsset, ConnectorCapabilities.ReadBinary, ConnectorCapabilities.ReadMetadata, ConnectorCapabilities.ReadFolderPath, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Credentials =
         {
-            Type = "LocalStorage",
-            DisplayName = "Local Storage",
-            Direction = ConnectorDirections.Target,
-            Kind = "Target",
-            Description = "Copies binaries to a local or network file-system folder and can write DAM-style metadata sidecars.",
-            Capabilities =
-        {
-            ConnectorCapabilities.UpsertAsset,
-            ConnectorCapabilities.WriteBinary,
-            ConnectorCapabilities.WriteMetadata,
-            ConnectorCapabilities.DryRun,
-            ConnectorCapabilities.Resume,
-            ConnectorCapabilities.Preflight
+            Credential("ConnectionString", "Connection string", "AzureBlobSource:ConnectionString", true),
+            Credential("ContainerName", "Container name", "AzureBlobSource:ContainerName", true, false),
+            Credential("AccountName", "Account name", "AzureBlobSource:AccountName", false, false),
+            Credential("SasToken", "SAS token", "AzureBlobSource:SasToken", false)
         },
-            Options =
+        Options =
         {
-            new ConnectorOptionDescriptor { Name = "LocalStorageTargetRootDirectory", DisplayName = "Target root directory", Required = true },
-            new ConnectorOptionDescriptor { Name = "LocalStorageTargetBasePath", DisplayName = "Target base path", Required = false },
-            new ConnectorOptionDescriptor { Name = "PreserveSourceFolderPath", DisplayName = "Preserve source folder path", Required = false, DefaultValue = "true" },
-            new ConnectorOptionDescriptor { Name = "PrefixFileNameWithUniqueId", DisplayName = "Prefix binary with unique id", Required = false, DefaultValue = "true" },
-            new ConnectorOptionDescriptor { Name = "UniqueIdField", DisplayName = "Unique id field", Required = false, DefaultValue = "SourceAssetId" },
-            new ConnectorOptionDescriptor { Name = "WriteMetadataSidecar", DisplayName = "Write metadata sidecar", Required = false, DefaultValue = "true" },
-            new ConnectorOptionDescriptor { Name = "MetadataSidecarMode", DisplayName = "Metadata sidecar mode", Required = false, DefaultValue = "Both", AllowedValues = { "ManifestColumns", "TargetPayloadFields", "Both" } },
-            new ConnectorOptionDescriptor { Name = "Overwrite", DisplayName = "Overwrite existing files", Required = false, DefaultValue = "false" }
+            Option("AzureBlobSourceRootPrefix", "Root prefix"),
+            Option("AzureBlobSourceBlobNameField", "Blob name field", false, "BlobName"),
+            Option("AzureBlobSourceFileNameField", "File name field", false, "FileName")
         },
-            MappingFields =
-        {
-            "name",
-            "description",
-            "tags",
-            "keywords",
-            "metadata:<field>",
-            "<sidecar field name>"
-        },
-            Metadata =
-        {
-            ["BinaryNaming"] = "When PrefixFileNameWithUniqueId is true, binaries are written as {uniqueid}_{filename}.",
-            ["SidecarNaming"] = "When WriteMetadataSidecar is true, metadata is written as {uniqueid}_metadata.json next to the binary."
-        }
-        };
-    }
+        ManifestColumns = { "BlobName", "blobName", "SourcePath", "sourcePath", "SourceUri", "sourceUri", "Url", "url", "FileName", "filename", "ContentType", "contentType", "Length", "length" },
+        Metadata = { ["BinaryResolution"] = "Use SourceUri/Url when supplied; otherwise use BlobName/SourcePath with bound source credentials." }
+    };
 
+    private static ConnectorDescriptor CreateS3SourceDescriptor() => new()
+    {
+        Type = "S3",
+        DisplayName = "Amazon S3",
+        Direction = ConnectorDirections.Source,
+        Kind = "Source",
+        Description = "Reads staged binaries from Amazon S3 or S3-compatible storage. Manifest rows can provide S3Key, SourcePath, SourceUri, or Url.",
+        Capabilities = { ConnectorCapabilities.ReadAsset, ConnectorCapabilities.ReadBinary, ConnectorCapabilities.ReadMetadata, ConnectorCapabilities.ReadFolderPath, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Credentials =
+        {
+            Credential("AccessKeyId", "Access key ID", "S3:AccessKeyId", true),
+            Credential("SecretAccessKey", "Secret access key", "S3:SecretAccessKey", true),
+            Credential("Region", "Region", "S3:Region", true, false),
+            Credential("BucketName", "Bucket name", "S3:BucketName", true, false),
+            Credential("ServiceUrl", "S3-compatible service URL", "S3:ServiceUrl", false, false),
+            Credential("SessionToken", "Session token", "S3:SessionToken", false)
+        },
+        Options =
+        {
+            Option("S3SourceRootPrefix", "Root prefix"),
+            Option("S3SourceKeyField", "S3 key field", false, "S3Key"),
+            Option("S3SourceFileNameField", "File name field", false, "FileName")
+        },
+        ManifestColumns = { "S3Key", "s3Key", "Key", "key", "SourcePath", "sourcePath", "SourceUri", "sourceUri", "Url", "url", "FileName", "filename", "ContentType", "contentType", "Length", "length" },
+        Metadata = { ["BinaryResolution"] = "Use SourceUri/Url when supplied; otherwise use S3Key/SourcePath with bound source credentials." }
+    };
+
+    private static ConnectorDescriptor CreateSitecoreSourceDescriptor() => new()
+    {
+        Type = "Sitecore",
+        DisplayName = "Sitecore",
+        Direction = ConnectorDirections.Source,
+        Kind = "Source",
+        Description = "Reads asset references and metadata exported from Sitecore. Manifest rows should include an item/media id and either a source URL or staged file path.",
+        Capabilities = { ConnectorCapabilities.ReadAsset, ConnectorCapabilities.ReadMetadata, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Credentials =
+        {
+            Credential("BaseUrl", "Base URL", "Sitecore:BaseUrl", true, false),
+            Credential("ClientId", "Client ID", "Sitecore:ClientId", false),
+            Credential("ClientSecret", "Client Secret", "Sitecore:ClientSecret", false),
+            Credential("Username", "Username", "Sitecore:Username", false),
+            Credential("Password", "Password", "Sitecore:Password", false),
+            Credential("ApiKey", "API key", "Sitecore:ApiKey", false)
+        },
+        Options =
+        {
+            Option("SitecoreIdField", "Sitecore id field", false, "SitecoreId"),
+            Option("SitecorePathField", "Sitecore path field", false, "SitecorePath")
+        },
+        ManifestColumns = { "SitecoreId", "ItemId", "MediaId", "SourceAssetId", "SitecorePath", "SourcePath", "SourceUri", "Url", "FileName" },
+        Metadata = { ["Status"] = "Credential schema and manifest-driven source envelope are enabled. Native Sitecore API download can be implemented behind the SitecoreSourceConnector." }
+    };
+
+    private static ConnectorDescriptor CreateAemSourceDescriptor() => new()
+    {
+        Type = "Aem",
+        DisplayName = "Adobe Experience Manager",
+        Direction = ConnectorDirections.Source,
+        Kind = "Source",
+        Description = "Reads asset references and metadata exported from AEM. Manifest rows should include an AEM path/id and either a source URL or staged file path.",
+        Capabilities = { ConnectorCapabilities.ReadAsset, ConnectorCapabilities.ReadMetadata, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Credentials =
+        {
+            Credential("BaseUrl", "Base URL", "Aem:BaseUrl", true, false),
+            Credential("Username", "Username", "Aem:Username", false),
+            Credential("Password", "Password", "Aem:Password", false),
+            Credential("ClientId", "Client ID", "Aem:ClientId", false),
+            Credential("ClientSecret", "Client Secret", "Aem:ClientSecret", false),
+            Credential("AccessToken", "Access token", "Aem:AccessToken", false)
+        },
+        Options =
+        {
+            Option("AemAssetPathField", "AEM asset path field", false, "AemPath"),
+            Option("AemAssetIdField", "AEM asset id field", false, "AemId")
+        },
+        ManifestColumns = { "AemId", "AemPath", "AssetPath", "SourceAssetId", "SourcePath", "SourceUri", "Url", "FileName" },
+        Metadata = { ["Status"] = "Credential schema and manifest-driven source envelope are enabled. Native AEM API download can be implemented behind the AemSourceConnector." }
+    };
+
+    private static ConnectorDescriptor CreateBynderTargetDescriptor() => new()
+    {
+        Type = "Bynder",
+        DisplayName = "Bynder",
+        Direction = ConnectorDirections.Target,
+        Kind = "Target",
+        Description = "Uploads binaries and stamps tags/metaproperties into Bynder.",
+        Capabilities = { ConnectorCapabilities.UpsertAsset, ConnectorCapabilities.WriteMetadata, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Credentials =
+        {
+            Credential("BaseUrl", "Base URL", "Bynder:Client:BaseUrl", true, false),
+            Credential("ClientId", "Client ID", "Bynder:Client:ClientId", true),
+            Credential("ClientSecret", "Client Secret", "Bynder:Client:ClientSecret", true),
+            Credential("Scopes", "Scopes", "Bynder:Client:Scopes", true, false),
+            Credential("BrandStoreId", "Brand Store ID", "Bynder:BrandStoreId", false, false)
+        },
+        Options = { Option("ValidateMetaproperties", "Validate metaproperties", false, "true") },
+        MappingFields = { "name", "description", "tags", "keywords", "meta:", "" },
+        Metadata = { ["MetapropertyConvention"] = "Mapping target names should match Bynder metaproperty display names, or use meta:." }
+    };
+
+    private static ConnectorDescriptor CreateAzureBlobTargetDescriptor() => new()
+    {
+        Type = "AzureBlob",
+        DisplayName = "Azure Blob Storage",
+        Direction = ConnectorDirections.Target,
+        Kind = "Target",
+        Description = "Writes DAM binaries to Azure Blob Storage, preserving source folder paths and optional JSON metadata sidecars.",
+        Capabilities = { ConnectorCapabilities.UpsertAsset, ConnectorCapabilities.WriteBinary, ConnectorCapabilities.WriteMetadata, ConnectorCapabilities.WriteFolderPath, ConnectorCapabilities.WriteSidecarMetadata, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Credentials =
+        {
+            Credential("ConnectionString", "Connection string", "AzureBlobTarget:ConnectionString", true),
+            Credential("ContainerName", "Container name", "AzureBlobTarget:ContainerName", true, false)
+        },
+        Options =
+        {
+            Option("RootFolderPath", "Root folder path"),
+            Option("PreserveSourceFolderPath", "Preserve source folder path", false, "true", "true", "false"),
+            Option("SourceFolderPathField", "Source folder path field", false, "Folder Path"),
+            Option("UniqueIdField", "Unique ID field", false, "webdam_id"),
+            Option("FileNameField", "File name field", false, "File Name"),
+            Option("BinaryFileNameTemplate", "Binary filename template", false, "{uniqueid}_{filename}"),
+            Option("WriteMetadataSidecar", "Write metadata sidecar", false, "true", "true", "false"),
+            Option("MetadataFileNameTemplate", "Metadata filename template", false, "{uniqueid}_metadata.json"),
+            Option("Overwrite", "Overwrite existing blobs", false, "false", "true", "false")
+        },
+        MappingFields = { "FileName", "AssetName", "FolderPath", "" }
+    };
+
+    private static ConnectorDescriptor CreateCloudinaryTargetDescriptor() => new()
+    {
+        Type = "Cloudinary",
+        DisplayName = "Cloudinary",
+        Direction = ConnectorDirections.Target,
+        Kind = "Target",
+        Description = "Uploads assets into Cloudinary with support for public id, asset folder, tags, context, and structured metadata.",
+        Capabilities = { ConnectorCapabilities.UpsertAsset, ConnectorCapabilities.WriteBinary, ConnectorCapabilities.WriteMetadata, ConnectorCapabilities.ValidateMetadataSchema, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Credentials =
+        {
+            Credential("CloudName", "Cloud name", "Cloudinary:CloudName", true, false),
+            Credential("ApiKey", "API key", "Cloudinary:ApiKey", true),
+            Credential("ApiSecret", "API secret", "Cloudinary:ApiSecret", true),
+            Credential("UploadPreset", "Upload preset", "Cloudinary:UploadPreset", false, false)
+        },
+        Options =
+        {
+            Option("CloudinaryFolderField", "Asset folder field", false, "asset_folder"),
+            Option("CloudinaryPublicIdField", "Public ID field", false, "public_id"),
+            Option("CloudinaryResourceType", "Resource type", false, "auto", "auto", "image", "video", "raw"),
+            Option("Overwrite", "Overwrite existing assets", false, "true", "true", "false"),
+            Option("Invalidate", "Invalidate CDN cache", false, "false", "true", "false")
+        },
+        MappingFields = { "public_id", "asset_folder", "folder", "resource_type", "type", "upload_preset", "tags", "context", "metadata", "file", "overwrite", "invalidate" },
+        Metadata = { ["Credentials"] = "CloudName, ApiKey, ApiSecret" }
+    };
+
+    private static ConnectorDescriptor CreateAprimoTargetDescriptor() => new()
+    {
+        Type = "Aprimo",
+        DisplayName = "Aprimo",
+        Direction = ConnectorDirections.Target,
+        Kind = "Target",
+        Description = "Target connector shell for Aprimo asset creation and metadata writes.",
+        Capabilities = { ConnectorCapabilities.UpsertAsset, ConnectorCapabilities.WriteBinary, ConnectorCapabilities.WriteMetadata, ConnectorCapabilities.DryRun, ConnectorCapabilities.Preflight },
+        Credentials =
+        {
+            Credential("BaseUrl", "Base URL", "Aprimo:BaseUrl", true, false),
+            Credential("Tenant", "Tenant", "Aprimo:Tenant", false, false),
+            Credential("ClientId", "Client ID", "Aprimo:ClientId", true),
+            Credential("ClientSecret", "Client Secret", "Aprimo:ClientSecret", true),
+            Credential("ApiKey", "API key", "Aprimo:ApiKey", false)
+        },
+        Options =
+        {
+            Option("AprimoClassificationId", "Classification ID"),
+            Option("AprimoRecordStatus", "Record status", false, "Draft"),
+            Option("AprimoFileNameField", "File name field", false, "FileName")
+        },
+        MappingFields = { "title", "description", "classificationId", "recordStatus", "fields", "file", "filename" },
+        Metadata = { ["Status"] = "Registered credential-aware target connector. Native upload implementation can now be completed behind AprimoTargetConnector." }
+    };
+
+    private static ConnectorDescriptor CreateLocalStorageSourceDescriptor() => new()
+    {
+        Type = "LocalStorage",
+        DisplayName = "Local Storage",
+        Direction = ConnectorDirections.Source,
+        Kind = "Source",
+        Description = "Reads binaries from local or network file-system paths supplied by the manifest.",
+        Capabilities = { ConnectorCapabilities.ReadAsset, ConnectorCapabilities.ReadBinary, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Options =
+        {
+            Option("LocalStorageSourceRootDirectory", "Source root directory"),
+            Option("RequireExistingFile", "Require existing file", false, "true")
+        },
+        ManifestColumns = { "SourceAssetId", "sourceAssetId", "AssetId", "assetId", "id", "Id", "SourcePath", "sourcePath", "FilePath", "filePath", "Path", "path", "LocalPath", "localPath", "SourceUri", "sourceUri", "FileName", "fileName", "filename", "OriginalFileName", "originalFileName" }
+    };
+
+    private static ConnectorDescriptor CreateLocalStorageTargetDescriptor() => new()
+    {
+        Type = "LocalStorage",
+        DisplayName = "Local Storage",
+        Direction = ConnectorDirections.Target,
+        Kind = "Target",
+        Description = "Copies binaries to a local or network file-system folder and can write DAM-style metadata sidecars.",
+        Capabilities = { ConnectorCapabilities.UpsertAsset, ConnectorCapabilities.WriteBinary, ConnectorCapabilities.WriteMetadata, ConnectorCapabilities.DryRun, ConnectorCapabilities.Resume, ConnectorCapabilities.Preflight },
+        Options =
+        {
+            Option("LocalStorageTargetRootDirectory", "Target root directory", true),
+            Option("LocalStorageTargetBasePath", "Target base path"),
+            Option("PreserveSourceFolderPath", "Preserve source folder path", false, "true"),
+            Option("PrefixFileNameWithUniqueId", "Prefix binary with unique id", false, "true"),
+            Option("UniqueIdField", "Unique id field", false, "SourceAssetId"),
+            Option("WriteMetadataSidecar", "Write metadata sidecar", false, "true"),
+            Option("Overwrite", "Overwrite existing files", false, "false")
+        },
+        MappingFields = { "name", "description", "tags", "keywords", "metadata:", "" }
+    };
+
+    private static CredentialDescriptor Credential(string name, string displayName, string configurationKey, bool required, bool secret = true) => new()
+    {
+        Name = name,
+        DisplayName = displayName,
+        ConfigurationKey = configurationKey,
+        Required = required,
+        Secret = secret
+    };
+
+    private static ConnectorOptionDescriptor Option(string name, string displayName, bool required = false, string? defaultValue = null, params string[] allowedValues) => new()
+    {
+        Name = name,
+        DisplayName = displayName,
+        Required = required,
+        DefaultValue = defaultValue,
+        AllowedValues = allowedValues.ToList()
+    };
 }

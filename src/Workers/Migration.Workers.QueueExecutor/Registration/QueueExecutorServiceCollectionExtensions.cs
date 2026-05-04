@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Migration.Connectors.Registration;
 using Migration.ControlPlane.Registration;
 using Migration.GenericRuntime.Registration;
 using Migration.Workers.QueueExecutor.Options;
@@ -16,7 +15,12 @@ public static class QueueExecutorServiceCollectionExtensions
 
         services.AddGenericMigrationRuntime(configuration);
         services.AddMigrationControlPlane(configuration);
-        services.AddMigrationConnectorModules(configuration);
+
+        // Explicitly call the connector module registration extension to avoid ambiguity with
+        // Migration.GenericRuntime.Registration.ServiceCollectionExtensions.AddMigrationConnectorModules(...).
+        Migration.Connectors.Registration.ConnectorModuleRegistrationExtensions.AddMigrationConnectorModules(
+            services,
+            configuration);
 
         services.AddSingleton<ProjectCredentialJobSettingsHydrator>();
         services.AddHostedService<MigrationRunQueueWorker>();
