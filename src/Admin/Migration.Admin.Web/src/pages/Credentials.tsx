@@ -41,6 +41,12 @@ type DescriptorField = {
   example?: unknown;
 };
 
+type ConnectorListResponse = {
+  sources?: ConnectorDescriptor[];
+  targets?: ConnectorDescriptor[];
+  manifestProviders?: ConnectorDescriptor[];
+};
+
 const emptyCredentialsJson = JSON.stringify({}, null, 2);
 
 const bynderScopes =
@@ -94,17 +100,46 @@ const bynderTargetCredentialFields: CredentialField[] = [
   }
 ];
 
-function flattenConnectors(data: {
-  sources?: ConnectorDescriptor[];
-  targets?: ConnectorDescriptor[];
-  manifestProviders?: ConnectorDescriptor[];
-} | null) {
-  const result: Array<{ role: Role; connector: ConnectorDescriptor }> = [];
+const cloudinaryTargetCredentialFields: CredentialField[] = [
+  {
+    key: "CloudName",
+    label: "Cloud name",
+    description: "Cloudinary cloud name.",
+    required: true,
+    secret: false,
+    defaultValue: "your-cloud-name"
+  },
+  {
+    key: "ApiKey",
+    label: "API key",
+    description: "Cloudinary API key.",
+    required: true,
+    secret: true,
+    defaultValue: "your-api-key"
+  },
+  {
+    key: "ApiSecret",
+    label: "API secret",
+    description: "Cloudinary API secret.",
+    required: true,
+    secret: true,
+    defaultValue: "your-api-secret"
+  },
+  {
+    key: "CLOUDINARY_URL",
+    label: "Cloudinary URL",
+    description: "Optional alternative format: cloudinary://apiKey:apiSecret@cloudName.",
+    required: false,
+    secret: true,
+    defaultValue: ""
+  }
+];
 
+function flattenConnectors(data: ConnectorListResponse | null) {
+  const result: Array<{ role: Role; connector: ConnectorDescriptor }> = [];
   for (const connector of data?.sources ?? []) result.push({ role: "Source", connector });
   for (const connector of data?.targets ?? []) result.push({ role: "Target", connector });
   for (const connector of data?.manifestProviders ?? []) result.push({ role: "Manifest", connector });
-
   return result;
 }
 
@@ -134,18 +169,24 @@ function isSecretLikeKey(key: string) {
   );
 }
 
+function connectorTypeText(connector: ConnectorDescriptor | null | undefined) {
+  return `${connector?.type ?? ""} ${connector?.name ?? ""} ${connector?.displayName ?? ""}`.toLowerCase();
+}
+
 function isBynderTarget(role: Role | undefined, connector: ConnectorDescriptor | null | undefined) {
-  return role === "Target" && connectorValue(connector).toLowerCase() === "bynder";
+  return role === "Target" && connectorTypeText(connector).includes("bynder");
+}
+
+function isCloudinaryTarget(role: Role | undefined, connector: ConnectorDescriptor | null | undefined) {
+  return role === "Target" && connectorTypeText(connector).includes("cloudinary");
 }
 
 function isOptionalCredentialOverride(connector: ConnectorDescriptor | null, key: string) {
-  const connectorType = connectorValue(connector);
+  const connectorType = connectorValue(connector).toLowerCase();
   const normalizedKey = key.toLowerCase();
-
-  if (connectorType.toLowerCase() === "webdam") {
+  if (connectorType === "webdam") {
     return normalizedKey === "accesstoken" || normalizedKey === "refreshtoken";
   }
-
   return false;
 }
 
@@ -156,13 +197,15 @@ function normalizeCredentialFields(role: Role | undefined, connector: ConnectorD
     return bynderTargetCredentialFields;
   }
 
+  if (isCloudinaryTarget(role, connector)) {
+    return cloudinaryTargetCredentialFields;
+  }
+
   return descriptorFields(connector.credentials)
     .map(field => {
       const key = getFieldKey(field);
       if (!key) return null;
-
       const requiredFromSchema = Boolean(field.required ?? field.isRequired ?? false);
-
       return {
         key,
         label: (field.displayName || field.label || key).trim(),
@@ -182,21 +225,21 @@ function sampleValueForCredential(field: CredentialField): unknown {
   }
 
   const key = field.key.toLowerCase();
-
   if (key === "baseurl" || key === "base_url" || key.endsWith("url")) return "https://example.invalid";
   if (key === "scopes" || key === "scope") return bynderScopes;
   if (key.includes("brandstore")) return "your-brandstore-id";
+  if (key.includes("cloudname") || key.includes("cloud_name")) return "your-cloud-name";
   if (key.includes("clientid") || key.includes("client_id")) return "your-client-id";
   if (key.includes("consumerkey") || key.includes("consumer_key")) return "your-consumer-key";
   if (key.includes("consumersecret") || key.includes("consumer_secret")) return "your-consumer-secret";
   if (key.includes("clientsecret") || key.includes("client_secret")) return "your-client-secret";
+  if (key.includes("apisecret") || key.includes("api_secret")) return "your-api-secret";
+  if (key.includes("apikey") || key.includes("api_key") || key === "key") return "your-api-key";
   if (key.includes("password")) return "your-password";
   if (key.includes("username") || key.includes("user_name")) return "your-username";
-  if (key.includes("apikey") || key.includes("api_key") || key === "key") return "your-api-key";
   if (key.includes("connectionstring") || key.includes("connection_string")) return "UseDevelopmentStorage=true";
   if (key.includes("refresh") || key.includes("token")) return field.required ? "your-token" : "";
   if (!field.required) return "";
-
   return `your-${field.key}`;
 }
 
@@ -246,20 +289,20 @@ export function Credentials() {
   async function load() {
     setLoading(true);
     setError(null);
-
     try {
       const [credentialResult, connectorResult] = await Promise.all([api.credentials(), api.connectors()]);
-      setCredentials(credentialResult);
-
-      const flattened = flattenConnectors(connectorResult);
+      setCredentials(credentialResult ?? []);
+      const flattened = flattenConnectors(connectorResult as ConnectorListResponse);
       setConnectors(flattened);
 
       if (!selectedConnector && flattened.length > 0) {
         const bynderTarget = flattened.find(item => isBynderTarget(item.role, item.connector));
-        const first = bynderTarget ?? flattened[0];
+        const cloudinaryTarget = flattened.find(item => isCloudinaryTarget(item.role, item.connector));
+        const first = bynderTarget ?? cloudinaryTarget ?? flattened[0];
         setSelectedConnector(`${first.role}|${connectorValue(first.connector)}`);
         setValuesJson(buildCredentialValuesJson(first.role, first.connector));
         if (bynderTarget) setDisplayName("Bynder target credentials");
+        else if (cloudinaryTarget) setDisplayName("Cloudinary target credentials");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -305,11 +348,12 @@ export function Credentials() {
 
     const [role, type] = value.split("|") as [Role | undefined, string | undefined];
     const next = connectors.find(item => item.role === role && connectorValue(item.connector) === type);
-
     setValuesJson(buildCredentialValuesJson(next?.role, next?.connector ?? null));
 
     if (next && isBynderTarget(next.role, next.connector)) {
       setDisplayName("Bynder target credentials");
+    } else if (next && isCloudinaryTarget(next.role, next.connector)) {
+      setDisplayName("Cloudinary target credentials");
     }
   }
 
@@ -375,7 +419,6 @@ export function Credentials() {
     setFormNotice(null);
     setSavedSetsNotice(null);
     setTestingCredentialId(credentialSetId);
-
     try {
       const result = await api.testCredential(credentialSetId);
       setSavedSetsNotice({
@@ -395,7 +438,6 @@ export function Credentials() {
     setFormNotice(null);
     setSavedSetsNotice(null);
     setDeletingCredentialId(credentialSetId);
-
     try {
       await api.deleteCredential(credentialSetId);
       setSavedSetsNotice({ kind: "success", message: `Deleted credential set ${credentialSetId}.` });
@@ -409,16 +451,16 @@ export function Credentials() {
 
   if (loading) {
     return (
-      <div className="pageStack credentialsPage">
+      <div className="credentialsPage">
         <h1>Credentials</h1>
-        <p className="pageIntro">Loading credential sets and connector schemas...</p>
+        <p className="muted">Loading credential sets and connector schemas...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="pageStack credentialsPage">
+      <div className="credentialsPage">
         <h1>Credentials</h1>
         <LoadingError message={error} onRetry={() => void load()} />
       </div>
@@ -426,32 +468,31 @@ export function Credentials() {
   }
 
   return (
-    <div className="pageStack credentialsPage">
-      <div>
-        <h1>Credentials</h1>
-        <p className="pageIntro">
-          Credential sets should contain only the values required to authenticate/connect to a connector.
-          Connector options belong in project, run, or settings profiles.
-        </p>
-      </div>
+    <div className="credentialsPage">
+      <h1>Credentials</h1>
+      <p className="muted">
+        Credential sets should contain only the values required to authenticate/connect to a connector. Connector options belong in project, run, or settings profiles.
+      </p>
 
       {pageNotice && <div className={noticeClassName(pageNotice.kind)}>{pageNotice.message}</div>}
 
       <Card title="Create credential set">
         <div className="credentialsFormGrid">
           <label>
-            <span>Display name</span>
+            Display name
             <input value={displayName} onChange={event => setDisplayName(event.target.value)} />
           </label>
-
           <label>
-            <span>Connector</span>
+            Connector
             <select value={selectedConnector} onChange={event => selectConnector(event.target.value)}>
-              {connectors.map(item => (
-                <option key={`${item.role}|${connectorValue(item.connector)}`} value={`${item.role}|${connectorValue(item.connector)}`}>
-                  {item.role}: {displayConnectorName(item.connector)}
-                </option>
-              ))}
+              {connectors.map(item => {
+                const value = `${item.role}|${connectorValue(item.connector)}`;
+                return (
+                  <option key={value} value={value}>
+                    {item.role}: {displayConnectorName(item.connector)}
+                  </option>
+                );
+              })}
             </select>
           </label>
         </div>
@@ -459,15 +500,18 @@ export function Credentials() {
         {formNotice && <div className={noticeClassName(formNotice.kind)}>{formNotice.message}</div>}
 
         {credentialFields.length === 0 ? (
-          <EmptyState
-            title="No credentials required"
-            message="This connector does not declare credential fields. Its configurable values are connector options, not credential values."
-          />
+          <EmptyState title="No credential schema" message="This connector does not declare credential fields." />
         ) : (
           <>
             <label className="credentialsJsonLabel">
-              <span>Values JSON</span>
-              <textarea value={valuesJson} onChange={event => setValuesJson(event.target.value)} spellCheck={false} />
+              Values JSON
+              <textarea
+                className="credentialsJsonTextarea"
+                value={valuesJson}
+                onChange={event => setValuesJson(event.target.value)}
+                spellCheck={false}
+                rows={18}
+              />
             </label>
 
             <div className="credentialSchemaSummary">
@@ -510,7 +554,9 @@ export function Credentials() {
                 ) : (
                   <ul>
                     {secretKeys.map(key => (
-                      <li key={key}><code>{key}</code></li>
+                      <li key={key}>
+                        <code>{key}</code>
+                      </li>
                     ))}
                   </ul>
                 )}
@@ -531,12 +577,7 @@ export function Credentials() {
         )}
 
         <div className="buttonRow">
-          <button
-            type="button"
-            className="primaryButton"
-            onClick={() => void createCredential()}
-            disabled={loading || saving || !selected || credentialFields.length === 0}
-          >
+          <button type="button" className="primaryButton" onClick={() => void createCredential()} disabled={loading || saving || !selected || credentialFields.length === 0}>
             {saving ? "Saving..." : "Save credential set"}
           </button>
           <button type="button" className="secondaryButton" onClick={resetValuesFromSchema} disabled={!selected || saving}>
@@ -547,7 +588,6 @@ export function Credentials() {
 
       <Card title="Saved credential sets">
         {savedSetsNotice && <div className={noticeClassName(savedSetsNotice.kind)}>{savedSetsNotice.message}</div>}
-
         {credentials.length === 0 ? (
           <EmptyState title="No credential sets saved yet" />
         ) : (
@@ -575,26 +615,18 @@ export function Credentials() {
                     <td>{item.connectorType}</td>
                     <td>{item.connectorRole}</td>
                     <td>{new Date(item.updatedUtc).toLocaleString()}</td>
-                    <td><JsonBlock value={item.values} /></td>
                     <td>
-                      {item.secretKeys?.length > 0
-                        ? item.secretKeys.map(key => <code key={key}>{key} </code>)
-                        : <span className="muted">None</span>}
+                      <JsonBlock value={item.values} />
+                    </td>
+                    <td>
+                      {item.secretKeys?.length > 0 ? item.secretKeys.map(key => <code key={key}>{key} </code>) : <span className="muted">None</span>}
                     </td>
                     <td>
                       <div className="credentialsActionRow">
-                        <button
-                          type="button"
-                          onClick={() => void testCredential(item.credentialSetId)}
-                          disabled={testingCredentialId === item.credentialSetId}
-                        >
+                        <button type="button" onClick={() => void testCredential(item.credentialSetId)} disabled={testingCredentialId === item.credentialSetId}>
                           {testingCredentialId === item.credentialSetId ? "Testing..." : "Test"}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => void deleteCredential(item.credentialSetId)}
-                          disabled={deletingCredentialId === item.credentialSetId}
-                        >
+                        <button type="button" onClick={() => void deleteCredential(item.credentialSetId)} disabled={deletingCredentialId === item.credentialSetId}>
                           {deletingCredentialId === item.credentialSetId ? "Deleting..." : "Delete"}
                         </button>
                       </div>
