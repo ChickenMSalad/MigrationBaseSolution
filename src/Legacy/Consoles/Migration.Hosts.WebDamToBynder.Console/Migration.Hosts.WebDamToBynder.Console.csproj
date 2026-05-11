@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>Migration-Hosts-WebDamToBynder-Console</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Connectors\Sources\Migration.Connectors.Sources.WebDam\Migration.Connectors.Sources.WebDam.csproj" />
+    <ProjectReference Include="..\..\..\Connectors\Sources\Migration.Connectors.Sources.S3\Migration.Connectors.Sources.S3.csproj" />
+    <ProjectReference Include="..\..\..\Connectors\Targets\Migration.Connectors.Targets.Bynder\Migration.Connectors.Targets.Bynder.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" />
+    <PackageReference Include="Bynder.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
+</Project>

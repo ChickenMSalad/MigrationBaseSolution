@@ -1,0 +1,79 @@
+{
+  "rules": [
+    {
+      "pattern": "(?:^|[\\\\/])(?:[0-9]|U)",
+      "category": "Upholstery",
+      "source": "Number (0-9) or U"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])A",
+      "category": "Accessories",
+      "source": "A"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])B",
+      "category": "Bedroom",
+      "source": "B"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])D",
+      "category": "Dining",
+      "source": "D"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])EA",
+      "category": "ETA_Accents",
+      "source": "EA"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])EB",
+      "category": "ETA_Bedroom",
+      "source": "EB"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])EW",
+      "category": "ETA_Entertainment",
+      "source": "EW"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])H",
+      "category": "Home_Office",
+      "source": "H"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])L",
+      "category": "Lighting",
+      "source": "L"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])M",
+      "category": "Bedding",
+      "source": "M"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])P",
+      "category": "Outdoor",
+      "source": "P"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])Q",
+      "category": "TOB",
+      "source": "Q"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])R",
+      "category": "Rugs",
+      "source": "R"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])T",
+      "category": "Occasional Tables",
+      "source": "T"
+    },
+    {
+      "pattern": "(?:^|[\\\\/])W",
+      "category": "Entertainment Wall",
+      "source": "W"
+    }
+  ]
+}

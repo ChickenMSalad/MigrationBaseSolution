@@ -1,0 +1,17 @@
+{
+  "profileName": "aem-to-aprimo.default",
+  "sourceType": "Aem",
+  "targetType": "Aprimo",
+  "fieldMappings": [
+    { "source": "jcr:title", "target": "Title" },
+    { "source": "dc:description", "target": "Description" },
+    { "source": "dam:assetState", "target": "AssetState" }
+  ],
+  "requiredTargetFields": ["Title"],
+  "classificationRules": [
+    { "when": "path startsWith /content/dam/products", "classification": "Products" }
+  ],
+  "binary": {
+    "preferredRendition": "original"
+  }
+}

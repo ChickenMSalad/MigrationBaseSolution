@@ -1,0 +1,14 @@
+{
+  "profileName": "sample-csv-to-cloudinary",
+  "sourceType": "AzureBlob",
+  "targetType": "Cloudinary",
+  "fieldMappings": [
+    { "source": "title", "target": "title" },
+    { "source": "description", "target": "description" },
+    { "source": "alt_text", "target": "alt_text" },
+    { "source": "tags", "target": "tags" },
+    { "source": "folder", "target": "folder" },
+    { "source": "public_id", "target": "public_id" }
+  ],
+  "requiredTargetFields": [ "public_id" ]
+}

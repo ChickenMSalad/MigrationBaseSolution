@@ -1,0 +1,16 @@
+{
+  "profileName": "webdam-to-bynder.default",
+  "sourceType": "WebDam",
+  "targetType": "Bynder",
+  "fieldMappings": [
+    { "source": "name", "target": "name" },
+    { "source": "description", "target": "description" },
+    { "source": "keywords", "target": "tags", "transform": "SplitSemicolon" },
+    { "source": "created_date", "target": "dateCreated", "transform": "NormalizeDate" }
+  ],
+  "requiredTargetFields": ["name"],
+  "taxonomyMappings": [],
+  "binary": {
+    "preferredRendition": "original"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "jobName": "aem-azure-aprimo-sample",
+  "source": {
+    "type": "Aem",
+    "connection": "Aem.Main"
+  },
+  "target": {
+    "type": "Aprimo",
+    "connection": "Aprimo.Main"
+  },
+  "manifest": {
+    "type": "Sql",
+    "connection": "MigrationState",
+    "query": "select * from dbo.AssetManifest where IsActive = 1"
+  },
+  "mappingProfile": "../mappings/aem-to-aprimo.default.json",
+  "options": {
+    "dryRun": false,
+    "parallelism": 2,
+    "resumeMode": "PendingOnly"
+  }
+}

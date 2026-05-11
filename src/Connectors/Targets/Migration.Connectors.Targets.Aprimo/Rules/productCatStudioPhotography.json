@@ -1,0 +1,97 @@
+{
+  "ruleSet": "productCategoryStudioPhotography",
+  "version": 1,
+  "matchMode": "contains",
+  "caseInsensitive": true,
+  "rules": [
+    {
+      "aemFolderName": "AccentFurniture",
+      "aprimoProductCategory": "Accent Furniture"
+    },
+    {
+      "aemFolderName": "AshleySleep",
+      "aprimoProductCategory": "Mattress"
+    },
+    {
+      "aemFolderName": "Bedroom",
+      "aprimoProductCategory": "Bedroom"
+    },
+    {
+      "aemFolderName": "Dining",
+      "aprimoProductCategory": "Dining"
+    },
+    {
+      "aemFolderName": "Discontinued_SKUs",
+      "aprimoProductCategory": null,
+      "flags": {
+        "noMappingProvided": true
+      }
+    },
+    {
+      "aemFolderName": "EntertainmentWall",
+      "aprimoProductCategory": "Entertainment Wall"
+    },
+    {
+      "aemFolderName": "EVC",
+      "aprimoProductCategory": null,
+      "flags": {
+        "noMappingProvided": true
+      }
+    },
+    {
+      "aemFolderName": "HomeOffice",
+      "aprimoProductCategory": "Home Office"
+    },
+    {
+      "aemFolderName": "Lamps",
+      "aprimoProductCategory": "Lamps"
+    },
+    {
+      "aemFolderName": "Miscellaneous",
+      "aprimoProductCategory": "Miscellaneous"
+    },
+    {
+      "aemFolderName": "OccasionalTables",
+      "aprimoProductCategory": "Occasional Tables"
+    },
+    {
+      "aemFolderName": "Outdoor",
+      "aprimoProductCategory": "Outdoor"
+    },
+    {
+      "aemFolderName": "Pillows-Poufs-Throws",
+      "aprimoProductCategory": "Accessories"
+    },
+    {
+      "aemFolderName": "Resident_Home",
+      "aprimoProductCategory": "Resident Home"
+    },
+    {
+      "aemFolderName": "Rugs",
+      "aprimoProductCategory": "Rugs"
+    },
+    {
+      "aemFolderName": "Tableware",
+      "aprimoProductCategory": "Tableware"
+    },
+    {
+      "aemFolderName": "throws",
+      "aprimoProductCategory": null,
+      "flags": {
+        "noMappingProvided": true
+      }
+    },
+    {
+      "aemFolderName": "TOB",
+      "aprimoProductCategory": "TOB"
+    },
+    {
+      "aemFolderName": "Upholstery",
+      "aprimoProductCategory": "Upholstery"
+    },
+    {
+      "aemFolderName": "Wall-Art",
+      "aprimoProductCategory": "Accessories"
+    }
+  ]
+}

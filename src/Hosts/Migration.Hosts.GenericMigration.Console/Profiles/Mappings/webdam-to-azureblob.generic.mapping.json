@@ -1,0 +1,31 @@
+{
+  "profileName": "webdam-to-azureblob-generic-proof",
+  "sourceType": "WebDam",
+  "targetType": "AzureBlob",
+  "requiredTargetFields": [
+    "BlobName"
+  ],
+  "fieldMappings": [
+    {
+      "source": "File Name",
+      "target": "BlobName"
+    },
+    {
+      "source": "webdam_id",
+      "target": "WebDamId"
+    },
+    {
+      "source": "Title",
+      "target": "Title"
+    },
+    {
+      "source": "Caption_Description",
+      "target": "Description"
+    },
+    {
+      "source": "Keywords",
+      "target": "Keywords",
+      "transform": "split:semicolon"
+    }
+  ]
+}

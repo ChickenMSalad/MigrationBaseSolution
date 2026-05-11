@@ -1,0 +1,21 @@
+{
+  "jobName": "webdam-to-bynder-sample",
+  "source": {
+    "type": "WebDam",
+    "connection": "WebDam.Main"
+  },
+  "target": {
+    "type": "Bynder",
+    "connection": "Bynder.Main"
+  },
+  "manifest": {
+    "type": "Excel",
+    "location": "./input/webdam-manifest.xlsx"
+  },
+  "mappingProfile": "../mappings/webdam-to-bynder.default.json",
+  "options": {
+    "dryRun": true,
+    "parallelism": 4,
+    "resumeMode": "FailedOrPending"
+  }
+}

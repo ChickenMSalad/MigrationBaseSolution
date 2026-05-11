@@ -1,0 +1,91 @@
+/* Preflight page — matches current Preflight.tsx markup */
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.metric {
+  border: 1px solid var(--border, #d8dee9);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.metric span:first-child {
+  display: block;
+  color: var(--muted, #64748b);
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.metric strong {
+  display: block;
+  color: #0f172a;
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.pill {
+  display: inline-flex !important;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.32rem 0.65rem;
+  font-size: 0.82rem !important;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pill.good {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.pill.warn {
+  background: #fffaeb;
+  color: #b54708;
+}
+
+.pill.bad {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.pill.neutral {
+  background: #eef2ff;
+  color: #3538cd;
+}
+
+.pageStack table .pill {
+  margin: 0;
+}
+
+.pageStack table th {
+  color: #475569;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pageStack table td {
+  vertical-align: top;
+}
+
+.pageStack .formGrid + .primary {
+  margin-top: 1rem;
+}
+
+.pageStack input[type="number"] {
+  max-width: 180px;
+}
+
+.pageStack label.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

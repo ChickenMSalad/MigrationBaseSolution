@@ -1,0 +1,33 @@
+{
+  "jobName": "webdam-to-azureblob-ntara-sample",
+  "sourceType": "WebDam",
+  "targetType": "AzureBlob",
+  "manifestType": "Csv",
+  "manifestPath": "Profiles/Manifests/BynderWebDamImport_ntara.csv",
+  "mappingProfilePath": "Profiles/Mappings/webdam-to-azureblob.ntara.mapping.json",
+  "dryRun": true,
+  "parallelism": 2,
+  "settings": {
+    "AzureBlobTargetContainer": "migration-test",
+    "AzureBlobTargetRootFolder": "webdam-export/ntara",
+
+    "AzureBlobPreserveSourceFolderPath": "true",
+    "AzureBlobFolderPathField": "Folder Path",
+
+    "AzureBlobUniqueIdField": "webdam_id",
+    "AzureBlobFileNameField": "File Name",
+    "AzureBlobBinaryFileNameTemplate": "{uniqueid}_{filename}",
+
+    "AzureBlobWriteMetadataSidecar": "true",
+    "AzureBlobMetadataFileNameTemplate": "{uniqueid}_metadata.json",
+    "AzureBlobMetadataSidecarMode": "All",
+    "AzureBlobIncludeEmptyMetadataValues": "false",
+    "AzureBlobPrettyPrintMetadataSidecar": "true",
+
+    "AzureBlobWriteBlobMetadata": "true",
+    "AzureBlobIncludeMappedFieldsAsBlobMetadata": "false",
+    "AzureBlobIncludeSourceColumnsAsBlobMetadata": "false",
+
+    "AzureBlobTargetOverwrite": "false"
+  }
+}

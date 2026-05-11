@@ -1,0 +1,40 @@
+{
+  "ruleSet": "productCategoryAHSVideos",
+  "version": 1,
+  "matchMode": "contains",
+  "caseInsensitive": true,
+  "rules": [
+    {
+      "aemFolderName": "Bedroom",
+      "aprimoProductCategory": "Bedroom"
+    },
+    {
+      "aemFolderName": "Dining",
+      "aprimoProductCategory": "Dining"
+    },
+    {
+      "aemFolderName": "Discontinued",
+      "aprimoProductCategory": "Discontinued"
+    },
+    {
+      "aemFolderName": "EntertainmentWall",
+      "aprimoProductCategory": "Entertainment Wall"
+    },
+    {
+      "aemFolderName": "Mattress",
+      "aprimoProductCategory": "Mattress"
+    },
+    {
+      "aemFolderName": "OccasionalTables",
+      "aprimoProductCategory": "Occasional Tables"
+    },
+    {
+      "aemFolderName": "Outdoor",
+      "aprimoProductCategory": "Outdoor"
+    },
+    {
+      "aemFolderName": "Upholstery",
+      "aprimoProductCategory": "Upholstery"
+    }
+  ]
+}

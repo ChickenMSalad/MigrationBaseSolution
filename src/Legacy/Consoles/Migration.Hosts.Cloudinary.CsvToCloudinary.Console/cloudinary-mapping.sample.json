@@ -1,0 +1,40 @@
+{
+  "defaults": {
+    "resourceType": "auto",
+    "type": "upload",
+    "uploadPreset": "Migration",
+    "overwrite": false,
+    "invalidate": false,
+    "uniqueFilename": false,
+    "useFilename": false
+  },
+  "fileColumns": ["file", "source_url", "s3_url"],
+  "publicIdColumns": ["CLD_PublicID", "public_id"],
+  "assetFolderColumns": ["CLD_Folder", "cloudinary_folder", "folder"],
+  "displayNameColumns": ["display_name", "title", "name"],
+  "tagsColumns": ["tags"],
+  "tagsSeparator": ",",
+  "context": [
+    { "column": "alt", "key": "alt" },
+    { "column": "caption", "key": "caption" }
+  ],
+  "structuredMetadata": [
+    {
+      "column": "Status",
+      "externalId": "status",
+      "valueMode": "label"
+    },
+    {
+      "column": "Market",
+      "externalId": "market",
+      "valueMode": "label",
+      "separator": ","
+    },
+    {
+      "column": "ShotDate",
+      "externalId": "shot_date",
+      "valueMode": "direct",
+      "dateInputFormat": "M/d/yyyy"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "profileName": "platform-smoke-localstorage",
+  "sourceType": "LocalStorage",
+  "targetType": "LocalStorage",
+  "fieldMappings": [
+    {
+      "source": "title",
+      "target": "title",
+      "required": false
+    },
+    {
+      "source": "description",
+      "target": "description",
+      "required": false
+    },
+    {
+      "source": "folderPath",
+      "target": "folderPath",
+      "required": false
+    }
+  ]
+}

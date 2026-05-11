@@ -1,0 +1,230 @@
+{
+  "matchMode": "PathContainsFolder",
+  "matchStrategy": "LongestFolderFirst",
+  "rules": [
+    {
+      "aemFolder": "/content/dam/ahs-creative/agr-holiday25-blackfri",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Brand Shoots",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ahs-creative/agr-holiday25-brand",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Brand Shoots",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/3rdparty",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Assorted",
+      "requiresAdditionalLogic": true,
+      "notes": "Subtype must be resolved via filename convention or AI"
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/glb_files",
+      "assetType": "3D",
+      "assetSubtype": "GLB",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/icons",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Icons",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/image_placeholders",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Grayscale",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/special_requests",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "A+ Content",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/wanek-3-fabric-images",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "A+ Content",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/series-fpo",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Series-FPO",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/studiophotography",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Assorted",
+      "requiresAdditionalLogic": true,
+      "notes": "Subtype must be resolved via filename convention or AI"
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/video/afi_product_videos",
+      "assetType": "Video (Product Related)",
+      "assetSubtype": "Individual Product",
+      "requiresAdditionalLogic": false, // maybe true if note is true
+      "notes": "AFI vs AHS must be resolved via filename - maybe?"
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/video/ahs_product_videos",
+      "assetType": "Video (Product Related)",
+      "assetSubtype": "Individual Product",
+      "requiresAdditionalLogic": false, // maybe true if note is true
+      "notes": "AFI vs AHS must be resolved via filename - maybe?"
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/video/assembly_videos/cgi_assembly",
+      "assetType": "Video (Product Related)",
+      "assetSubtype": "Educational / Assembly",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/video/assembly_videos/r-d_assembly_(phillhoff)",
+      "assetType": "Video (Product Related)",
+      "assetSubtype": "Educational / Assembly",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/video/showcase_product_videos",
+      "assetType": "Video (Product Related)",
+      "assetSubtype": "Product Collection",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/a-content_assets_storage",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "A+ Content",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/ashley-sleep-rollover",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "A+ Content",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/dimensions",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Dimensions",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/features_benefits_pdp",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Banners",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/mattress_layer_diagrams",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Mattress Layers",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/modmax-2-0-photography",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Brand Shoots",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/package-knockouts",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Package Knockouts",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/performance-fabric-2-0-photography",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Brand Shoots",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/cgi/digital-color-master-standard",
+      "assetType": "CGI Working Files",
+      "assetSubtype": "Digital Master Standard",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/rh_social",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Social",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/rh_social/rh_agr_metacatalog",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Social",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/rh_social/rh_agr_pinterestcreativecatalog",
+      "assetType": "Digital Marketing",
+      "assetSubtype": "Social",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/knockout-images-4x3",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Knockouts 4x3",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/knockout-images",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Knockouts",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/lifestyle-images-4x3",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Lifestyle 4x3",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/lifestyle8x10-crop",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Lifestyle 8x10",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    },
+    {
+      "aemFolder": "/content/dam/ashley-furniture/webimages/swatches-500",
+      "assetType": "Inline Product Imagery",
+      "assetSubtype": "Swatch 500",
+      "requiresAdditionalLogic": false,
+      "notes": null
+    }
+  ]
+}

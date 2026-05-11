@@ -1,0 +1,36 @@
+{
+  "ruleSet": "imagePlaceholderProductCategory",
+  "version": 1,
+  "matchMode": "contains",
+  "caseInsensitive": true,
+  "rules": [
+    {
+      "aemFolderName": "Bedroom_Placeholder_Images",
+      "aprimoProductCategory": "Bedroom"
+    },
+    {
+      "aemFolderName": "Dining_Placeholder_Images",
+      "aprimoProductCategory": "Dining"
+    },
+    {
+      "aemFolderName": "Entertainment_Wall_Placeholder_Images",
+      "aprimoProductCategory": "Entertainment Wall"
+    },
+    {
+      "aemFolderName": "Home_Office_Placeholder_Images",
+      "aprimoProductCategory": "Home Office"
+    },
+    {
+      "aemFolderName": "Occasional_Table_Placeholder_Images",
+      "aprimoProductCategory": "Occasionalional Tables"
+    },
+    {
+      "aemFolderName": "Outdoor_Placeholder_Images",
+      "aprimoProductCategory": "Outdoor"
+    },
+    {
+      "aemFolderName": "Upholstery_Placeholder_Images",
+      "aprimoProductCategory": "Upholstery"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "workItemId": "ls-cat-001",
+  "sourceAssetId": "ls-cat-001",
+  "sourcePath": "C:\\Workspace\\MigrationBaseSolution\\samples\\localstorage\\source\\animals\\cats\\cat-001.txt",
+  "targetPath": "C:\\Workspace\\MigrationBaseSolution\\samples\\localstorage\\target\\platform-smoke-output\\animals\\cats\\ls-cat-001_cat-001.txt",
+  "fileName": "cat-001.txt",
+  "writtenUtc": "2026-04-29T17:20:04.9187226+00:00",
+  "FolderPath": "animals/cats",
+  "title": "Cat Sample",
+  "description": "LocalStorage smoke test cat row",
+  "keywords": "animal;cat;smoke-test"
+}

@@ -1,0 +1,7 @@
+namespace Migration.Orchestration.Abstractions;
+
+public interface IMigrationRetryPolicy
+{
+    Task<T> ExecuteAsync<T>(string operationName, Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken = default);
+    Task ExecuteAsync(string operationName, Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default);
+}

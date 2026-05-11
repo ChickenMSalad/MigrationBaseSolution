@@ -1,0 +1,15 @@
+{
+  "JobName": "sample-csv-to-cloudinary",
+  "SourceType": "AzureBlob",
+  "TargetType": "Cloudinary",
+  "ManifestType": "csv",
+  "MappingProfilePath": "Profiles/Mappings/sample-csv-to-cloudinary.mapping.json",
+  "ManifestPath": "Profiles/Manifests/sample-cloudinary-manifest.csv",
+  "DryRun": true,
+  "Parallelism": 2,
+  "Settings": {
+    "ContainerName": "source-assets",
+    "CloudinaryFolder": "migration/sample-client",
+    "CloudinaryResourceType": "auto"
+  }
+}

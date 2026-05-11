@@ -1,0 +1,15 @@
+{
+  "JobName": "localstorage-platform-smoke",
+  "SourceType": "LocalStorage",
+  "TargetType": "LocalStorage",
+  "ManifestType": "Csv",
+  "ManifestPath": "profiles/manifests/localstorage-platform-smoke.csv",
+  "MappingProfilePath": "profiles/mappings/localstorage-platform-smoke.json",
+  "DryRun": false,
+  "Parallelism": 1,
+  "Settings": {
+    "LocalStorageSourceRootDirectory": "samples/localstorage/source",
+    "LocalStorageTargetRootDirectory": "samples/localstorage/target",
+    "LocalStorageTargetBasePath": "platform-smoke-output"
+  }
+}

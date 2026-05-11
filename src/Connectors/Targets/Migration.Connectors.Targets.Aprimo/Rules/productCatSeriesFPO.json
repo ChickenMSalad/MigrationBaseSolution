@@ -1,0 +1,48 @@
+{
+  "ruleSet": "seriesFPOProductCategory",
+  "version": 1,
+  "matchMode": "contains",
+  "caseInsensitive": true,
+  "rules": [
+    {
+      "aemFolderName": "Accent-FPO",
+      "aprimoProductCategory": "Accent Furniture"
+    },
+    {
+      "aemFolderName": "Bedroom-FPO",
+      "aprimoProductCategory": "Bedroom"
+    },
+    {
+      "aemFolderName": "Dining-FPO",
+      "aprimoProductCategory": "Dining"
+    },
+    {
+      "aemFolderName": "Entertainment_Wall-FPO",
+      "aprimoProductCategory": "Entertainment Wall"
+    },
+    {
+      "aemFolderName": "Home_Office-FPO",
+      "aprimoProductCategory": "Home Office"
+    },
+    {
+      "aemFolderName": "Lighting-FPO",
+      "aprimoProductCategory": "Lighting"
+    },
+    {
+      "aemFolderName": "Mattress-FPO",
+      "aprimoProductCategory": "Mattress"
+    },
+    {
+      "aemFolderName": "Occasional-FPO",
+      "aprimoProductCategory": "Occasional Tables"
+    },
+    {
+      "aemFolderName": "Outdoor-FPO",
+      "aprimoProductCategory": "Outdoor"
+    },
+    {
+      "aemFolderName": "Upholstery-FPO",
+      "aprimoProductCategory": "Upholstery"
+    }
+  ]
+}
