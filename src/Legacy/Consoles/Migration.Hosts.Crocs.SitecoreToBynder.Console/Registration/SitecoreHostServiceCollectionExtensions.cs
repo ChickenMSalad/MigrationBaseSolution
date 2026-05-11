@@ -7,7 +7,7 @@ using Migration.Connectors.Sources.Sitecore.Clients;
 using Migration.Connectors.Sources.Sitecore.Configuration;
 using Migration.Connectors.Sources.Sitecore.Services;
 using Migration.Shared.Runtime;
-using Migration.Shared.Storage;
+using Migration.Shared.Storage.AzureBlob;
 using Stylelabs.M.Sdk.WebClient;
 using Stylelabs.M.Sdk.WebClient.Authentication;
 

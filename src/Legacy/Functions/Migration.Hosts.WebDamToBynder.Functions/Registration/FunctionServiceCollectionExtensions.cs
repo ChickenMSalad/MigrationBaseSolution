@@ -16,7 +16,7 @@ using Migration.Connectors.Targets.Bynder.Configuration;
 using Migration.Connectors.Targets.Bynder.Services;
 using Migration.Shared.Configuration.Hosts.Bynder;
 using Migration.Shared.Configuration.Hosts.WebDam;
-using Migration.Shared.Storage;
+using Migration.Shared.Storage.AzureBlob;
 
 namespace Migration.Hosts.WebDamToBynder.Functions.Registration;
 

@@ -2,7 +2,6 @@
 using Migration.Connectors.Targets.Aprimo.Clients;
 using Migration.Domain.Models;
 using Migration.Connectors.Targets.Aprimo.Extensions;
-using Migration.Shared.Storage;
 using Migration.Connectors.Targets.Aprimo.Configuration;
 using Migration.Shared.Configuration.Hosts.Aprimo;
 using Migration.Shared.Configuration.Infrastructure;
@@ -26,6 +25,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using static OfficeOpenXml.ExcelErrorValue;
+using Migration.Shared.Storage.AzureBlob;
 
 
 

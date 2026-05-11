@@ -1,6 +1,6 @@
 using System;
 
-namespace Migration.Shared.Storage
+namespace Migration.Shared.Storage.AzureBlob
 {
     public sealed class BlobUploadResult
     {

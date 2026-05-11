@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 
-namespace Migration.Shared.Storage
+namespace Migration.Shared.Storage.AzureBlob
 {
 
     public class AzureBlobWrapperFactory : IAzureBlobWrapperFactory

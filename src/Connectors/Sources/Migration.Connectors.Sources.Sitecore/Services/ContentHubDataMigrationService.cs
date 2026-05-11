@@ -9,8 +9,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Azure.Storage.Blobs;
-
-using Migration.Shared.Storage;
 using Migration.Connectors.Targets.Bynder.Extensions;
 using Migration.Shared.Files;
 using Migration.Connectors.Sources.Sitecore.Models;
@@ -26,6 +24,7 @@ using Stylelabs.M.Base.Querying.Linq;
 using Stylelabs.M.Sdk;
 using Stylelabs.M.Sdk.Contracts.Base;
 using Stylelabs.M.Sdk.WebClient;
+using Migration.Shared.Storage.AzureBlob;
 
 namespace Migration.Connectors.Sources.Sitecore.Services
 {

@@ -15,7 +15,7 @@ using Azure.Storage.Blobs.Specialized;
 using Microsoft.Extensions.Logging;
 
 
-namespace Migration.Shared.Storage
+namespace Migration.Shared.Storage.AzureBlob
 {
     public class AzureBlobWrapperAsync : IAzureBlobWrapperAsync
     {
@@ -40,7 +40,7 @@ namespace Migration.Shared.Storage
                 MaxRetries = 3,
                 Delay = TimeSpan.FromSeconds(2),
                 MaxDelay = TimeSpan.FromSeconds(60),
-                Mode = Azure.Core.RetryMode.Exponential,
+                Mode = RetryMode.Exponential,
                 NetworkTimeout = TimeSpan.FromMinutes(60),
             },
                 Transport = transport

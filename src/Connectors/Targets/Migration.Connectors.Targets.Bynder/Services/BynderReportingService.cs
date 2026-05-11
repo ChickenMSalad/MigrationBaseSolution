@@ -1,8 +1,5 @@
 using Migration.Connectors.Targets.Bynder.Configuration;
 using System.Data;
-
-
-using Migration.Shared.Storage;
 using Migration.Connectors.Targets.Bynder.Models;
 
 using Bynder.Sdk.Query.Asset;
@@ -17,6 +14,7 @@ using Microsoft.Extensions.Options;
 
 using OfficeOpenXml;
 using Migration.Shared.Configuration.Hosts.Bynder;
+using Migration.Shared.Storage.AzureBlob;
 
 namespace Migration.Connectors.Targets.Bynder.Services
 {

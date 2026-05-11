@@ -14,7 +14,7 @@ using Migration.Shared.Configuration.Hosts.Bynder;
 using Migration.Shared.Configuration.Hosts.Sitecore;
 using Migration.Shared.Extensions;
 using Migration.Shared.Files;
-using Migration.Shared.Storage;
+using Migration.Shared.Storage.AzureBlob;
 
 StartupExtensions.ConfigureThirdPartyLicenses();
 

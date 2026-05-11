@@ -13,7 +13,7 @@ using Migration.Connectors.Targets.Aprimo.Services;
 using Migration.Shared.Configuration.Hosts.Aem;
 using Migration.Shared.Configuration.Hosts.Aprimo;
 using Migration.Shared.Configuration.Infrastructure;
-using Migration.Shared.Storage;
+using Migration.Shared.Storage.AzureBlob;
 using Migration.Shared.Workflows.AemToAprimo.Models;
 using AemHttpClientDiagnosticsHandler = Migration.Connectors.Sources.Aem.Utilities.HttpClientDiagnosticsHandler;
 using AprimoHttpClientDiagnosticsHandler = Migration.Connectors.Targets.Aprimo.Utilities.HttpClientDiagnosticsHandler;

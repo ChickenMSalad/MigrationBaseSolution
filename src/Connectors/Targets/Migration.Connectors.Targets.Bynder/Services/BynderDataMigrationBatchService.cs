@@ -3,8 +3,6 @@ using Migration.Connectors.Targets.Bynder.Configuration;
 using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;
-
-using Migration.Shared.Storage;
 using Migration.Connectors.Targets.Bynder.Clients;
 using Migration.Shared.Files;
 using Migration.Connectors.Targets.Bynder.Models;
@@ -18,6 +16,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Migration.Shared.Configuration.Hosts.Bynder;
+using Migration.Shared.Storage.AzureBlob;
 
 
 namespace Migration.Connectors.Targets.Bynder.Services

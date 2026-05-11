@@ -14,8 +14,8 @@ using Migration.Hosts.WebDamToBynder.Console.Infrastructure;
 using Migration.Hosts.WebDamToBynder.Console.Registration;
 using Migration.Shared.Extensions;
 using Migration.Shared.Files;
-using Migration.Shared.Storage;
 using Migration.Connectors.Targets.Bynder.Configuration;
+using Migration.Shared.Storage.AzureBlob;
 
 StartupExtensions.ConfigureThirdPartyLicenses();
 

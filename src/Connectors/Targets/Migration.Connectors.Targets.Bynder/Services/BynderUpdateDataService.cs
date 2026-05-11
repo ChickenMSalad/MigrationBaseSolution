@@ -11,7 +11,7 @@ using Migration.Connectors.Targets.Bynder.Extensions;
 using Migration.Connectors.Targets.Bynder.Models;
 using Migration.Shared.Configuration.Hosts.Bynder;
 using Migration.Shared.Files;
-using Migration.Shared.Storage;
+using Migration.Shared.Storage.AzureBlob;
 using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;

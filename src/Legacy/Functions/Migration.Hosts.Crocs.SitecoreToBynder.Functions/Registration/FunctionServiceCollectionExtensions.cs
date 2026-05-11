@@ -14,7 +14,7 @@ using Migration.Connectors.Targets.Bynder.Services;
 using Migration.Shared.Configuration.Hosts.Bynder;
 using Migration.Shared.Configuration.Hosts.Sitecore;
 using Migration.Shared.Runtime;
-using Migration.Shared.Storage;
+using Migration.Shared.Storage.AzureBlob;
 using Stylelabs.M.Sdk.WebClient;
 using Stylelabs.M.Sdk.WebClient.Authentication;
 

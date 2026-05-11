@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Migration.Shared.Storage
+namespace Migration.Shared.Storage.AzureBlob
 {
     public class AzureConfiguration
     {
