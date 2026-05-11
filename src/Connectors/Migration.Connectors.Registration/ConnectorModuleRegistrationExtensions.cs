@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Migration.Connectors.Sources.WebDam.Registration;
 using Migration.Connectors.Targets.AzureBlob.Registration;
+using Migration.Connectors.Targets.S3.Registration;
 
 namespace Migration.Connectors.Registration;
 
@@ -17,6 +18,7 @@ public static class ConnectorModuleRegistrationExtensions
             .AddSharePointSourceConnector(services, configuration);
 
         services.AddAzureBlobTargetConnector(configuration);
+        services.AddS3TargetConnector(configuration);
 
         return services;
     }

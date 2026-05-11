@@ -87,6 +87,34 @@ const sharePointOptionFields = [
   { name: "IncludeGraphMetadata", label: "Include Graph metadata", description: "Include Graph/SharePoint item metadata when Graph mode is used.", required: false }
 ];
 
+
+const s3CredentialFields = [
+  { name: "AccessKey", label: "Access key", description: "AWS access key id for the S3 target bucket.", required: true, secret: true },
+  { name: "SecretKey", label: "Secret key", description: "AWS secret access key for the S3 target bucket.", required: true, secret: true },
+  { name: "Region", label: "Region", description: "AWS region, for example us-east-1.", required: true, defaultValue: "us-east-1" },
+  { name: "BucketName", label: "Bucket name", description: "Destination S3 bucket name.", required: true },
+  { name: "Prefix", label: "Prefix", description: "Optional default destination key prefix.", required: false },
+  { name: "ServiceUrl", label: "Service URL", description: "Optional S3-compatible endpoint for MinIO, R2, Wasabi, etc.", required: false },
+  { name: "ForcePathStyle", label: "Force path style", description: "true/false. Enable for many S3-compatible endpoints.", required: false, defaultValue: "false" }
+];
+
+const s3TargetOptionFields = [
+  { name: "BucketName", label: "Bucket name", description: "Destination S3 bucket name.", required: false },
+  { name: "Prefix", label: "Prefix", description: "Optional default destination key prefix.", required: false },
+  { name: "ObjectKeyTemplate", label: "Object key template", description: "Optional object key template used by mappings, for example {sourceRelativePath}.", required: false }
+];
+
+const s3TargetDescriptor: ConnectorDescriptor = {
+  type: "S3",
+  name: "S3",
+  displayName: "S3",
+  description: "Amazon S3 target connector for writing migrated binaries to an S3 bucket.",
+  direction: "Target",
+  capabilities: { canWriteAssets: true, supportsPrefixes: true },
+  credentials: s3CredentialFields,
+  options: s3TargetOptionFields
+};
+
 const sharePointSourceDescriptor: ConnectorDescriptor = {
   type: "SharePoint",
   name: "SharePoint",
@@ -115,6 +143,7 @@ function withSharePointConnectors(data: ConnectorsResponse): ConnectorsResponse 
   const manifestProviders = [...(data?.manifestProviders ?? [])];
 
   if (!hasConnector(sources, "SharePoint")) sources.push(sharePointSourceDescriptor);
+  if (!hasConnector(targets, "S3")) targets.push(s3TargetDescriptor);
   if (!hasConnector(manifestProviders, "SharePoint")) manifestProviders.push(sharePointManifestProviderDescriptor);
 
   return { sources, targets, manifestProviders };
