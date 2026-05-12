@@ -203,6 +203,7 @@ internal sealed class AprimoWorkbookApiClient
         request.Headers.TryAddWithoutValidation("API-VERSION", "1");
         request.Headers.TryAddWithoutValidation("pageSize", "500");
         request.Headers.TryAddWithoutValidation("Languages", "*");
+        request.Headers.Add("User-Agent", "Azure Aprimo Migration Connector");
         if (headers is not null)
         {
             foreach (var header in headers)
@@ -256,7 +257,7 @@ internal sealed class AprimoWorkbookDataBuilder
         if (options.Classifications) sheets.Add(await ClassificationsSheetAsync(options).ConfigureAwait(false));
         if (options.ClassificationPermissions) sheets.Add(await ClassificationPermissionsSheetAsync().ConfigureAwait(false));
         if (options.FunctionalPermissions) sheets.Add(await FunctionalPermissionsSheetAsync().ConfigureAwait(false));
-        if (options.Settings) sheets.Add(await GenericItemsSheetAsync("Settings", "/settings/definitions", includeDetail: true).ConfigureAwait(false));
+        if (options.Settings) sheets.Add(await SettingsSheetAsync().ConfigureAwait(false));
         if (options.Watermarks) sheets.Add(await GenericItemsSheetAsync("Watermarks", "/watermarks", includeDetail: false).ConfigureAwait(false));
         if (options.Translations) sheets.Add(await GenericItemsSheetAsync("Translations", "/translations", includeDetail: false).ConfigureAwait(false));
         if (options.Rules) sheets.Add(await RulesSheetAsync().ConfigureAwait(false));
@@ -388,6 +389,64 @@ internal sealed class AprimoWorkbookDataBuilder
             rows.Add(new[] { GetText(item, "name"), Label(item), Raw(item) });
         }
         return new XlsxWorksheet("Functional Permissions", rows);
+    }
+
+
+    private async Task<XlsxWorksheet> SettingsSheetAsync()
+    {
+        // This mirrors the original workbook generator. The Aprimo DAM endpoint is
+        // /settingdefinitions, not /settings/definitions. Individual values are then read from
+        // /setting/{name} when the definition supports direct reads.
+        var definitions = await _client.GetAllAsync("/settingdefinitions", null, _cancellationToken).ConfigureAwait(false);
+        var rows = Start("Id", "Name", "Label", "Value", "RawJson");
+
+        foreach (var definition in definitions.OrderBy(x => GetText(x, "name"), StringComparer.OrdinalIgnoreCase))
+        {
+            var name = GetText(definition, "name");
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            var dataType = GetText(definition, "dataType");
+            var userGroupSettingMode = GetText(definition, "userGroupSettingMode");
+
+            // The original generator skips role settings and manual user-group settings because
+            // the Aprimo GetSetting endpoint does not support them.
+            if (dataType.Equals("ROLE", StringComparison.OrdinalIgnoreCase) ||
+                userGroupSettingMode.Equals("MANUAL", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string value = string.Empty;
+            try
+            {
+                var setting = await _client.GetObjectAsync($"/setting/{Uri.EscapeDataString(name)}", null, _cancellationToken).ConfigureAwait(false);
+                value = GetText(setting, "value");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed reading Aprimo setting value for {SettingName}.", name);
+            }
+
+            var defaultValue = GetText(definition, "defaultValue");
+            if (string.IsNullOrWhiteSpace(value) || value.Equals(defaultValue, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            rows.Add(new[]
+            {
+                GetText(definition, "id"),
+                name,
+                Label(definition),
+                value,
+                Raw(definition)
+            });
+        }
+
+        return new XlsxWorksheet("Settings", rows);
     }
 
     private async Task<XlsxWorksheet> RulesSheetAsync()

@@ -1,4 +1,6 @@
+using System.Data;
 using System.Globalization;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -27,38 +29,30 @@ public static class TaxonomyBuilderEndpoints
             ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
-            if (string.IsNullOrWhiteSpace(request.TargetType))
+            var validation = await ValidateRequestAndLoadCredentialAsync(
+                request.TargetType,
+                request.CredentialSetId,
+                credentialStore,
+                cancellationToken).ConfigureAwait(false);
+
+            if (validation.ErrorResult is not null)
             {
-                return Results.BadRequest(new { error = "targetType is required." });
+                return validation.ErrorResult;
             }
 
-            if (string.IsNullOrWhiteSpace(request.CredentialSetId))
-            {
-                return Results.BadRequest(new { error = "credentialSetId is required." });
-            }
-
-            var credential = await credentialStore.GetAsync(request.CredentialSetId, cancellationToken).ConfigureAwait(false);
-            if (credential is null)
-            {
-                return Results.NotFound(new { error = $"Credential set '{request.CredentialSetId}' was not found." });
-            }
-
-            if (!string.Equals(credential.ConnectorRole, "target", StringComparison.OrdinalIgnoreCase))
-            {
-                return Results.BadRequest(new { error = "Taxonomy Builder requires a target credential set." });
-            }
-
-            var targetKind = NormalizeTargetKind(request.TargetType);
-            if (targetKind is null)
-            {
-                return Results.BadRequest(new { error = "Taxonomy Builder currently supports Bynder, Cloudinary, and Aprimo targets." });
-            }
+            var credential = validation.Credential!;
+            var targetKind = validation.TargetKind!;
 
             try
             {
                 if (targetKind == "aprimo")
                 {
-                    return await BuildAprimoConfigurationWorkbookAsync(request, credential, artifactStore, loggerFactory, cancellationToken).ConfigureAwait(false);
+                    return await BuildAprimoConfigurationWorkbookAsync(
+                        request,
+                        credential,
+                        artifactStore,
+                        loggerFactory,
+                        cancellationToken).ConfigureAwait(false);
                 }
 
                 var snapshot = targetKind switch
@@ -70,7 +64,10 @@ public static class TaxonomyBuilderEndpoints
 
                 var workbookXml = BuildLegacyWorkbookXml(snapshot, request.IncludeOptions, request.IncludeRaw);
                 await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(workbookXml));
-                var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName) ? $"{targetKind}-taxonomy-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xls" : request.FileName.Trim());
+                var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName)
+                    ? $"{targetKind}-taxonomy-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xls"
+                    : request.FileName.Trim());
+
                 if (!fileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))
                 {
                     fileName += ".xls";
@@ -93,16 +90,133 @@ public static class TaxonomyBuilderEndpoints
                     },
                     cancellationToken).ConfigureAwait(false);
 
-                return Results.Created($"/api/artifacts/{artifact.ArtifactId}", new BuildTaxonomyArtifactResponse(artifact, snapshot.TargetType, snapshot.Fields.Count, snapshot.Options.Count, artifact.FileName));
+                return Results.Created($"/api/artifacts/{artifact.ArtifactId}",
+                    new BuildTaxonomyArtifactResponse(artifact, snapshot.TargetType, snapshot.Fields.Count, snapshot.Options.Count, artifact.FileName));
             }
-            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or JsonException)
+            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or JsonException or UriFormatException)
             {
                 return Results.BadRequest(new { error = ex.Message });
             }
         })
         .WithSummary("Pull target metadata schema and save it as an Excel taxonomy artifact.");
 
+        group.MapPost("/blank-template", async (
+            BuildTaxonomyArtifactRequest request,
+            ICredentialSetStore credentialStore,
+            IArtifactStore artifactStore,
+            ILoggerFactory loggerFactory,
+            CancellationToken cancellationToken) =>
+        {
+            var validation = await ValidateRequestAndLoadCredentialAsync(
+                request.TargetType,
+                request.CredentialSetId,
+                credentialStore,
+                cancellationToken).ConfigureAwait(false);
+
+            if (validation.ErrorResult is not null)
+            {
+                return validation.ErrorResult;
+            }
+
+            var credential = validation.Credential!;
+            var targetKind = validation.TargetKind!;
+
+            try
+            {
+                if (targetKind == "aprimo")
+                {
+                    return await BuildAprimoConfigurationWorkbookAsync(
+                        request,
+                        credential,
+                        artifactStore,
+                        loggerFactory,
+                        cancellationToken).ConfigureAwait(false);
+                }
+
+                var snapshot = targetKind switch
+                {
+                    "bynder" => await ReadBynderTaxonomyAsync(credential, request with { IncludeOptions = false, IncludeRaw = false }, cancellationToken).ConfigureAwait(false),
+                    "cloudinary" => await ReadCloudinaryTaxonomyAsync(credential, request with { IncludeOptions = false, IncludeRaw = false }, cancellationToken).ConfigureAwait(false),
+                    _ => throw new InvalidOperationException($"Unsupported taxonomy target '{request.TargetType}'.")
+                };
+
+                var dataTable = CreateBlankGenericMetadataTemplateDataTable(snapshot);
+                var workbookXml = BuildSimpleWorksheetXml(dataTable);
+                await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(workbookXml));
+                var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName)
+                    ? $"{targetKind}-blank-metadata-template-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xls"
+                    : request.FileName.Trim());
+
+                if (!fileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))
+                {
+                    fileName += ".xls";
+                }
+
+                var artifact = await artifactStore.SaveAsync(
+                    stream,
+                    fileName,
+                    "application/vnd.ms-excel",
+                    ArtifactKind.Taxonomy,
+                    request.ProjectId,
+                    string.IsNullOrWhiteSpace(request.Description) ? $"Generated blank metadata template from {snapshot.TargetType} taxonomy" : request.Description,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["GeneratedBy"] = "TaxonomyBuilder",
+                        ["TargetType"] = snapshot.TargetType,
+                        ["CredentialSetId"] = credential.CredentialSetId,
+                        ["FieldCount"] = snapshot.Fields.Count.ToString(CultureInfo.InvariantCulture),
+                        ["OptionCount"] = "0",
+                        ["WorkbookShape"] = "BlankMetadataTemplate"
+                    },
+                    cancellationToken).ConfigureAwait(false);
+
+                return Results.Created($"/api/artifacts/{artifact.ArtifactId}",
+                    new BuildTaxonomyArtifactResponse(artifact, snapshot.TargetType, snapshot.Fields.Count, 0, artifact.FileName));
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or JsonException or UriFormatException)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithSummary("Build a blank metadata template workbook from target taxonomy fields.");
+
         return app;
+    }
+
+    private static async Task<(IResult? ErrorResult, CredentialSetRecord? Credential, string? TargetKind)> ValidateRequestAndLoadCredentialAsync(
+        string? targetType,
+        string? credentialSetId,
+        ICredentialSetStore credentialStore,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(targetType))
+        {
+            return (Results.BadRequest(new { error = "targetType is required." }), null, null);
+        }
+
+        if (string.IsNullOrWhiteSpace(credentialSetId))
+        {
+            return (Results.BadRequest(new { error = "credentialSetId is required." }), null, null);
+        }
+
+        var credential = await credentialStore.GetAsync(credentialSetId, cancellationToken).ConfigureAwait(false);
+        if (credential is null)
+        {
+            return (Results.NotFound(new { error = $"Credential set '{credentialSetId}' was not found." }), null, null);
+        }
+
+        if (!string.Equals(credential.ConnectorRole, "target", StringComparison.OrdinalIgnoreCase))
+        {
+            return (Results.BadRequest(new { error = "Taxonomy Builder requires a target credential set." }), null, null);
+        }
+
+        var targetKind = NormalizeTargetKind(targetType);
+        if (targetKind is null)
+        {
+            return (Results.BadRequest(new { error = "Taxonomy Builder currently supports Bynder, Cloudinary, and Aprimo targets." }), null, null);
+        }
+
+        return (null, credential, targetKind);
     }
 
     private static async Task<IResult> BuildAprimoConfigurationWorkbookAsync(
@@ -112,27 +226,49 @@ public static class TaxonomyBuilderEndpoints
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        var subDomain = FirstValue(credential.Values, "subDomain", "aprimoSubDomain", "tenant", "tenantName");
+        var subDomain = FirstValue(credential.Values,
+            "SubDomain", "subDomain", "Subdomain", "subdomain",
+            "AprimoSubDomain", "aprimoSubDomain", "AprimoSubdomain", "aprimoSubdomain",
+            "Tenant", "tenant", "TenantName", "tenantName");
+
+        var baseUrl = FirstValue(credential.Values,
+            "BaseUrl", "baseUrl", "BaseURL", "baseURL",
+            "AprimoBaseUrl", "aprimoBaseUrl", "AprimoBaseURL", "aprimoBaseURL",
+            "Url", "url", "URL", "TenantUrl", "tenantUrl", "TenantURL", "tenantURL");
+
         if (string.IsNullOrWhiteSpace(subDomain))
         {
-            var baseUrl = FirstValue(credential.Values, "baseUrl", "url", "tenantUrl", "aprimoBaseUrl");
             subDomain = TryExtractSubDomain(baseUrl);
         }
 
-        var clientId = FirstValue(credential.Values, "clientId", "aprimoClientId", "TargetCredential_ClientId");
-        var clientSecret = FirstValue(credential.Values, "clientSecret", "aprimoClientSecret", "secret", "TargetCredential_ClientSecret");
+        var clientId = FirstValue(credential.Values,
+            "ClientId", "clientId", "ClientID", "clientID",
+            "AprimoClientId", "aprimoClientId", "AprimoClientID", "aprimoClientID",
+            "TargetCredential_ClientId", "TargetCredential_ClientID");
+
+        var clientSecret = FirstValue(credential.Values,
+            "ClientSecret", "clientSecret",
+            "AprimoClientSecret", "aprimoClientSecret",
+            "Secret", "secret",
+            "TargetCredential_ClientSecret");
 
         if (string.IsNullOrWhiteSpace(subDomain))
         {
-            throw new InvalidOperationException("Aprimo workbook generation requires a subDomain, aprimoSubDomain, tenant, or Aprimo baseUrl that contains the subdomain.");
+            var availableKeys = string.Join(", ", credential.Values.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+            throw new InvalidOperationException(
+                "Aprimo workbook generation requires SubDomain or BaseUrl. " +
+                $"Checked credential keys but could not derive a subdomain. Available keys: {availableKeys}.");
         }
 
         if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
         {
-            throw new InvalidOperationException("Aprimo workbook generation requires clientId and clientSecret credentials.");
+            throw new InvalidOperationException("Aprimo workbook generation requires ClientId and ClientSecret credentials.");
         }
 
-        var service = new AprimoConfigurationWorkbookService(new HttpClient(), loggerFactory.CreateLogger<AprimoConfigurationWorkbookService>());
+        var service = new AprimoConfigurationWorkbookService(
+            new HttpClient(),
+            loggerFactory.CreateLogger<AprimoConfigurationWorkbookService>());
+
         await using var stream = new MemoryStream();
         var result = await service.GenerateAsync(
             new AprimoConfigurationWorkbookRequest(
@@ -140,8 +276,8 @@ public static class TaxonomyBuilderEndpoints
                 AprimoConfigurationWorkbookExportOptions.Defaults),
             stream,
             cancellationToken).ConfigureAwait(false);
-        stream.Position = 0;
 
+        stream.Position = 0;
         var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName) ? result.FileName : request.FileName.Trim());
         if (!fileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
         {
@@ -166,70 +302,282 @@ public static class TaxonomyBuilderEndpoints
             cancellationToken).ConfigureAwait(false);
 
         var fieldCount = result.RowCounts.TryGetValue("Field definitions", out var fields) ? fields : 0;
-        return Results.Created($"/api/artifacts/{artifact.ArtifactId}", new BuildTaxonomyArtifactResponse(artifact, "Aprimo", fieldCount, 0, artifact.FileName));
+        return Results.Created($"/api/artifacts/{artifact.ArtifactId}",
+            new BuildTaxonomyArtifactResponse(artifact, "Aprimo", fieldCount, 0, artifact.FileName));
     }
 
-    private static async Task<TaxonomySnapshot> ReadBynderTaxonomyAsync(CredentialSetRecord credential, BuildTaxonomyArtifactRequest request, CancellationToken cancellationToken)
+    private static async Task<TaxonomySnapshot> ReadBynderTaxonomyAsync(
+        CredentialSetRecord credential,
+        BuildTaxonomyArtifactRequest request,
+        CancellationToken cancellationToken)
     {
-        var baseUrl = FirstValue(credential.Values, "baseUrl", "url", "domain", "bynderDomain");
-        var token = FirstValue(credential.Values, "accessToken", "apiToken", "token", "bearerToken");
-        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(token)) throw new InvalidOperationException("Bynder credentials require baseUrl and accessToken/apiToken.");
+        var baseUrl = FirstValue(credential.Values, "BaseUrl", "baseUrl", "url", "domain", "bynderDomain");
+        var token = FirstValue(credential.Values, "AccessToken", "accessToken", "apiToken", "Token", "token", "BearerToken", "bearerToken");
+        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(token))
+        {
+            throw new InvalidOperationException("Bynder credentials require baseUrl and accessToken/apiToken.");
+        }
+
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, "/api/v4/metaproperties/"));
-        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var response = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Bynder metaproperties request failed: {(int)response.StatusCode} {response.ReasonPhrase}. {json}");
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"Bynder metaproperties request failed: {(int)response.StatusCode} {response.ReasonPhrase}.\n{json}");
+        }
+
         var root = JsonNode.Parse(json) ?? new JsonArray();
         var fields = new List<TaxonomyField>();
         var options = new List<TaxonomyOption>();
         foreach (var item in AsArray(root).OfType<JsonObject>())
         {
             var id = Text(item, "id", "uuid", "name", "propertyId");
-            fields.Add(new TaxonomyField(id, Text(item, "name", "propertyName", "technicalName", "id"), Text(item, "label", "displayName", "name", "propertyName"), Text(item, "type", "inputType", "fieldType"), Bool(item, "required", "isRequired", "mandatory"), Bool(item, "isMultiselect", "multiSelect", "multiselect", "multiple"), Text(item, "description", "helpText"), item.ToJsonString(JsonOptions)));
+            fields.Add(new TaxonomyField(
+                id,
+                Text(item, "name", "propertyName", "technicalName", "id"),
+                Text(item, "label", "displayName", "name", "propertyName"),
+                Text(item, "type", "inputType", "fieldType"),
+                Bool(item, "required", "isRequired", "mandatory"),
+                Bool(item, "isMultiselect", "multiSelect", "multiselect", "multiple"),
+                Text(item, "description", "helpText"),
+                item.ToJsonString(JsonOptions)));
         }
+
         return new TaxonomySnapshot("Bynder", fields, options, json);
     }
 
-    private static async Task<TaxonomySnapshot> ReadCloudinaryTaxonomyAsync(CredentialSetRecord credential, BuildTaxonomyArtifactRequest request, CancellationToken cancellationToken)
+    private static async Task<TaxonomySnapshot> ReadCloudinaryTaxonomyAsync(
+        CredentialSetRecord credential,
+        BuildTaxonomyArtifactRequest request,
+        CancellationToken cancellationToken)
     {
-        var cloudName = FirstValue(credential.Values, "cloudName", "cloud_name");
-        var apiKey = FirstValue(credential.Values, "apiKey", "api_key");
-        var apiSecret = FirstValue(credential.Values, "apiSecret", "api_secret", "secret");
-        if (string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret)) throw new InvalidOperationException("Cloudinary credentials require cloudName, apiKey, and apiSecret.");
+        var cloudName = FirstValue(credential.Values, "CloudName", "cloudName", "cloud_name");
+        var apiKey = FirstValue(credential.Values, "ApiKey", "apiKey", "api_key");
+        var apiSecret = FirstValue(credential.Values, "ApiSecret", "apiSecret", "api_secret", "Secret", "secret");
+        if (string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
+        {
+            throw new InvalidOperationException("Cloudinary credentials require cloudName, apiKey, and apiSecret.");
+        }
+
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"https://api.cloudinary.com/v1_1/{Uri.EscapeDataString(cloudName)}/metadata_fields");
-        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:{apiSecret}")));
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:{apiSecret}")));
         using var response = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Cloudinary metadata fields request failed: {(int)response.StatusCode} {response.ReasonPhrase}. {json}");
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"Cloudinary metadata fields request failed: {(int)response.StatusCode} {response.ReasonPhrase}.\n{json}");
+        }
+
         var root = JsonNode.Parse(json) ?? new JsonObject();
         var fieldNodes = root is JsonObject rootObj && rootObj["metadata_fields"] is JsonArray arr ? arr : AsArray(root);
-        var fields = fieldNodes.OfType<JsonObject>().Select(obj => new TaxonomyField(Text(obj, "external_id", "id", "name"), Text(obj, "external_id", "name", "id"), Text(obj, "label", "display_name", "external_id", "name"), Text(obj, "type"), Bool(obj, "mandatory", "required"), Bool(obj, "multiple", "multiValue"), Text(obj, "description", "help_text"), obj.ToJsonString(JsonOptions))).ToList();
+        var fields = fieldNodes.OfType<JsonObject>().Select(obj => new TaxonomyField(
+            Text(obj, "external_id", "id", "name"),
+            Text(obj, "external_id", "name", "id"),
+            Text(obj, "label", "display_name", "external_id", "name"),
+            Text(obj, "type"),
+            Bool(obj, "mandatory", "required"),
+            Bool(obj, "multiple", "multiValue"),
+            Text(obj, "description", "help_text"),
+            obj.ToJsonString(JsonOptions))).ToList();
+
         return new TaxonomySnapshot("Cloudinary", fields, new List<TaxonomyOption>(), json);
     }
 
+    private static DataTable CreateBlankGenericMetadataTemplateDataTable(TaxonomySnapshot snapshot)
+    {
+        var dataTable = new DataTable("Metadata");
+        dataTable.Columns.Add("Id");
+        dataTable.Columns.Add("Filename");
+        dataTable.Columns.Add("Tags");
+        foreach (var field in snapshot.Fields.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            AddUniqueColumn(dataTable, string.IsNullOrWhiteSpace(field.Name) ? field.Label : field.Name);
+        }
+
+        return dataTable;
+    }
+
+    private static void AddUniqueColumn(DataTable dataTable, string? requestedName)
+    {
+        var baseName = string.IsNullOrWhiteSpace(requestedName) ? "Field" : requestedName.Trim();
+        var columnName = baseName;
+        for (var index = 2; dataTable.Columns.Contains(columnName); index++)
+        {
+            columnName = $"{baseName}_{index}";
+        }
+
+        dataTable.Columns.Add(columnName);
+    }
+
     private static JsonArray AsArray(JsonNode node) => node as JsonArray ?? new JsonArray(node);
-    private static string Text(JsonObject obj, params string[] keys) { foreach (var key in keys) if (obj[key] is JsonValue value && !string.IsNullOrWhiteSpace(value.ToString())) return value.ToString(); return string.Empty; }
-    private static bool Bool(JsonObject obj, params string[] keys) { foreach (var key in keys) if (obj[key] is JsonValue value && bool.TryParse(value.ToString(), out var parsed)) return parsed; return false; }
-    private static string FirstValue(IReadOnlyDictionary<string, string> values, params string[] keys) { foreach (var key in keys) if (values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) && value != "********") return value.Trim(); return string.Empty; }
-    private static string? NormalizeTargetKind(string targetType) { var value = targetType.Trim().ToLowerInvariant(); if (value.Contains("bynder")) return "bynder"; if (value.Contains("cloudinary")) return "cloudinary"; if (value.Contains("aprimo")) return "aprimo"; return null; }
+
+    private static string Text(JsonObject obj, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            if (obj[key] is JsonValue value && !string.IsNullOrWhiteSpace(value.ToString()))
+            {
+                return value.ToString();
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static bool Bool(JsonObject obj, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            if (obj[key] is JsonValue value && bool.TryParse(value.ToString(), out var parsed))
+            {
+                return parsed;
+            }
+        }
+
+        return false;
+    }
+
+    private static string FirstValue(IReadOnlyDictionary<string, string> values, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            foreach (var pair in values)
+            {
+                if (!pair.Key.Equals(key, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(pair.Value) && pair.Value != "********")
+                {
+                    return pair.Value.Trim();
+                }
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static string? NormalizeTargetKind(string targetType)
+    {
+        var value = targetType.Trim().ToLowerInvariant();
+        if (value.Contains("bynder")) return "bynder";
+        if (value.Contains("cloudinary")) return "cloudinary";
+        if (value.Contains("aprimo")) return "aprimo";
+        return null;
+    }
+
     private static string CombineUrl(string baseUrl, string path) => baseUrl.TrimEnd('/') + "/" + path.TrimStart('/');
-    private static string? TryExtractSubDomain(string url) { if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return null; var host = uri.Host; return host.EndsWith(".aprimo.com", StringComparison.OrdinalIgnoreCase) ? host[..^".aprimo.com".Length].Replace(".dam", "") : null; }
-    private static string MakeSafeFileName(string value) { var invalid = Path.GetInvalidFileNameChars(); var safe = new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()); return string.IsNullOrWhiteSpace(safe) ? $"taxonomy-{Guid.NewGuid():N}.xlsx" : safe; }
+
+    private static string? TryExtractSubDomain(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        var value = url.Trim();
+        if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            value = "https://" + value;
+        }
+
+        var host = Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            ? uri.Host
+            : url.Trim().Split('/')[0];
+
+        if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+        {
+            host = host[4..];
+        }
+
+        if (host.EndsWith(".dam.aprimo.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return host[..^".dam.aprimo.com".Length];
+        }
+
+        if (host.EndsWith(".aprimo.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return host[..^".aprimo.com".Length];
+        }
+
+        return host.Split('.')[0];
+    }
+
+    private static string MakeSafeFileName(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var safe = new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
+        return string.IsNullOrWhiteSpace(safe) ? $"taxonomy-{Guid.NewGuid():N}.xlsx" : safe;
+    }
 
     private static string BuildLegacyWorkbookXml(TaxonomySnapshot snapshot, bool includeOptions, bool includeRaw)
     {
         var sheets = new StringBuilder();
-        sheets.Append(Worksheet("Fields", new[] { "FieldId", "Name", "Label", "Type", "Required", "MultiValue", "Description" }, snapshot.Fields.Select(x => new[] { x.FieldId, x.Name, x.Label, x.Type, x.Required.ToString(), x.MultiValue.ToString(), x.Description })));
-        if (includeRaw) sheets.Append(Worksheet("Raw", new[] { "Target", "Json" }, new[] { new[] { snapshot.TargetType, snapshot.RawJson } }));
-        return $"<?xml version=\"1.0\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\">{sheets}</Workbook>";
+        sheets.Append(Worksheet("Fields", new[] { "FieldId", "Name", "Label", "Type", "Required", "MultiValue", "Description" },
+            snapshot.Fields.Select(x => new[] { x.FieldId, x.Name, x.Label, x.Type, x.Required.ToString(), x.MultiValue.ToString(), x.Description })));
+
+        if (includeRaw)
+        {
+            sheets.Append(Worksheet("Raw", new[] { "Target", "Json" }, new[] { new[] { snapshot.TargetType, snapshot.RawJson } }));
+        }
+
+        return $"<html><body>{sheets}</body></html>";
     }
-    private static string Worksheet(string name, string[] headers, IEnumerable<string[]> rows) => $"<Worksheet ss:Name=\"{Xml(name)}\"><Table>{Row(headers)}{string.Concat(rows.Select(Row))}</Table></Worksheet>";
-    private static string Row(IEnumerable<string> cells) => $"<Row>{string.Concat(cells.Select(cell => $"<Cell><Data ss:Type=\"String\">{Xml(cell)}</Data></Cell>"))}</Row>";
+
+    private static string BuildSimpleWorksheetXml(DataTable dataTable)
+    {
+        var headers = dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName).ToArray();
+        return $"<html><body>{Worksheet(dataTable.TableName, headers, Array.Empty<string[]>())}</body></html>";
+    }
+
+    private static string Worksheet(string name, string[] headers, IEnumerable<string[]> rows) =>
+        $"<table><tr><th colspan=\"{headers.Length}\">{Xml(name)}</th></tr>{Row(headers)}{string.Concat(rows.Select(Row))}</table>";
+
+    private static string Row(IEnumerable<string> cells) =>
+        $"<tr>{string.Concat(cells.Select(cell => $"<td>{Xml(cell)}</td>"))}</tr>";
+
     private static string Xml(string? value) => HtmlEncoder.Default.Encode(value ?? string.Empty);
 }
 
-public sealed record BuildTaxonomyArtifactRequest(string TargetType, string CredentialSetId, bool IncludeOptions = true, bool IncludeRaw = true, string? ProjectId = null, string? FileName = null, string? Description = null);
-public sealed record BuildTaxonomyArtifactResponse(ControlPlaneArtifactRecord Artifact, string TargetType, int FieldCount, int OptionCount, string FileName);
-internal sealed record TaxonomySnapshot(string TargetType, List<TaxonomyField> Fields, List<TaxonomyOption> Options, string RawJson);
-internal sealed record TaxonomyField(string FieldId, string Name, string Label, string Type, bool Required, bool MultiValue, string Description, string RawJson);
-internal sealed record TaxonomyOption(string FieldId, string OptionId, string Name, string Label, bool Active, string RawJson);
+public sealed record BuildTaxonomyArtifactRequest(
+    string TargetType,
+    string CredentialSetId,
+    bool IncludeOptions = true,
+    bool IncludeRaw = true,
+    string? ProjectId = null,
+    string? FileName = null,
+    string? Description = null);
+
+public sealed record BuildTaxonomyArtifactResponse(
+    ControlPlaneArtifactRecord Artifact,
+    string TargetType,
+    int FieldCount,
+    int OptionCount,
+    string FileName);
+
+internal sealed record TaxonomySnapshot(
+    string TargetType,
+    List<TaxonomyField> Fields,
+    List<TaxonomyOption> Options,
+    string RawJson);
+
+internal sealed record TaxonomyField(
+    string FieldId,
+    string Name,
+    string Label,
+    string Type,
+    bool Required,
+    bool MultiValue,
+    string Description,
+    string RawJson);
+
+internal sealed record TaxonomyOption(
+    string FieldId,
+    string OptionId,
+    string Name,
+    string Label,
+    bool Active,
+    string RawJson);
