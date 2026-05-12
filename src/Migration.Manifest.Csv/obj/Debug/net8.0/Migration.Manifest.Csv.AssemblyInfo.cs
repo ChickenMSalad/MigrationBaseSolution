@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Migration.Manifest.Csv")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d9bfb2db2dd53866d4b9676e14c45eb5ec59719a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d8f82c5fb63415ffbbbc9464d748a971e9121f9f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Migration.Manifest.Csv")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Migration.Manifest.Csv")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

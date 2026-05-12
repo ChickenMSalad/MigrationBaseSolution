@@ -136,7 +136,7 @@ public static class TaxonomyBuilderEndpoints
         await using var stream = new MemoryStream();
         var result = await service.GenerateAsync(
             new AprimoConfigurationWorkbookRequest(
-                new AprimoConfigurationWorkbookCredentials(subDomain, clientId, clientSecret),
+                new AprimoConfigurationWorkbookCredentials(subDomain, clientId, clientSecret, FirstValue(credential.Values, "baseUrl", "BaseUrl", "url", "Url", "tenantUrl", "TenantUrl", "aprimoBaseUrl", "AprimoBaseUrl")),
                 AprimoConfigurationWorkbookExportOptions.Defaults),
             stream,
             cancellationToken).ConfigureAwait(false);
@@ -210,10 +210,44 @@ public static class TaxonomyBuilderEndpoints
     private static JsonArray AsArray(JsonNode node) => node as JsonArray ?? new JsonArray(node);
     private static string Text(JsonObject obj, params string[] keys) { foreach (var key in keys) if (obj[key] is JsonValue value && !string.IsNullOrWhiteSpace(value.ToString())) return value.ToString(); return string.Empty; }
     private static bool Bool(JsonObject obj, params string[] keys) { foreach (var key in keys) if (obj[key] is JsonValue value && bool.TryParse(value.ToString(), out var parsed)) return parsed; return false; }
-    private static string FirstValue(IReadOnlyDictionary<string, string> values, params string[] keys) { foreach (var key in keys) if (values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) && value != "********") return value.Trim(); return string.Empty; }
+    private static string FirstValue(IReadOnlyDictionary<string, string> values, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            foreach (var pair in values)
+            {
+                if (pair.Key.Equals(key, StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrWhiteSpace(pair.Value)
+                    && pair.Value != "********")
+                {
+                    return pair.Value.Trim();
+                }
+            }
+        }
+
+        return string.Empty;
+    }
     private static string? NormalizeTargetKind(string targetType) { var value = targetType.Trim().ToLowerInvariant(); if (value.Contains("bynder")) return "bynder"; if (value.Contains("cloudinary")) return "cloudinary"; if (value.Contains("aprimo")) return "aprimo"; return null; }
     private static string CombineUrl(string baseUrl, string path) => baseUrl.TrimEnd('/') + "/" + path.TrimStart('/');
-    private static string? TryExtractSubDomain(string url) { if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return null; var host = uri.Host; return host.EndsWith(".aprimo.com", StringComparison.OrdinalIgnoreCase) ? host[..^".aprimo.com".Length].Replace(".dam", "") : null; }
+    private static string? TryExtractSubDomain(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        var value = url.Trim();
+        if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            && !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            value = "https://" + value;
+        }
+
+        var host = Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            ? uri.Host
+            : url.Trim().Split('/')[0];
+
+        if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)) host = host[4..];
+        if (host.EndsWith(".dam.aprimo.com", StringComparison.OrdinalIgnoreCase)) return host[..^".dam.aprimo.com".Length];
+        if (host.EndsWith(".aprimo.com", StringComparison.OrdinalIgnoreCase)) return host[..^".aprimo.com".Length];
+        return host.Split('.')[0];
+    }
     private static string MakeSafeFileName(string value) { var invalid = Path.GetInvalidFileNameChars(); var safe = new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()); return string.IsNullOrWhiteSpace(safe) ? $"taxonomy-{Guid.NewGuid():N}.xlsx" : safe; }
 
     private static string BuildLegacyWorkbookXml(TaxonomySnapshot snapshot, bool includeOptions, bool includeRaw)

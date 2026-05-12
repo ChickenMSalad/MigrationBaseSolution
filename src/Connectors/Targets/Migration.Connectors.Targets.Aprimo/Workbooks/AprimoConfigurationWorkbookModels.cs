@@ -5,7 +5,8 @@ namespace Migration.Connectors.Targets.Aprimo.Workbooks;
 public sealed record AprimoConfigurationWorkbookCredentials(
     string SubDomain,
     string ClientId,
-    string ClientSecret);
+    string ClientSecret,
+    string? BaseUrl = null);
 
 public sealed record AprimoConfigurationWorkbookRequest(
     AprimoConfigurationWorkbookCredentials Credentials,

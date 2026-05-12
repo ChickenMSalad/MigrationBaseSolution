@@ -31,10 +31,10 @@ public sealed class AprimoConfigurationWorkbookService : IAprimoConfigurationWor
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(outputStream);
 
-        var credentials = request.Credentials;
+        var credentials = NormalizeCredentials(request.Credentials);
         if (string.IsNullOrWhiteSpace(credentials.SubDomain) || string.IsNullOrWhiteSpace(credentials.ClientId) || string.IsNullOrWhiteSpace(credentials.ClientSecret))
         {
-            throw new InvalidOperationException("Aprimo workbook generation requires SubDomain, ClientId, and ClientSecret.");
+            throw new InvalidOperationException("Aprimo workbook generation requires SubDomain or BaseUrl, ClientId, and ClientSecret.");
         }
 
         var options = request.ExportOptions ?? AprimoConfigurationWorkbookExportOptions.Defaults;
@@ -51,6 +51,56 @@ public sealed class AprimoConfigurationWorkbookService : IAprimoConfigurationWor
             ContentType,
             sheets.Count,
             rowCounts);
+    }
+
+
+    private static AprimoConfigurationWorkbookCredentials NormalizeCredentials(AprimoConfigurationWorkbookCredentials credentials)
+    {
+        var subDomain = credentials.SubDomain;
+
+        if (string.IsNullOrWhiteSpace(subDomain) && !string.IsNullOrWhiteSpace(credentials.BaseUrl))
+        {
+            subDomain = ExtractSubDomain(credentials.BaseUrl);
+        }
+
+        return credentials with
+        {
+            SubDomain = subDomain?.Trim() ?? string.Empty,
+            ClientId = credentials.ClientId?.Trim() ?? string.Empty,
+            ClientSecret = credentials.ClientSecret?.Trim() ?? string.Empty,
+            BaseUrl = credentials.BaseUrl?.Trim()
+        };
+    }
+
+    private static string ExtractSubDomain(string baseUrl)
+    {
+        var value = baseUrl.Trim();
+        if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            && !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            value = "https://" + value;
+        }
+
+        var host = Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            ? uri.Host
+            : baseUrl.Trim().Split('/')[0];
+
+        if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+        {
+            host = host[4..];
+        }
+
+        if (host.EndsWith(".dam.aprimo.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return host[..^".dam.aprimo.com".Length];
+        }
+
+        if (host.EndsWith(".aprimo.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return host[..^".aprimo.com".Length];
+        }
+
+        return host.Split('.')[0];
     }
 
     private async Task<string> GetAccessTokenAsync(AprimoConfigurationWorkbookCredentials credentials, CancellationToken cancellationToken)
@@ -471,4 +521,6 @@ internal static class XlsxWorkbookWriter
         return safe.Length > 31 ? safe[..31] : safe;
     }
     private static string Xml(string? value) => HtmlEncoder.Default.Encode(value ?? string.Empty);
+
+
 }

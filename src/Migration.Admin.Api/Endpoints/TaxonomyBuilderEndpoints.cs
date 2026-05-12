@@ -1,11 +1,9 @@
-using System.Data;
 using System.Globalization;
-using System.IO.Compression;
-using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
+using Migration.Connectors.Targets.Aprimo.Workbooks;
 using Migration.ControlPlane.Artifacts;
 using Migration.ControlPlane.Models;
 using Migration.ControlPlane.Services;
@@ -26,1328 +24,212 @@ public static class TaxonomyBuilderEndpoints
             BuildTaxonomyArtifactRequest request,
             ICredentialSetStore credentialStore,
             IArtifactStore artifactStore,
+            ILoggerFactory loggerFactory,
             CancellationToken cancellationToken) =>
         {
-            var validation = await ValidateRequestAndLoadCredentialAsync(
-                request.TargetType,
-                request.CredentialSetId,
-                credentialStore,
-                cancellationToken).ConfigureAwait(false);
-
-            if (validation.ErrorResult is not null)
+            if (string.IsNullOrWhiteSpace(request.TargetType))
             {
-                return validation.ErrorResult;
+                return Results.BadRequest(new { error = "targetType is required." });
             }
 
-            var credential = validation.Credential!;
-            var targetKind = validation.TargetKind!;
+            if (string.IsNullOrWhiteSpace(request.CredentialSetId))
+            {
+                return Results.BadRequest(new { error = "credentialSetId is required." });
+            }
 
-            TaxonomyWorkbookResult workbook;
+            var credential = await credentialStore.GetAsync(request.CredentialSetId, cancellationToken).ConfigureAwait(false);
+            if (credential is null)
+            {
+                return Results.NotFound(new { error = $"Credential set '{request.CredentialSetId}' was not found." });
+            }
+
+            if (!string.Equals(credential.ConnectorRole, "target", StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.BadRequest(new { error = "Taxonomy Builder requires a target credential set." });
+            }
+
+            var targetKind = NormalizeTargetKind(request.TargetType);
+            if (targetKind is null)
+            {
+                return Results.BadRequest(new { error = "Taxonomy Builder currently supports Bynder, Cloudinary, and Aprimo targets." });
+            }
+
             try
             {
-                workbook = targetKind switch
+                if (targetKind == "aprimo")
                 {
-                    "bynder" => await BuildBynderMetadataPropertiesWorkbookAsync(credential, cancellationToken).ConfigureAwait(false),
-                    "cloudinary" => await BuildGenericTaxonomyWorkbookAsync(
-                        "Cloudinary",
-                        await ReadCloudinaryTaxonomyAsync(credential, request with { IncludeOptions = true }, cancellationToken).ConfigureAwait(false),
-                        includeOptions: true,
-                        includeRaw: true).ConfigureAwait(false),
-                    "aprimo" => await BuildGenericTaxonomyWorkbookAsync(
-                        "Aprimo",
-                        await ReadAprimoTaxonomyAsync(credential, request with { IncludeOptions = true }, cancellationToken).ConfigureAwait(false),
-                        includeOptions: true,
-                        includeRaw: true).ConfigureAwait(false),
+                    return await BuildAprimoConfigurationWorkbookAsync(request, credential, artifactStore, loggerFactory, cancellationToken).ConfigureAwait(false);
+                }
+
+                var snapshot = targetKind switch
+                {
+                    "bynder" => await ReadBynderTaxonomyAsync(credential, request, cancellationToken).ConfigureAwait(false),
+                    "cloudinary" => await ReadCloudinaryTaxonomyAsync(credential, request, cancellationToken).ConfigureAwait(false),
                     _ => throw new InvalidOperationException($"Unsupported taxonomy target '{request.TargetType}'.")
                 };
+
+                var workbookXml = BuildLegacyWorkbookXml(snapshot, request.IncludeOptions, request.IncludeRaw);
+                await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(workbookXml));
+                var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName) ? $"{targetKind}-taxonomy-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xls" : request.FileName.Trim());
+                if (!fileName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase))
+                {
+                    fileName += ".xls";
+                }
+
+                var artifact = await artifactStore.SaveAsync(
+                    stream,
+                    fileName,
+                    "application/vnd.ms-excel",
+                    ArtifactKind.Taxonomy,
+                    request.ProjectId,
+                    string.IsNullOrWhiteSpace(request.Description) ? $"Generated by Taxonomy Builder from {snapshot.TargetType}" : request.Description,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["GeneratedBy"] = "TaxonomyBuilder",
+                        ["TargetType"] = snapshot.TargetType,
+                        ["CredentialSetId"] = credential.CredentialSetId,
+                        ["FieldCount"] = snapshot.Fields.Count.ToString(CultureInfo.InvariantCulture),
+                        ["OptionCount"] = snapshot.Options.Count.ToString(CultureInfo.InvariantCulture)
+                    },
+                    cancellationToken).ConfigureAwait(false);
+
+                return Results.Created($"/api/artifacts/{artifact.ArtifactId}", new BuildTaxonomyArtifactResponse(artifact, snapshot.TargetType, snapshot.Fields.Count, snapshot.Options.Count, artifact.FileName));
             }
-            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or JsonException or UriFormatException)
+            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or JsonException)
             {
                 return Results.BadRequest(new { error = ex.Message });
             }
-
-            return await SaveWorkbookArtifactAsync(
-                workbook,
-                artifactStore,
-                credential,
-                request.ProjectId,
-                request.FileName,
-                $"{targetKind}-taxonomy-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xlsx",
-                string.IsNullOrWhiteSpace(request.Description)
-                    ? $"Generated by Taxonomy Builder from {workbook.TargetType}"
-                    : request.Description,
-                cancellationToken).ConfigureAwait(false);
         })
         .WithSummary("Pull target metadata schema and save it as an Excel taxonomy artifact.");
-
-        group.MapPost("/blank-template", async (
-            BuildTaxonomyArtifactRequest request,
-            ICredentialSetStore credentialStore,
-            IArtifactStore artifactStore,
-            CancellationToken cancellationToken) =>
-        {
-            var validation = await ValidateRequestAndLoadCredentialAsync(
-                request.TargetType,
-                request.CredentialSetId,
-                credentialStore,
-                cancellationToken).ConfigureAwait(false);
-
-            if (validation.ErrorResult is not null)
-            {
-                return validation.ErrorResult;
-            }
-
-            var credential = validation.Credential!;
-            var targetKind = validation.TargetKind!;
-
-            TaxonomyWorkbookResult workbook;
-            try
-            {
-                workbook = targetKind switch
-                {
-                    "bynder" => await BuildBynderBlankMetadataTemplateWorkbookAsync(credential, cancellationToken).ConfigureAwait(false),
-                    "cloudinary" => await BuildGenericBlankMetadataTemplateWorkbookAsync(
-                        "Cloudinary",
-                        await ReadCloudinaryTaxonomyAsync(credential, request with { IncludeOptions = false, IncludeRaw = false }, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false),
-                    "aprimo" => await BuildGenericBlankMetadataTemplateWorkbookAsync(
-                        "Aprimo",
-                        await ReadAprimoTaxonomyAsync(credential, request with { IncludeOptions = false, IncludeRaw = false }, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false),
-                    _ => throw new InvalidOperationException($"Unsupported taxonomy target '{request.TargetType}'.")
-                };
-            }
-            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or JsonException or UriFormatException)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
-
-            return await SaveWorkbookArtifactAsync(
-                workbook,
-                artifactStore,
-                credential,
-                request.ProjectId,
-                request.FileName,
-                $"{targetKind}-blank-metadata-template-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xlsx",
-                string.IsNullOrWhiteSpace(request.Description)
-                    ? $"Generated blank metadata template from {workbook.TargetType} taxonomy"
-                    : request.Description,
-                cancellationToken).ConfigureAwait(false);
-        })
-        .WithSummary("Build a blank metadata template workbook from target taxonomy fields.");
 
         return app;
     }
 
-    private static async Task<(IResult? ErrorResult, CredentialSetRecord? Credential, string? TargetKind)> ValidateRequestAndLoadCredentialAsync(
-        string? targetType,
-        string? credentialSetId,
-        ICredentialSetStore credentialStore,
-        CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(targetType))
-        {
-            return (Results.BadRequest(new { error = "targetType is required." }), null, null);
-        }
-
-        if (string.IsNullOrWhiteSpace(credentialSetId))
-        {
-            return (Results.BadRequest(new { error = "credentialSetId is required." }), null, null);
-        }
-
-        var credential = await credentialStore.GetAsync(credentialSetId, cancellationToken).ConfigureAwait(false);
-        if (credential is null)
-        {
-            return (Results.NotFound(new { error = $"Credential set '{credentialSetId}' was not found." }), null, null);
-        }
-
-        if (!string.Equals(credential.ConnectorRole, "target", StringComparison.OrdinalIgnoreCase))
-        {
-            return (Results.BadRequest(new { error = "Taxonomy Builder requires a target credential set." }), null, null);
-        }
-
-        var targetKind = NormalizeTargetKind(targetType);
-        if (targetKind is null)
-        {
-            return (Results.BadRequest(new { error = "Taxonomy Builder currently supports Bynder, Cloudinary, and Aprimo targets." }), null, null);
-        }
-
-        return (null, credential, targetKind);
-    }
-
-    private static async Task<IResult> SaveWorkbookArtifactAsync(
-        TaxonomyWorkbookResult workbook,
-        IArtifactStore artifactStore,
+    private static async Task<IResult> BuildAprimoConfigurationWorkbookAsync(
+        BuildTaxonomyArtifactRequest request,
         CredentialSetRecord credential,
-        string? projectId,
-        string? requestedFileName,
-        string defaultFileName,
-        string description,
+        IArtifactStore artifactStore,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        await using var stream = new MemoryStream(workbook.Content);
-        var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(requestedFileName)
-            ? defaultFileName
-            : requestedFileName.Trim());
+        var subDomain = FirstValue(credential.Values, "subDomain", "aprimoSubDomain", "tenant", "tenantName");
+        if (string.IsNullOrWhiteSpace(subDomain))
+        {
+            var baseUrl = FirstValue(credential.Values, "baseUrl", "url", "tenantUrl", "aprimoBaseUrl");
+            subDomain = TryExtractSubDomain(baseUrl);
+        }
 
+        var clientId = FirstValue(credential.Values, "clientId", "aprimoClientId", "TargetCredential_ClientId");
+        var clientSecret = FirstValue(credential.Values, "clientSecret", "aprimoClientSecret", "secret", "TargetCredential_ClientSecret");
+
+        if (string.IsNullOrWhiteSpace(subDomain))
+        {
+            throw new InvalidOperationException("Aprimo workbook generation requires a subDomain, aprimoSubDomain, tenant, or Aprimo baseUrl that contains the subdomain.");
+        }
+
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+        {
+            throw new InvalidOperationException("Aprimo workbook generation requires clientId and clientSecret credentials.");
+        }
+
+        var service = new AprimoConfigurationWorkbookService(new HttpClient(), loggerFactory.CreateLogger<AprimoConfigurationWorkbookService>());
+        await using var stream = new MemoryStream();
+        var result = await service.GenerateAsync(
+            new AprimoConfigurationWorkbookRequest(
+                new AprimoConfigurationWorkbookCredentials(subDomain, clientId, clientSecret),
+                AprimoConfigurationWorkbookExportOptions.Defaults),
+            stream,
+            cancellationToken).ConfigureAwait(false);
+        stream.Position = 0;
+
+        var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName) ? result.FileName : request.FileName.Trim());
         if (!fileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
         {
             fileName = Path.ChangeExtension(fileName, ".xlsx");
         }
 
-        var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["GeneratedBy"] = "TaxonomyBuilder",
-            ["TargetType"] = workbook.TargetType,
-            ["CredentialSetId"] = credential.CredentialSetId,
-            ["FieldCount"] = workbook.FieldCount.ToString(CultureInfo.InvariantCulture),
-            ["OptionCount"] = workbook.OptionCount.ToString(CultureInfo.InvariantCulture),
-            ["WorkbookShape"] = workbook.WorkbookShape
-        };
-
         var artifact = await artifactStore.SaveAsync(
             stream,
             fileName,
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            result.ContentType,
             ArtifactKind.Taxonomy,
-            projectId,
-            description,
-            metadata,
+            request.ProjectId,
+            string.IsNullOrWhiteSpace(request.Description) ? "Generated by Taxonomy Builder from Aprimo configuration workbook service" : request.Description,
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["GeneratedBy"] = "TaxonomyBuilder",
+                ["TargetType"] = "Aprimo",
+                ["CredentialSetId"] = credential.CredentialSetId,
+                ["WorksheetCount"] = result.WorksheetCount.ToString(CultureInfo.InvariantCulture),
+                ["WorkbookKind"] = "AprimoConfigurationWorkbook"
+            },
             cancellationToken).ConfigureAwait(false);
 
-        return Results.Created($"/api/artifacts/{artifact.ArtifactId}", new BuildTaxonomyArtifactResponse(
-            artifact,
-            workbook.TargetType,
-            workbook.FieldCount,
-            workbook.OptionCount,
-            artifact.FileName));
+        var fieldCount = result.RowCounts.TryGetValue("Field definitions", out var fields) ? fields : 0;
+        return Results.Created($"/api/artifacts/{artifact.ArtifactId}", new BuildTaxonomyArtifactResponse(artifact, "Aprimo", fieldCount, 0, artifact.FileName));
     }
 
-    private static async Task<TaxonomyWorkbookResult> BuildBynderMetadataPropertiesWorkbookAsync(
-        CredentialSetRecord credential,
-        CancellationToken cancellationToken)
+    private static async Task<TaxonomySnapshot> ReadBynderTaxonomyAsync(CredentialSetRecord credential, BuildTaxonomyArtifactRequest request, CancellationToken cancellationToken)
     {
-        var rawJson = await ReadBynderMetapropertiesJsonAsync(credential, cancellationToken).ConfigureAwait(false);
-        var metaProperties = ParseBynderMetaproperties(rawJson);
-        var dataTables = GetBynderMetaPropertiesDataTables(metaProperties);
-        var content = XlsxDataTableWriter.WriteDataTables(dataTables);
-
-        return new TaxonomyWorkbookResult(
-            "Bynder",
-            metaProperties.Count,
-            metaProperties.Sum(x => x.Options.Count),
-            "LegacyBynderMetadataProperties",
-            content);
-    }
-
-    private static async Task<TaxonomyWorkbookResult> BuildBynderBlankMetadataTemplateWorkbookAsync(
-        CredentialSetRecord credential,
-        CancellationToken cancellationToken)
-    {
-        var rawJson = await ReadBynderMetapropertiesJsonAsync(credential, cancellationToken).ConfigureAwait(false);
-        var metaProperties = ParseBynderMetaproperties(rawJson);
-        var table = CreateBlankBynderMetadataTemplateDataTable(metaProperties);
-        var content = XlsxDataTableWriter.WriteDataTables(new[] { table });
-
-        return new TaxonomyWorkbookResult(
-            "Bynder",
-            metaProperties.Count,
-            0,
-            "LegacyBynderBlankMetadataTemplate",
-            content);
-    }
-
-    private static Task<TaxonomyWorkbookResult> BuildGenericBlankMetadataTemplateWorkbookAsync(
-        string targetType,
-        TaxonomySnapshot snapshot)
-    {
-        var table = CreateBlankGenericMetadataTemplateDataTable(snapshot);
-        var content = XlsxDataTableWriter.WriteDataTables(new[] { table });
-
-        return Task.FromResult(new TaxonomyWorkbookResult(
-            targetType,
-            snapshot.Fields.Count,
-            0,
-            "BlankMetadataTemplate",
-            content));
-    }
-
-    private static DataTable CreateBlankBynderMetadataTemplateDataTable(List<BynderMetaPropertyRow> metaProperties)
-    {
-        var dataTable = new DataTable("Metadata");
-
-        // Same methodology as the legacy CreateBlankMetadataTemplate(): fixed import columns first,
-        // then one column per Bynder metaproperty name.
-        dataTable.Columns.Add("Id");
-        dataTable.Columns.Add("Collection");
-        dataTable.Columns.Add("Filename");
-        dataTable.Columns.Add("Tags");
-
-        foreach (var metaProperty in metaProperties.OrderBy(x => TryParseInt(x.ZIndex) ?? int.MaxValue).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
-        {
-            var columnName = string.IsNullOrWhiteSpace(metaProperty.Name) ? metaProperty.Label : metaProperty.Name;
-            AddUniqueColumn(dataTable, columnName);
-        }
-
-        return dataTable;
-    }
-
-    private static DataTable CreateBlankGenericMetadataTemplateDataTable(TaxonomySnapshot snapshot)
-    {
-        var dataTable = new DataTable("Metadata");
-        dataTable.Columns.Add("Id");
-        dataTable.Columns.Add("Filename");
-        dataTable.Columns.Add("Tags");
-
-        foreach (var field in snapshot.Fields.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
-        {
-            var columnName = string.IsNullOrWhiteSpace(field.Name) ? field.Label : field.Name;
-            AddUniqueColumn(dataTable, columnName);
-        }
-
-        return dataTable;
-    }
-
-    private static void AddUniqueColumn(DataTable dataTable, string? requestedName)
-    {
-        var baseName = string.IsNullOrWhiteSpace(requestedName) ? "Field" : requestedName.Trim();
-        var columnName = baseName;
-
-        for (var index = 2; dataTable.Columns.Contains(columnName); index++)
-        {
-            columnName = $"{baseName}_{index}";
-        }
-
-        dataTable.Columns.Add(columnName);
-    }
-
-    private static async Task<string> ReadBynderMetapropertiesJsonAsync(
-        CredentialSetRecord credential,
-        CancellationToken cancellationToken)
-    {
-        var baseUrl = FirstValue(credential.Values, "BaseUrl", "baseUrl", "url", "domain", "bynderDomain");
-        if (string.IsNullOrWhiteSpace(baseUrl))
-        {
-            throw new InvalidOperationException("Bynder credentials require BaseUrl.");
-        }
-
-        var bearerToken = await ResolveBynderBearerTokenAsync(baseUrl, credential.Values, cancellationToken).ConfigureAwait(false);
-        var endpoints = new[] { "/api/v4/metaproperties/", "/api/v4/metaproperties" };
-        string? json = null;
-        HttpResponseMessage? lastResponse = null;
-
-        foreach (var endpoint in endpoints)
-        {
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, endpoint));
-            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
-            httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            lastResponse = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
-            json = await lastResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            if (lastResponse.IsSuccessStatusCode)
-            {
-                return json;
-            }
-        }
-
-        throw new HttpRequestException($"Bynder metaproperties request failed: {(int?)lastResponse?.StatusCode} {lastResponse?.ReasonPhrase}.\n{json}");
-    }
-
-    private static async Task<string> ResolveBynderBearerTokenAsync(
-        string baseUrl,
-        IReadOnlyDictionary<string, string> values,
-        CancellationToken cancellationToken)
-    {
-        var existingToken = FirstValue(values, "AccessToken", "accessToken", "BearerToken", "bearerToken", "Token", "token");
-        if (!string.IsNullOrWhiteSpace(existingToken) && !LooksLikePlaceholder(existingToken))
-        {
-            return existingToken;
-        }
-
-        var clientId = FirstValue(values, "ClientId", "clientId", "client_id");
-        var clientSecret = FirstValue(values, "ClientSecret", "clientSecret", "client_secret");
-        var scopes = FirstValue(values, "Scopes", "scopes", "Scope", "scope");
-        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-        {
-            throw new InvalidOperationException("Bynder credentials require ClientId and ClientSecret.");
-        }
-
-        var tokenEndpoints = new[] { "/v6/authentication/oauth2/token", "/api/v4/oauth2/token", "/oauth2/token" };
-        var formValues = new List<KeyValuePair<string, string>>
-        {
-            new("grant_type", "client_credentials"),
-            new("client_id", clientId),
-            new("client_secret", clientSecret)
-        };
-        if (!string.IsNullOrWhiteSpace(scopes))
-        {
-            formValues.Add(new KeyValuePair<string, string>("scope", scopes));
-        }
-
-        string? lastBody = null;
-        HttpResponseMessage? lastResponse = null;
-        foreach (var endpoint in tokenEndpoints)
-        {
-            using var content = new FormUrlEncodedContent(formValues);
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, CombineUrl(baseUrl, endpoint)) { Content = content };
-            httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            lastResponse = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
-            lastBody = await lastResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            if (!lastResponse.IsSuccessStatusCode)
-            {
-                continue;
-            }
-
-            var tokenRoot = JsonNode.Parse(lastBody) as JsonObject;
-            var accessToken = tokenRoot is null ? string.Empty : Text(tokenRoot, "access_token", "accessToken", "token");
-            if (!string.IsNullOrWhiteSpace(accessToken))
-            {
-                return accessToken;
-            }
-        }
-
-        throw new HttpRequestException($"Bynder OAuth token request failed: {(int?)lastResponse?.StatusCode} {lastResponse?.ReasonPhrase}.\n{lastBody}");
-    }
-
-    private static async Task<TaxonomySnapshot> ReadCloudinaryTaxonomyAsync(
-        CredentialSetRecord credential,
-        BuildTaxonomyArtifactRequest request,
-        CancellationToken cancellationToken)
-    {
-        var (cloudName, apiKey, apiSecret) = ResolveCloudinaryCredentials(credential.Values);
-        if (string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
-        {
-            var keys = string.Join(", ", credential.Values.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
-            throw new InvalidOperationException(
-                "Cloudinary credentials require CloudName, ApiKey, and ApiSecret, or CLOUDINARY_URL in the form cloudinary://apiKey:apiSecret@cloudName. " +
-                $"Found keys: [{keys}].");
-        }
-
-        using var httpRequest = new HttpRequestMessage(
-            HttpMethod.Get,
-            $"https://api.cloudinary.com/v1_1/{Uri.EscapeDataString(cloudName)}/metadata_fields");
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue(
-            "Basic",
-            Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:{apiSecret}")));
-        httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
+        var baseUrl = FirstValue(credential.Values, "baseUrl", "url", "domain", "bynderDomain");
+        var token = FirstValue(credential.Values, "accessToken", "apiToken", "token", "bearerToken");
+        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(token)) throw new InvalidOperationException("Bynder credentials require baseUrl and accessToken/apiToken.");
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, "/api/v4/metaproperties/"));
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         using var response = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Bynder metaproperties request failed: {(int)response.StatusCode} {response.ReasonPhrase}. {json}");
+        var root = JsonNode.Parse(json) ?? new JsonArray();
+        var fields = new List<TaxonomyField>();
+        var options = new List<TaxonomyOption>();
+        foreach (var item in AsArray(root).OfType<JsonObject>())
         {
-            throw new HttpRequestException($"Cloudinary metadata fields request failed: {(int)response.StatusCode} {response.ReasonPhrase}.\n{json}");
+            var id = Text(item, "id", "uuid", "name", "propertyId");
+            fields.Add(new TaxonomyField(id, Text(item, "name", "propertyName", "technicalName", "id"), Text(item, "label", "displayName", "name", "propertyName"), Text(item, "type", "inputType", "fieldType"), Bool(item, "required", "isRequired", "mandatory"), Bool(item, "isMultiselect", "multiSelect", "multiselect", "multiple"), Text(item, "description", "helpText"), item.ToJsonString(JsonOptions)));
         }
+        return new TaxonomySnapshot("Bynder", fields, options, json);
+    }
 
+    private static async Task<TaxonomySnapshot> ReadCloudinaryTaxonomyAsync(CredentialSetRecord credential, BuildTaxonomyArtifactRequest request, CancellationToken cancellationToken)
+    {
+        var cloudName = FirstValue(credential.Values, "cloudName", "cloud_name");
+        var apiKey = FirstValue(credential.Values, "apiKey", "api_key");
+        var apiSecret = FirstValue(credential.Values, "apiSecret", "api_secret", "secret");
+        if (string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret)) throw new InvalidOperationException("Cloudinary credentials require cloudName, apiKey, and apiSecret.");
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"https://api.cloudinary.com/v1_1/{Uri.EscapeDataString(cloudName)}/metadata_fields");
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:{apiSecret}")));
+        using var response = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Cloudinary metadata fields request failed: {(int)response.StatusCode} {response.ReasonPhrase}. {json}");
         var root = JsonNode.Parse(json) ?? new JsonObject();
         var fieldNodes = root is JsonObject rootObj && rootObj["metadata_fields"] is JsonArray arr ? arr : AsArray(root);
-        var fields = new List<TaxonomyField>();
-        var options = new List<TaxonomyOption>();
-
-        foreach (var item in fieldNodes)
-        {
-            if (item is not JsonObject obj)
-            {
-                continue;
-            }
-
-            var id = Text(obj, "external_id", "id", "name");
-            fields.Add(new TaxonomyField(
-                id,
-                Text(obj, "external_id", "name", "id"),
-                Text(obj, "label", "display_name", "external_id", "name"),
-                Text(obj, "type"),
-                Bool(obj, "mandatory", "required"),
-                IsMultiValueCloudinaryField(obj),
-                Text(obj, "description", "help_text")));
-
-            if (!request.IncludeOptions)
-            {
-                continue;
-            }
-
-            foreach (var option in ExtractOptionObjects(obj, "datasource", "values", "options"))
-            {
-                options.Add(new TaxonomyOption(
-                    id,
-                    Text(option, "external_id", "id", "value"),
-                    Text(option, "value", "label", "name"),
-                    Text(option, "label", "value", "name"),
-                    Bool(option, new[] { "active", "enabled" }, defaultValue: true)));
-            }
-        }
-
-        return new TaxonomySnapshot("Cloudinary", fields, options, json);
+        var fields = fieldNodes.OfType<JsonObject>().Select(obj => new TaxonomyField(Text(obj, "external_id", "id", "name"), Text(obj, "external_id", "name", "id"), Text(obj, "label", "display_name", "external_id", "name"), Text(obj, "type"), Bool(obj, "mandatory", "required"), Bool(obj, "multiple", "multiValue"), Text(obj, "description", "help_text"), obj.ToJsonString(JsonOptions))).ToList();
+        return new TaxonomySnapshot("Cloudinary", fields, new List<TaxonomyOption>(), json);
     }
 
-    private static (string? CloudName, string? ApiKey, string? ApiSecret) ResolveCloudinaryCredentials(
-        IReadOnlyDictionary<string, string> values)
+    private static JsonArray AsArray(JsonNode node) => node as JsonArray ?? new JsonArray(node);
+    private static string Text(JsonObject obj, params string[] keys) { foreach (var key in keys) if (obj[key] is JsonValue value && !string.IsNullOrWhiteSpace(value.ToString())) return value.ToString(); return string.Empty; }
+    private static bool Bool(JsonObject obj, params string[] keys) { foreach (var key in keys) if (obj[key] is JsonValue value && bool.TryParse(value.ToString(), out var parsed)) return parsed; return false; }
+    private static string FirstValue(IReadOnlyDictionary<string, string> values, params string[] keys) { foreach (var key in keys) if (values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) && value != "********") return value.Trim(); return string.Empty; }
+    private static string? NormalizeTargetKind(string targetType) { var value = targetType.Trim().ToLowerInvariant(); if (value.Contains("bynder")) return "bynder"; if (value.Contains("cloudinary")) return "cloudinary"; if (value.Contains("aprimo")) return "aprimo"; return null; }
+    private static string CombineUrl(string baseUrl, string path) => baseUrl.TrimEnd('/') + "/" + path.TrimStart('/');
+    private static string? TryExtractSubDomain(string url) { if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return null; var host = uri.Host; return host.EndsWith(".aprimo.com", StringComparison.OrdinalIgnoreCase) ? host[..^".aprimo.com".Length].Replace(".dam", "") : null; }
+    private static string MakeSafeFileName(string value) { var invalid = Path.GetInvalidFileNameChars(); var safe = new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()); return string.IsNullOrWhiteSpace(safe) ? $"taxonomy-{Guid.NewGuid():N}.xlsx" : safe; }
+
+    private static string BuildLegacyWorkbookXml(TaxonomySnapshot snapshot, bool includeOptions, bool includeRaw)
     {
-        var cloudName = FirstValue(values, "CloudName", "cloudName", "cloud_name", "CLOUD_NAME");
-        var apiKey = FirstValue(values, "ApiKey", "apiKey", "api_key", "API_KEY", "Key", "key");
-        var apiSecret = FirstValue(values, "ApiSecret", "apiSecret", "api_secret", "API_SECRET", "Secret", "secret");
-
-        if (!string.IsNullOrWhiteSpace(cloudName) && !string.IsNullOrWhiteSpace(apiKey) && !string.IsNullOrWhiteSpace(apiSecret))
-        {
-            return (cloudName, apiKey, apiSecret);
-        }
-
-        var cloudinaryUrl = FirstValue(values, "CLOUDINARY_URL", "CloudinaryUrl", "cloudinaryUrl", "cloudinary_url");
-        if (string.IsNullOrWhiteSpace(cloudinaryUrl))
-        {
-            return (cloudName, apiKey, apiSecret);
-        }
-
-        var uri = new Uri(cloudinaryUrl);
-        if (!string.Equals(uri.Scheme, "cloudinary", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("CLOUDINARY_URL must use the cloudinary:// scheme.");
-        }
-
-        var userInfo = uri.UserInfo.Split(':', 2);
-        if (userInfo.Length == 2)
-        {
-            apiKey = string.IsNullOrWhiteSpace(apiKey) ? Uri.UnescapeDataString(userInfo[0]) : apiKey;
-            apiSecret = string.IsNullOrWhiteSpace(apiSecret) ? Uri.UnescapeDataString(userInfo[1]) : apiSecret;
-        }
-
-        cloudName = string.IsNullOrWhiteSpace(cloudName) ? uri.Host : cloudName;
-        return (cloudName, apiKey, apiSecret);
+        var sheets = new StringBuilder();
+        sheets.Append(Worksheet("Fields", new[] { "FieldId", "Name", "Label", "Type", "Required", "MultiValue", "Description" }, snapshot.Fields.Select(x => new[] { x.FieldId, x.Name, x.Label, x.Type, x.Required.ToString(), x.MultiValue.ToString(), x.Description })));
+        if (includeRaw) sheets.Append(Worksheet("Raw", new[] { "Target", "Json" }, new[] { new[] { snapshot.TargetType, snapshot.RawJson } }));
+        return $"<?xml version=\"1.0\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\">{sheets}</Workbook>";
     }
-
-    private static async Task<TaxonomySnapshot> ReadAprimoTaxonomyAsync(
-        CredentialSetRecord credential,
-        BuildTaxonomyArtifactRequest request,
-        CancellationToken cancellationToken)
-    {
-        var baseUrl = FirstValue(credential.Values, "baseUrl", "BaseUrl", "url", "tenantUrl", "aprimoBaseUrl");
-        var token = FirstValue(credential.Values, "accessToken", "AccessToken", "token", "Token", "bearerToken", "BearerToken");
-        if (string.IsNullOrWhiteSpace(baseUrl))
-        {
-            throw new InvalidOperationException("Aprimo credentials require baseUrl, url, tenantUrl, or aprimoBaseUrl.");
-        }
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new InvalidOperationException("Aprimo credentials require accessToken, token, or bearerToken.");
-        }
-
-        var endpoints = new[] { "/api/core/metadatafields?limit=1000", "/api/core/metadata-fields?limit=1000", "/api/metadatafields?limit=1000" };
-        string? json = null;
-        HttpResponseMessage? lastResponse = null;
-        foreach (var endpoint in endpoints)
-        {
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, endpoint));
-            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            lastResponse = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
-            json = await lastResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            if (lastResponse.IsSuccessStatusCode)
-            {
-                break;
-            }
-        }
-
-        if (lastResponse is null || !lastResponse.IsSuccessStatusCode || json is null)
-        {
-            throw new HttpRequestException($"Aprimo metadata fields request failed: {(int?)lastResponse?.StatusCode} {lastResponse?.ReasonPhrase}.\n{json}");
-        }
-
-        var root = JsonNode.Parse(json) ?? new JsonObject();
-        var fieldNodes = FindFirstArray(root, "items", "fields", "metadataFields", "data") ?? AsArray(root);
-        var fields = new List<TaxonomyField>();
-        var options = new List<TaxonomyOption>();
-
-        foreach (var item in fieldNodes)
-        {
-            if (item is not JsonObject obj)
-            {
-                continue;
-            }
-
-            var id = Text(obj, "id", "fieldName", "name");
-            fields.Add(new TaxonomyField(
-                id,
-                Text(obj, "fieldName", "name", "id"),
-                Text(obj, "label", "localizedLabel", "displayName", "name", "fieldName"),
-                Text(obj, "dataType", "type", "fieldType"),
-                Bool(obj, "required", "isRequired", "mandatory"),
-                Bool(obj, "multiValue", "isMultiValue", "allowMultipleValues", "multiple"),
-                Text(obj, "description", "helpText")));
-
-            if (!request.IncludeOptions)
-            {
-                continue;
-            }
-
-            foreach (var option in ExtractOptionObjects(obj, "options", "values", "listValues", "allowedValues"))
-            {
-                options.Add(new TaxonomyOption(
-                    id,
-                    Text(option, "id", "value", "name"),
-                    Text(option, "value", "name", "label"),
-                    Text(option, "label", "name", "value"),
-                    Bool(option, new[] { "active", "isActive", "enabled" }, defaultValue: true)));
-            }
-        }
-
-        return new TaxonomySnapshot("Aprimo", fields, options, json);
-    }
-
-    private static Task<TaxonomyWorkbookResult> BuildGenericTaxonomyWorkbookAsync(
-        string targetType,
-        TaxonomySnapshot snapshot,
-        bool includeOptions,
-        bool includeRaw)
-    {
-        var fields = new DataTable("Fields");
-        fields.Columns.Add("FieldId");
-        fields.Columns.Add("Name");
-        fields.Columns.Add("Label");
-        fields.Columns.Add("Type");
-        fields.Columns.Add("Required");
-        fields.Columns.Add("MultiValue");
-        fields.Columns.Add("Description");
-        foreach (var field in snapshot.Fields)
-        {
-            fields.Rows.Add(field.FieldId, field.Name, field.Label, field.Type, field.Required, field.MultiValue, field.Description);
-        }
-
-        var tables = new List<DataTable> { fields };
-        if (includeOptions)
-        {
-            var options = new DataTable("Options");
-            options.Columns.Add("FieldId");
-            options.Columns.Add("OptionId");
-            options.Columns.Add("Name");
-            options.Columns.Add("Label");
-            options.Columns.Add("Active");
-            foreach (var option in snapshot.Options)
-            {
-                options.Rows.Add(option.FieldId, option.OptionId, option.Name, option.Label, option.Active);
-            }
-            tables.Add(options);
-        }
-
-        if (includeRaw)
-        {
-            var raw = new DataTable("Raw");
-            raw.Columns.Add("Target");
-            raw.Columns.Add("Json");
-            foreach (var chunk in Chunk(snapshot.RawJson, 32000))
-            {
-                raw.Rows.Add(targetType, chunk);
-            }
-            tables.Add(raw);
-        }
-
-        var content = XlsxDataTableWriter.WriteDataTables(tables);
-        return Task.FromResult(new TaxonomyWorkbookResult(targetType, snapshot.Fields.Count, snapshot.Options.Count, "GenericTaxonomy", content));
-    }
-
-    private static List<BynderMetaPropertyRow> ParseBynderMetaproperties(string json)
-    {
-        var root = JsonNode.Parse(json) ?? new JsonObject();
-        var properties = new List<BynderMetaPropertyRow>();
-        foreach (var obj in EnumerateBynderPropertyObjects(root))
-        {
-            var property = new BynderMetaPropertyRow(
-                Id: Text(obj, "id", "uuid", "propertyId"),
-                Name: Text(obj, "name", "propertyName"),
-                Label: Text(obj, "label", "displayName", "name", "propertyName"),
-                IsMultiSelect: BoolText(obj, "isMultiselect", "isMultiSelect", "multiSelect", "multiselect", "multiple"),
-                IsRequired: BoolText(obj, "isRequired", "required", "mandatory"),
-                IsFilterable: BoolText(obj, "isFilterable", "filterable"),
-                IsMainfilter: BoolText(obj, "isMainfilter", "isMainFilter", "mainfilter", "mainFilter"),
-                IsEditable: BoolText(obj, "isEditable", "editable"),
-                ZIndex: Text(obj, "zIndex", "zindex", "sortOrder", "position", "order"),
-                IsDisplayField: BoolText(obj, "isDisplayField", "displayField"),
-                IsMultifilter: BoolText(obj, "isMultifilter", "isMultiFilter", "multifilter", "multiFilter"),
-                ShowInGridView: BoolText(obj, "showInGridView", "showGridView"),
-                ShowInListView: BoolText(obj, "showInListView", "showListView"),
-                IsApiField: BoolText(obj, "isApiField", "apiField"),
-                ShowInDuplicateView: BoolText(obj, "showInDuplicateView", "duplicateView"),
-                Type: Text(obj, "type", "inputType", "fieldType"),
-                IsSearchable: BoolText(obj, "isSearchable", "searchable"),
-                IsDrilldown: BoolText(obj, "isDrilldown", "drilldown"),
-                UseDependencies: BoolText(obj, "useDependencies", "dependencies", "hasDependencies"),
-                Options: ExtractBynderOptions(obj));
-
-            if (!string.IsNullOrWhiteSpace(property.Id) || !string.IsNullOrWhiteSpace(property.Name))
-            {
-                properties.Add(property);
-            }
-        }
-
-        return properties
-            .OrderBy(x => TryParseInt(x.ZIndex) ?? int.MaxValue)
-            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static IEnumerable<JsonObject> EnumerateBynderPropertyObjects(JsonNode node)
-    {
-        if (node is JsonArray arr)
-        {
-            foreach (var item in arr.OfType<JsonObject>())
-            {
-                yield return item;
-            }
-            yield break;
-        }
-
-        if (node is not JsonObject obj)
-        {
-            yield break;
-        }
-
-        foreach (var key in new[] { "metaproperties", "metaProperties", "properties", "items", "data" })
-        {
-            if (obj[key] is JsonArray nestedArray)
-            {
-                foreach (var item in nestedArray.OfType<JsonObject>())
-                {
-                    yield return item;
-                }
-                yield break;
-            }
-            if (obj[key] is JsonObject nestedObject)
-            {
-                foreach (var child in nestedObject.Select(x => x.Value).OfType<JsonObject>())
-                {
-                    yield return child;
-                }
-                yield break;
-            }
-        }
-
-        if (LooksLikeBynderMetaproperty(obj))
-        {
-            yield return obj;
-            yield break;
-        }
-
-        foreach (var child in obj.Select(x => x.Value).OfType<JsonObject>())
-        {
-            if (LooksLikeBynderMetaproperty(child))
-            {
-                yield return child;
-            }
-        }
-    }
-
-    private static bool LooksLikeBynderMetaproperty(JsonObject obj)
-    {
-        return obj.ContainsKey("id")
-            && (obj.ContainsKey("name") || obj.ContainsKey("label"))
-            && (obj.ContainsKey("type") || obj.ContainsKey("options") || obj.ContainsKey("isRequired") || obj.ContainsKey("isMultiselect"));
-    }
-
-    private static List<BynderMetaPropertyOptionRow> ExtractBynderOptions(JsonObject property)
-    {
-        var options = new List<BynderMetaPropertyOptionRow>();
-        foreach (var option in ExtractOptionObjects(property, "options", "values", "propertyOptions"))
-        {
-            options.Add(new BynderMetaPropertyOptionRow(
-                Id: Text(option, "id", "uuid", "optionId"),
-                Name: Text(option, "name", "value"),
-                Label: Text(option, "label", "displayName", "name", "value"),
-                ZIndex: Text(option, "zIndex", "zindex", "sortOrder", "position", "order"),
-                IsSelectable: BoolText(option, true, "isSelectable", "selectable", "active", "isActive", "enabled"),
-                LinkedOptionIds: ReadLinkedOptionIds(option)));
-        }
-
-        return options
-            .OrderBy(x => TryParseInt(x.ZIndex) ?? int.MaxValue)
-            .ThenBy(x => x.Label, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static List<DataTable> GetBynderMetaPropertiesDataTables(List<BynderMetaPropertyRow> metaProperties)
-    {
-        var metaPropertiesDataTable = CreateMetaPropertyDataTable();
-        var optionDataTables = new List<DataTable>();
-        var usedSheetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { metaPropertiesDataTable.TableName };
-
-        foreach (var metaProperty in metaProperties)
-        {
-            metaPropertiesDataTable.Rows.Add(
-                metaProperty.Id,
-                metaProperty.Name,
-                metaProperty.Label,
-                metaProperty.IsMultiSelect,
-                metaProperty.IsRequired,
-                metaProperty.IsFilterable,
-                metaProperty.IsMainfilter,
-                metaProperty.IsEditable,
-                metaProperty.ZIndex,
-                metaProperty.IsDisplayField,
-                metaProperty.IsMultifilter,
-                metaProperty.ShowInGridView,
-                metaProperty.ShowInListView,
-                metaProperty.IsApiField,
-                metaProperty.ShowInDuplicateView,
-                metaProperty.Type,
-                metaProperty.IsSearchable,
-                metaProperty.IsDrilldown,
-                metaProperty.UseDependencies);
-
-            if (metaProperty.Options.Count > 0)
-            {
-                var metaPropertyOptionsDataTable = CreateMetaPropertyOptionsDataTable(
-                    MakeUniqueSheetName(metaProperty.Name, usedSheetNames));
-                foreach (var option in metaProperty.Options)
-                {
-                    metaPropertyOptionsDataTable.Rows.Add(
-                        option.Id,
-                        option.Name,
-                        option.Label,
-                        option.ZIndex,
-                        option.IsSelectable,
-                        option.LinkedOptionIds);
-                }
-                optionDataTables.Add(metaPropertyOptionsDataTable);
-            }
-        }
-
-        var dataTables = new List<DataTable> { metaPropertiesDataTable };
-        dataTables.AddRange(optionDataTables);
-        return dataTables;
-    }
-
-    private static DataTable CreateMetaPropertyDataTable()
-    {
-        var dataTable = new DataTable("MetaProperties");
-        dataTable.Columns.Add("Id");
-        dataTable.Columns.Add("Name");
-        dataTable.Columns.Add("Label");
-        dataTable.Columns.Add("IsMultiSelect");
-        dataTable.Columns.Add("IsRequired");
-        dataTable.Columns.Add("IsFilterable");
-        dataTable.Columns.Add("IsMainfilter");
-        dataTable.Columns.Add("IsEditable");
-        dataTable.Columns.Add("ZIndex");
-        dataTable.Columns.Add("IsDisplayField");
-        dataTable.Columns.Add("IsMultiFilter");
-        dataTable.Columns.Add("ShowInGridView");
-        dataTable.Columns.Add("ShowInListView");
-        dataTable.Columns.Add("IsApiField");
-        dataTable.Columns.Add("ShowInDuplicateView");
-        dataTable.Columns.Add("Type");
-        dataTable.Columns.Add("IsSearchable");
-        dataTable.Columns.Add("IsDrilldown");
-        dataTable.Columns.Add("UseDependencies");
-        return dataTable;
-    }
-
-    private static DataTable CreateMetaPropertyOptionsDataTable(string nameOfMetaProperty)
-    {
-        var dataTable = new DataTable(nameOfMetaProperty);
-        dataTable.Columns.Add("Id");
-        dataTable.Columns.Add("Name");
-        dataTable.Columns.Add("Label");
-        dataTable.Columns.Add("ZIndex");
-        dataTable.Columns.Add("IsSelectable");
-        dataTable.Columns.Add("LinkedOptionIds");
-        return dataTable;
-    }
-
-    private static IEnumerable<string> Chunk(string value, int chunkSize)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            yield return string.Empty;
-            yield break;
-        }
-
-        for (var index = 0; index < value.Length; index += chunkSize)
-        {
-            yield return value.Substring(index, Math.Min(chunkSize, value.Length - index));
-        }
-    }
-
-    private static JsonArray AsArray(JsonNode node)
-    {
-        if (node is JsonArray arr)
-        {
-            return arr;
-        }
-
-        var result = new JsonArray();
-        result.Add(node.DeepClone());
-        return result;
-    }
-
-    private static JsonArray? FindFirstArray(JsonNode node, params string[] keys)
-    {
-        if (node is not JsonObject obj)
-        {
-            return node as JsonArray;
-        }
-
-        foreach (var key in keys)
-        {
-            if (obj[key] is JsonArray arr)
-            {
-                return arr;
-            }
-        }
-
-        return null;
-    }
-
-    private static IEnumerable<JsonObject> ExtractOptionObjects(JsonObject field, params string[] keys)
-    {
-        foreach (var key in keys)
-        {
-            var node = field[key];
-            if (node is JsonArray arr)
-            {
-                foreach (var item in arr.OfType<JsonObject>())
-                {
-                    yield return item;
-                }
-            }
-            else if (node is JsonObject obj)
-            {
-                if (LooksLikeOption(obj))
-                {
-                    yield return obj;
-                }
-
-                foreach (var nestedKey in new[] { "values", "options", "items", "datasource" })
-                {
-                    if (obj[nestedKey] is JsonArray nested)
-                    {
-                        foreach (var item in nested.OfType<JsonObject>())
-                        {
-                            yield return item;
-                        }
-                    }
-                }
-
-                foreach (var child in obj.Select(x => x.Value).OfType<JsonObject>())
-                {
-                    if (LooksLikeOption(child))
-                    {
-                        yield return child;
-                    }
-                }
-            }
-        }
-    }
-
-    private static bool LooksLikeOption(JsonObject obj)
-    {
-        return obj.ContainsKey("id") && (obj.ContainsKey("name") || obj.ContainsKey("label") || obj.ContainsKey("value"));
-    }
-
-    private static string Text(JsonObject obj, params string[] keys)
-    {
-        foreach (var key in keys)
-        {
-            if (obj[key] is JsonValue value)
-            {
-                var text = value.ToString();
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    return text;
-                }
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static bool Bool(JsonObject obj, params string[] keys)
-    {
-        return Bool(obj, keys, defaultValue: false);
-    }
-
-    private static bool Bool(JsonObject obj, string[] keys, bool defaultValue)
-    {
-        foreach (var key in keys)
-        {
-            if (obj[key] is JsonValue value)
-            {
-                if (value.TryGetValue<bool>(out var boolValue))
-                {
-                    return boolValue;
-                }
-
-                if (bool.TryParse(value.ToString(), out var parsed))
-                {
-                    return parsed;
-                }
-
-                if (int.TryParse(value.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
-                {
-                    return number != 0;
-                }
-            }
-        }
-
-        return defaultValue;
-    }
-
-    private static string BoolText(JsonObject obj, params string[] keys)
-    {
-        return BoolText(obj, defaultValue: false, keys);
-    }
-
-    private static string BoolText(JsonObject obj, bool defaultValue, params string[] keys)
-    {
-        return Bool(obj, keys, defaultValue).ToString(CultureInfo.InvariantCulture);
-    }
-
-    private static bool IsMultiValueCloudinaryField(JsonObject obj)
-    {
-        var type = Text(obj, "type");
-        return type.Contains("multi", StringComparison.OrdinalIgnoreCase) || Bool(obj, "multiple", "multiValue");
-    }
-
-    private static string FirstValue(IReadOnlyDictionary<string, string> values, params string[] keys)
-    {
-        foreach (var key in keys)
-        {
-            var pair = values.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(pair.Value) && pair.Value != "********" && !LooksLikePlaceholder(pair.Value))
-            {
-                return pair.Value.Trim();
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static bool LooksLikePlaceholder(string value)
-    {
-        return value.StartsWith("your-", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("********", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string? NormalizeTargetKind(string targetType)
-    {
-        var value = targetType.Trim().ToLowerInvariant();
-        if (value.Contains("bynder")) return "bynder";
-        if (value.Contains("cloudinary")) return "cloudinary";
-        if (value.Contains("aprimo")) return "aprimo";
-        return null;
-    }
-
-    private static string CombineUrl(string baseUrl, string path)
-    {
-        return baseUrl.TrimEnd('/') + "/" + path.TrimStart('/');
-    }
-
-    private static string MakeSafeFileName(string value)
-    {
-        var invalid = Path.GetInvalidFileNameChars();
-        var safe = new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
-        return string.IsNullOrWhiteSpace(safe) ? $"taxonomy-{Guid.NewGuid():N}.xlsx" : safe;
-    }
-
-    private static int? TryParseInt(string? value)
-    {
-        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
-        {
-            return parsed;
-        }
-
-        return null;
-    }
-
-    private static string ReadLinkedOptionIds(JsonObject obj)
-    {
-        foreach (var key in new[] { "linkedOptionIds", "LinkedOptionIds", "linkedOptions", "dependencies" })
-        {
-            var node = obj[key];
-            if (node is JsonArray arr)
-            {
-                return string.Join("|", arr.Select(x => x?.ToString()).Where(x => !string.IsNullOrWhiteSpace(x)));
-            }
-            if (node is JsonValue value)
-            {
-                return value.ToString();
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static string MakeUniqueSheetName(string? requestedName, HashSet<string> usedSheetNames)
-    {
-        var baseName = SanitizeSheetName(requestedName);
-        if (string.IsNullOrWhiteSpace(baseName))
-        {
-            baseName = "Sheet";
-        }
-
-        if (usedSheetNames.Add(baseName))
-        {
-            return baseName;
-        }
-
-        for (var index = 2; index < 10000; index++)
-        {
-            var suffix = $"_{index}";
-            var maxBaseLength = Math.Max(1, 31 - suffix.Length);
-            var candidateBase = baseName.Length > maxBaseLength ? baseName[..maxBaseLength] : baseName;
-            var candidate = candidateBase + suffix;
-            if (usedSheetNames.Add(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        throw new InvalidOperationException("Unable to generate a unique Excel sheet name.");
-    }
-
-    private static string SanitizeSheetName(string? value)
-    {
-        var name = string.IsNullOrWhiteSpace(value) ? "Sheet" : value.Trim();
-        name = Regex.Replace(name, @"[\\/\?\*\[\]:]+", "_");
-        name = Regex.Replace(name, @"\s+", " ").Trim('\'', ' ');
-        if (name.Length > 31)
-        {
-            name = name[..31];
-        }
-        return string.IsNullOrWhiteSpace(name) ? "Sheet" : name;
-    }
+    private static string Worksheet(string name, string[] headers, IEnumerable<string[]> rows) => $"<Worksheet ss:Name=\"{Xml(name)}\"><Table>{Row(headers)}{string.Concat(rows.Select(Row))}</Table></Worksheet>";
+    private static string Row(IEnumerable<string> cells) => $"<Row>{string.Concat(cells.Select(cell => $"<Cell><Data ss:Type=\"String\">{Xml(cell)}</Data></Cell>"))}</Row>";
+    private static string Xml(string? value) => HtmlEncoder.Default.Encode(value ?? string.Empty);
 }
 
-public sealed record BuildTaxonomyArtifactRequest(
-    string TargetType,
-    string CredentialSetId,
-    bool IncludeOptions = true,
-    bool IncludeRaw = true,
-    string? ProjectId = null,
-    string? FileName = null,
-    string? Description = null);
-
-public sealed record BuildTaxonomyArtifactResponse(
-    ControlPlaneArtifactRecord Artifact,
-    string TargetType,
-    int FieldCount,
-    int OptionCount,
-    string FileName);
-
-internal sealed record TaxonomyWorkbookResult(
-    string TargetType,
-    int FieldCount,
-    int OptionCount,
-    string WorkbookShape,
-    byte[] Content);
-
-internal sealed record TaxonomySnapshot(
-    string TargetType,
-    List<TaxonomyField> Fields,
-    List<TaxonomyOption> Options,
-    string RawJson);
-
-internal sealed record TaxonomyField(
-    string FieldId,
-    string Name,
-    string Label,
-    string Type,
-    bool Required,
-    bool MultiValue,
-    string Description);
-
-internal sealed record TaxonomyOption(
-    string FieldId,
-    string OptionId,
-    string Name,
-    string Label,
-    bool Active);
-
-internal sealed record BynderMetaPropertyRow(
-    string Id,
-    string Name,
-    string Label,
-    string IsMultiSelect,
-    string IsRequired,
-    string IsFilterable,
-    string IsMainfilter,
-    string IsEditable,
-    string ZIndex,
-    string IsDisplayField,
-    string IsMultifilter,
-    string ShowInGridView,
-    string ShowInListView,
-    string IsApiField,
-    string ShowInDuplicateView,
-    string Type,
-    string IsSearchable,
-    string IsDrilldown,
-    string UseDependencies,
-    List<BynderMetaPropertyOptionRow> Options);
-
-internal sealed record BynderMetaPropertyOptionRow(
-    string Id,
-    string Name,
-    string Label,
-    string ZIndex,
-    string IsSelectable,
-    string LinkedOptionIds);
-
-internal static class XlsxDataTableWriter
-{
-    public static byte[] WriteDataTables(IReadOnlyList<DataTable> dataTables)
-    {
-        if (dataTables.Count == 0)
-        {
-            throw new InvalidOperationException("At least one worksheet is required.");
-        }
-
-        using var output = new MemoryStream();
-        using (var archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
-        {
-            AddText(archive, "[Content_Types].xml", BuildContentTypes(dataTables.Count));
-            AddText(archive, "_rels/.rels", RootRels);
-            AddText(archive, "xl/workbook.xml", BuildWorkbook(dataTables));
-            AddText(archive, "xl/_rels/workbook.xml.rels", BuildWorkbookRels(dataTables.Count));
-            AddText(archive, "xl/styles.xml", Styles);
-            for (var i = 0; i < dataTables.Count; i++)
-            {
-                AddText(archive, $"xl/worksheets/sheet{i + 1}.xml", BuildWorksheet(dataTables[i]));
-            }
-        }
-
-        return output.ToArray();
-    }
-
-    private static string BuildContentTypes(int sheetCount)
-    {
-        var builder = new StringBuilder();
-        builder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-        builder.Append("<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">");
-        builder.Append("<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>");
-        builder.Append("<Default Extension=\"xml\" ContentType=\"application/xml\"/>");
-        builder.Append("<Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>");
-        builder.Append("<Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>");
-        for (var i = 1; i <= sheetCount; i++)
-        {
-            builder.Append(CultureInfo.InvariantCulture, $"<Override PartName=\"/xl/worksheets/sheet{i}.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>");
-        }
-        builder.Append("</Types>");
-        return builder.ToString();
-    }
-
-    private static string BuildWorkbook(IReadOnlyList<DataTable> dataTables)
-    {
-        var builder = new StringBuilder();
-        builder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-        builder.Append("<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">");
-        builder.Append("<sheets>");
-        for (var i = 0; i < dataTables.Count; i++)
-        {
-            builder.Append(CultureInfo.InvariantCulture, $"<sheet name=\"{Xml(SanitizeSheetName(dataTables[i].TableName))}\" sheetId=\"{i + 1}\" r:id=\"rId{i + 1}\"/>");
-        }
-        builder.Append("</sheets>");
-        builder.Append("</workbook>");
-        return builder.ToString();
-    }
-
-    private static string BuildWorkbookRels(int sheetCount)
-    {
-        var builder = new StringBuilder();
-        builder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-        builder.Append("<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">");
-        for (var i = 1; i <= sheetCount; i++)
-        {
-            builder.Append(CultureInfo.InvariantCulture, $"<Relationship Id=\"rId{i}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet{i}.xml\"/>");
-        }
-        builder.Append(CultureInfo.InvariantCulture, $"<Relationship Id=\"rId{sheetCount + 1}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>");
-        builder.Append("</Relationships>");
-        return builder.ToString();
-    }
-
-    private static string BuildWorksheet(DataTable table)
-    {
-        var totalRows = table.Rows.Count + 1;
-        var totalColumns = Math.Max(1, table.Columns.Count);
-        var dimension = $"A1:{ColumnName(totalColumns)}{Math.Max(1, totalRows)}";
-        var builder = new StringBuilder();
-        builder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
-        builder.Append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
-        builder.Append(CultureInfo.InvariantCulture, $"<dimension ref=\"{dimension}\"/>");
-        builder.Append("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
-        builder.Append("<sheetFormatPr defaultRowHeight=\"15\"/>");
-        builder.Append("<sheetData>");
-        builder.Append("<row r=\"1\">");
-        for (var col = 0; col < table.Columns.Count; col++)
-        {
-            AppendCell(builder, 1, col + 1, table.Columns[col].ColumnName, styleIndex: 1);
-        }
-        builder.Append("</row>");
-        for (var row = 0; row < table.Rows.Count; row++)
-        {
-            var excelRow = row + 2;
-            builder.Append(CultureInfo.InvariantCulture, $"<row r=\"{excelRow}\">");
-            for (var col = 0; col < table.Columns.Count; col++)
-            {
-                AppendCell(builder, excelRow, col + 1, Convert.ToString(table.Rows[row][col], CultureInfo.InvariantCulture) ?? string.Empty, styleIndex: 0);
-            }
-            builder.Append("</row>");
-        }
-        builder.Append("</sheetData>");
-        builder.Append("</worksheet>");
-        return builder.ToString();
-    }
-
-    private static void AppendCell(StringBuilder builder, int row, int column, string? value, int styleIndex)
-    {
-        var reference = $"{ColumnName(column)}{row}";
-        var safeValue = RemoveInvalidXmlChars(value ?? string.Empty);
-        if (safeValue.Length > 32767)
-        {
-            safeValue = safeValue[..32767];
-        }
-        builder.Append(CultureInfo.InvariantCulture, $"<c r=\"{reference}\" t=\"inlineStr\" s=\"{styleIndex}\"><is><t>{Xml(safeValue)}</t></is></c>");
-    }
-
-    private static string ColumnName(int columnNumber)
-    {
-        var dividend = columnNumber;
-        var columnName = string.Empty;
-        while (dividend > 0)
-        {
-            var modulo = (dividend - 1) % 26;
-            columnName = Convert.ToChar('A' + modulo) + columnName;
-            dividend = (dividend - modulo) / 26;
-        }
-        return columnName;
-    }
-
-    private static void AddText(ZipArchive archive, string path, string content)
-    {
-        var entry = archive.CreateEntry(path, CompressionLevel.Optimal);
-        using var stream = entry.Open();
-        using var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        writer.Write(content);
-    }
-
-    private static string SanitizeSheetName(string? value)
-    {
-        var name = string.IsNullOrWhiteSpace(value) ? "Sheet" : value.Trim();
-        name = Regex.Replace(name, @"[\\/\?\*\[\]:]+", "_");
-        name = Regex.Replace(name, @"\s+", " ").Trim('\'', ' ');
-        return name.Length > 31 ? name[..31] : name;
-    }
-
-    private static string RemoveInvalidXmlChars(string value)
-    {
-        return new string(value.Where(ch => ch == 0x9 || ch == 0xA || ch == 0xD || ch >= 0x20).ToArray());
-    }
-
-    private static string Xml(string value)
-    {
-        return value
-            .Replace("&", "&amp;", StringComparison.Ordinal)
-            .Replace("<", "&lt;", StringComparison.Ordinal)
-            .Replace(">", "&gt;", StringComparison.Ordinal)
-            .Replace("\"", "&quot;", StringComparison.Ordinal)
-            .Replace("'", "&apos;", StringComparison.Ordinal);
-    }
-
-    private const string RootRels = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>";
-    private const string Styles = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"2\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font><font><b/><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts><fills count=\"1\"><fill><patternFill patternType=\"none\"/></fill></fills><borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs><cellXfs count=\"2\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/><xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/></cellXfs></styleSheet>";
-}
+public sealed record BuildTaxonomyArtifactRequest(string TargetType, string CredentialSetId, bool IncludeOptions = true, bool IncludeRaw = true, string? ProjectId = null, string? FileName = null, string? Description = null);
+public sealed record BuildTaxonomyArtifactResponse(ControlPlaneArtifactRecord Artifact, string TargetType, int FieldCount, int OptionCount, string FileName);
+internal sealed record TaxonomySnapshot(string TargetType, List<TaxonomyField> Fields, List<TaxonomyOption> Options, string RawJson);
+internal sealed record TaxonomyField(string FieldId, string Name, string Label, string Type, bool Required, bool MultiValue, string Description, string RawJson);
+internal sealed record TaxonomyOption(string FieldId, string OptionId, string Name, string Label, bool Active, string RawJson);
