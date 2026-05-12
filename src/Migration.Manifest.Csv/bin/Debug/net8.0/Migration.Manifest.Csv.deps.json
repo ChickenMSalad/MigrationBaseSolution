@@ -1,0 +1,56 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Migration.Manifest.Csv/1.0.0": {
+        "dependencies": {
+          "Migration.Application": "1.0.0",
+          "Migration.Domain": "1.0.0"
+        },
+        "runtime": {
+          "Migration.Manifest.Csv.dll": {}
+        }
+      },
+      "Migration.Application/1.0.0": {
+        "dependencies": {
+          "Migration.Domain": "1.0.0"
+        },
+        "runtime": {
+          "Migration.Application.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Migration.Domain/1.0.0": {
+        "runtime": {
+          "Migration.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Migration.Manifest.Csv/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Migration.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Migration.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

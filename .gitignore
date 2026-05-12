@@ -208,3 +208,7 @@ __queuestorage__/
 # QueueExecutor runtime/state output
 /src/Workers/Migration.Workers.QueueExecutor/Runtime/
 src/Workers/Migration.Workers.QueueExecutor/Runtime/
+
+# Allow Migration.Manifest.Csv project
+!src/Migration.Manifest.Csv/
+!src/Migration.Manifest.Csv/**
