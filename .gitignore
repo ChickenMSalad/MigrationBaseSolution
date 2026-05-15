@@ -211,6 +211,8 @@ __queuestorage__/
 /src/Workers/Migration.Workers.QueueExecutor/Runtime/
 src/Workers/Migration.Workers.QueueExecutor/Runtime/
 
-# Allow Migration.Manifest.Csv project
+# Allow Migration.Manifest.Csv project, but not build output
 !src/Migration.Manifest.Csv/
 !src/Migration.Manifest.Csv/**
+src/Migration.Manifest.Csv/bin/
+src/Migration.Manifest.Csv/obj/
