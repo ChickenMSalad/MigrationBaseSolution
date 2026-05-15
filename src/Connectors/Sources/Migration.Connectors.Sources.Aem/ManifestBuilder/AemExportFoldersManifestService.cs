@@ -1,13 +1,17 @@
+using System.Globalization;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using Migration.Connectors.Sources.Aem.Clients;
 using Migration.Connectors.Sources.Aem.Models;
 using Migration.ControlPlane.ManifestBuilder;
+using Microsoft.Extensions.Logging;
 
 namespace Migration.Connectors.Sources.Aem.ManifestBuilder;
 
 public sealed class AemExportFoldersManifestService : ISourceManifestService
 {
+    private const string Source = "aem";
+    private const string Service = "export-folders";
+
     private readonly IAemClient _aemClient;
     private readonly ILogger<AemExportFoldersManifestService> _logger;
 
@@ -19,154 +23,205 @@ public sealed class AemExportFoldersManifestService : ISourceManifestService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public string SourceType => "aem";
+    public string SourceType => Source;
 
-    public string ServiceName => "export-folders";
+    public string ServiceName => Service;
 
     public ManifestBuilderServiceDescriptor GetDescriptor()
     {
         return new ManifestBuilderServiceDescriptor(
-            SourceType,
-            ServiceName,
-            "Export Folders",
-            "Exports one or more AEM DAM folders into a migration manifest file.",
-            [
+            Source,
+            Service,
+            "Export folders",
+            "Builds an AEM manifest by exporting assets from one or more AEM DAM folders.",
+            new[]
+            {
                 new ManifestBuilderOptionDescriptor(
                     "folders",
-                    "Export folders",
-                    "One or more AEM DAM folder paths to export. Use one path per line, or comma-separated values.",
+                    "Folders",
+                    "One AEM DAM folder path per line. Example: /content/dam/site/folder.",
                     Required: true,
-                    Placeholder: "/content/dam/site/folder-one\n/content/dam/site/folder-two"),
+                    Placeholder: "/content/dam/example-folder"),
                 new ManifestBuilderOptionDescriptor(
                     "recursive",
                     "Recursive",
-                    "true/false. Defaults to true. Includes assets in child folders when true.",
+                    "true/false. Defaults to true.",
                     Required: false,
                     Placeholder: "true")
-            ]);
+            });
     }
 
     public async Task<BuildSourceManifestResult> BuildAsync(
         BuildSourceManifestRequest request,
         CancellationToken cancellationToken = default)
     {
-        var folders = GetFolders(request);
-        if (folders.Count == 0)
+        if (request is null)
         {
-            throw new ArgumentException("At least one AEM export folder is required.");
+            throw new ArgumentNullException(nameof(request));
         }
 
-        var recursive = GetBooleanOption(request, "recursive", defaultValue: true);
-        var rows = new List<AemAsset>();
+        var options = request.Options ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var folders = GetFolders(options);
+
+        if (folders.Count == 0)
+        {
+            throw new ArgumentException("At least one AEM folder is required. Enter one folder path per line.", nameof(request));
+        }
+
+        var recursive = GetBool(options, "recursive", defaultValue: true);
+        var rows = new List<AemManifestRow>();
+        var rowId = 1;
 
         foreach (var folder in folders)
         {
-            _logger.LogInformation("Building AEM manifest for folder {Folder} recursive={Recursive}.", folder, recursive);
-
             await foreach (var asset in _aemClient.EnumerateAssetsAsync(folder, recursive, _logger, cancellationToken))
             {
-                rows.Add(asset);
+                rows.Add(AemManifestRow.From(asset, rowId++, folder));
             }
         }
 
-        var contentBytes = WriteCsv(rows);
+        var csv = BuildCsv(rows);
+        var fileName = $"aem-manifest-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.csv";
 
         return new BuildSourceManifestResult(
-            SourceType,
-            ServiceName,
-            $"aem-manifest-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.csv",
+            Source,
+            Service,
+            fileName,
             "text/csv",
-            Content: null,
-            ContentBytes: contentBytes,
+            csv,
+            ContentBytes: null,
             rows.Count);
     }
 
-    private static IReadOnlyList<string> GetFolders(BuildSourceManifestRequest request)
+    private static IReadOnlyList<string> GetFolders(IReadOnlyDictionary<string, string> options)
     {
-        if (request.Options is null)
-        {
-            return Array.Empty<string>();
-        }
+        var raw = GetValue(options, "folders", "folderPaths", "exportFolders", "export.folders", "folder");
 
-        var rawValues = new List<string>();
-
-        if (request.Options.TryGetValue("folders", out var folders) && !string.IsNullOrWhiteSpace(folders))
-        {
-            rawValues.Add(folders);
-        }
-
-        if (request.Options.TryGetValue("folder", out var folder) && !string.IsNullOrWhiteSpace(folder))
-        {
-            rawValues.Add(folder);
-        }
-
-        return rawValues
-            .SelectMany(value => value.Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            .Where(value => !string.IsNullOrWhiteSpace(value))
+        return (raw ?? string.Empty)
+            .Split(new[] { '\r', '\n', ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(NormalizeFolder)
+            .Where(folder => !string.IsNullOrWhiteSpace(folder))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
-    private static bool GetBooleanOption(BuildSourceManifestRequest request, string name, bool defaultValue)
+    private static string NormalizeFolder(string folder)
     {
-        if (request.Options is null ||
-            !request.Options.TryGetValue(name, out var value) ||
-            string.IsNullOrWhiteSpace(value))
+        folder = folder.Trim();
+
+        if (!folder.StartsWith('/'))
         {
-            return defaultValue;
+            folder = "/" + folder;
         }
 
+        return folder.TrimEnd('/');
+    }
+
+    private static string? GetValue(IReadOnlyDictionary<string, string> options, params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            if (options.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return null;
+    }
+
+    private static bool GetBool(IReadOnlyDictionary<string, string> options, string key, bool defaultValue)
+    {
+        var value = GetValue(options, key);
         return bool.TryParse(value, out var parsed) ? parsed : defaultValue;
     }
 
-    private static string NormalizeFolder(string folder)
-    {
-        var normalized = folder.Trim();
-
-        if (!normalized.StartsWith("/", StringComparison.Ordinal))
-        {
-            normalized = "/" + normalized;
-        }
-
-        return normalized.TrimEnd('/');
-    }
-
-    private static byte[] WriteCsv(IReadOnlyCollection<AemAsset> assets)
+    private static string BuildCsv(IReadOnlyList<AemManifestRow> rows)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("SourceAssetId,SourcePath,Name,MimeType,SizeBytes,Created,LastModified");
-
-        foreach (var asset in assets)
+        builder.AppendLine(string.Join(',', new[]
         {
-            builder.Append(Csv(asset.Id));
-            builder.Append(',');
-            builder.Append(Csv(asset.Path));
-            builder.Append(',');
-            builder.Append(Csv(asset.Name));
-            builder.Append(',');
-            builder.Append(Csv(asset.MimeType));
-            builder.Append(',');
-            builder.Append(Csv(asset.SizeBytes?.ToString()));
-            builder.Append(',');
-            builder.Append(Csv(asset.Created));
-            builder.Append(',');
-            builder.Append(Csv(asset.LastModified));
-            builder.AppendLine();
+            "RowId",
+            "SourceType",
+            "ServiceName",
+            "SourceAssetId",
+            "SourcePath",
+            "ExportFolder",
+            "FileName",
+            "FileNameWithoutExtension",
+            "Extension",
+            "MimeType",
+            "SizeBytes",
+            "Created",
+            "LastModified"
+        }.Select(EscapeCsv)));
+
+        foreach (var row in rows)
+        {
+            builder.AppendLine(string.Join(',', new[]
+            {
+                row.RowId.ToString(CultureInfo.InvariantCulture),
+                Source,
+                Service,
+                row.SourceAssetId,
+                row.SourcePath,
+                row.ExportFolder,
+                row.FileName,
+                row.FileNameWithoutExtension,
+                row.Extension,
+                row.MimeType,
+                row.SizeBytes,
+                row.Created,
+                row.LastModified
+            }.Select(EscapeCsv)));
         }
 
-        return Encoding.UTF8.GetBytes(builder.ToString());
+        return builder.ToString();
     }
 
-    private static string Csv(string? value)
+    private static string EscapeCsv(string? value)
     {
         if (string.IsNullOrEmpty(value))
         {
             return string.Empty;
         }
 
+        var escaped = value.Replace("\"", "\"\"");
         return value.Contains(',') || value.Contains('"') || value.Contains('\r') || value.Contains('\n')
-            ? $"\"{value.Replace("\"", "\"\"")}\""
-            : value;
+            ? $"\"{escaped}\""
+            : escaped;
+    }
+
+    private sealed record AemManifestRow(
+        int RowId,
+        string SourceAssetId,
+        string SourcePath,
+        string ExportFolder,
+        string FileName,
+        string FileNameWithoutExtension,
+        string Extension,
+        string? MimeType,
+        string? SizeBytes,
+        string? Created,
+        string? LastModified)
+    {
+        public static AemManifestRow From(AemAsset asset, int rowId, string exportFolder)
+        {
+            var path = asset.Path ?? string.Empty;
+            var fileName = Path.GetFileName(path);
+
+            return new AemManifestRow(
+                rowId,
+                asset.Id ?? path,
+                path,
+                exportFolder,
+                fileName,
+                Path.GetFileNameWithoutExtension(fileName),
+                Path.GetExtension(fileName).TrimStart('.'),
+                asset.MimeType,
+                asset.SizeBytes?.ToString(CultureInfo.InvariantCulture),
+                asset.Created?.ToString("O", CultureInfo.InvariantCulture),
+                asset.LastModified?.ToString("O", CultureInfo.InvariantCulture));
+        }
     }
 }

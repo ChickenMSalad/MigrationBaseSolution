@@ -29,7 +29,8 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the concrete runtime services required by the generic migration execution path.
-    ///
+    /// </summary>
+    /// <remarks>
     /// This intentionally lives outside the GenericMigration console host so non-console processes
     /// such as Migration.Admin.Api and Migration.Workers.QueueExecutor can run or validate generic
     /// jobs without depending on a console host project.
@@ -43,7 +44,7 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
     ///
     /// This is important for workers and API hosts because they should not require Bynder/WebDam/etc.
     /// secrets just to start when the current run only uses LocalStorage.
-    /// </summary>
+    /// </remarks>
     public static IServiceCollection AddGenericMigrationRuntime(
         this IServiceCollection services,
         IConfiguration configuration,
@@ -66,7 +67,6 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
         AddSourceConnectors(services, configuration, options);
         AddTargetConnectors(services, configuration, options);
         AddMappingAndValidation(services);
-
         services.AddMigrationPreflight();
 
         return services;
@@ -167,8 +167,8 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
         services.AddSingleton<IMappingValueTransformer, DefaultMappingValueTransformer>();
         services.AddSingleton<IMapper, CanonicalMapper>();
 
-        // This is the legacy/shared application validation step. Orchestration-specific
-        // validation steps are registered by AddMigrationOrchestration(...).
+        // This is the legacy/shared application validation step.
+        // Orchestration-specific validation steps are registered by AddMigrationOrchestration(...).
         services.AddSingleton<IValidationStep, RequiredFieldValidationStep>();
     }
 

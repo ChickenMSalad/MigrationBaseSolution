@@ -10,8 +10,8 @@
     <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
     <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
     <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
-    <ProjectReference Include="..\..\..\Migration.ControlPlane\Migration.ControlPlane.csproj" />
     <ProjectReference Include="..\..\..\Migration.Manifest.Sql\Migration.Manifest.Sql.csproj" />
+    <ProjectReference Include="..\..\..\Migration.ControlPlane\Migration.ControlPlane.csproj" />
   </ItemGroup>
 
   <ItemGroup>

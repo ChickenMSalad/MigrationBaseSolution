@@ -43,13 +43,20 @@ public sealed class ManifestBuilderServiceRegistry
             : null;
     }
 
-    private static string BuildKey(string sourceType, string serviceName)
-        => $"{sourceType.Trim()}::{serviceName.Trim()}";
+    private static string BuildKey(string sourceType, string serviceName) => $"{sourceType.Trim()}::{serviceName.Trim()}";
 
     private static string GetDisplayName(string sourceType)
     {
-        return sourceType.Equals("webdam", StringComparison.OrdinalIgnoreCase)
-            ? "WebDam"
-            : sourceType;
+        if (sourceType.Equals("webdam", StringComparison.OrdinalIgnoreCase))
+        {
+            return "WebDam";
+        }
+
+        if (sourceType.Equals("aem", StringComparison.OrdinalIgnoreCase))
+        {
+            return "AEM";
+        }
+
+        return sourceType;
     }
 }
