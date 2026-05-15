@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Migration.Connectors.Sources.Aem.Registration;
 using Migration.Connectors.Sources.WebDam.Registration;
 using Migration.Connectors.Targets.AzureBlob.Registration;
+using Migration.Connectors.Targets.S3.Registration;
 
 namespace Migration.Connectors.Registration;
 
@@ -12,13 +13,15 @@ public static class ConnectorModuleRegistrationExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddAemSourceConnector(configuration);
         services.AddWebDamSourceConnector(configuration);
+        services.AddAemSourceConnector(configuration);
 
         Migration.Connectors.Sources.SharePoint.Registration.SharePointSourceConnectorRegistration
             .AddSharePointSourceConnector(services, configuration);
 
         services.AddAzureBlobTargetConnector(configuration);
+        services.AddS3TargetConnector(configuration);
+
         return services;
     }
 }

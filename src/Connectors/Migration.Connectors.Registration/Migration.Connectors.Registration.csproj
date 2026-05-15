@@ -1,24 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Migration.Connectors.Registration</RootNamespace>
-    <AssemblyName>Migration.Connectors.Registration</AssemblyName>
-  </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Migration.Application\Migration.Application.csproj" />
-    <ProjectReference Include="..\Sources\Migration.Connectors.Sources.WebDam\Migration.Connectors.Sources.WebDam.csproj" />
-	<ProjectReference Include="..\Sources\Migration.Connectors.Sources.SharePoint\Migration.Connectors.Sources.SharePoint.csproj" />
-	<ProjectReference Include="..\Sources\Migration.Connectors.Sources.Aem\Migration.Connectors.Sources.Aem.csproj" />
-	<ProjectReference Include="..\Targets\Migration.Connectors.Targets.AzureBlob\Migration.Connectors.Targets.AzureBlob.csproj" />
-    <ProjectReference Include="..\Targets\Migration.Connectors.Targets.Bynder\Migration.Connectors.Targets.Bynder.csproj" />
-	<ProjectReference Include="..\Targets\Migration.Connectors.Targets.S3\Migration.Connectors.Targets.S3.csproj" />
-  </ItemGroup>
+ <PropertyGroup>
+  <TargetFramework>net8.0</TargetFramework>
+  <Nullable>enable</Nullable>
+  <ImplicitUsings>enable</ImplicitUsings>
+  <RootNamespace>Migration.Connectors.Registration</RootNamespace>
+  <AssemblyName>Migration.Connectors.Registration</AssemblyName>
+ </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-  </ItemGroup>
+ <ItemGroup>
+  <ProjectReference Include="..\..\Migration.Application\Migration.Application.csproj" />
+  <ProjectReference Include="..\Sources\Migration.Connectors.Sources.WebDam\Migration.Connectors.Sources.WebDam.csproj" />
+  <ProjectReference Include="..\Sources\Migration.Connectors.Sources.Aem\Migration.Connectors.Sources.Aem.csproj" />
+  <ProjectReference Include="..\Sources\Migration.Connectors.Sources.SharePoint\Migration.Connectors.Sources.SharePoint.csproj" />
+  <ProjectReference Include="..\Targets\Migration.Connectors.Targets.AzureBlob\Migration.Connectors.Targets.AzureBlob.csproj" />
+  <ProjectReference Include="..\Targets\Migration.Connectors.Targets.Bynder\Migration.Connectors.Targets.Bynder.csproj" />
+  <ProjectReference Include="..\Targets\Migration.Connectors.Targets.S3\Migration.Connectors.Targets.S3.csproj" />
+ </ItemGroup>
+
+ <ItemGroup>
+  <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+  <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+ </ItemGroup>
+
 </Project>

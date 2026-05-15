@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+
 import { api } from "../api/client";
 import { Card } from "../components/Card";
 import { LoadingError } from "../components/LoadingError";
@@ -7,10 +8,12 @@ import type { BuildSourceManifestResponse, CredentialSetSummary, ManifestBuilder
 export function ManifestBuilder() {
   const [sources, setSources] = useState<ManifestBuilderSourceDescriptor[]>([]);
   const [credentials, setCredentials] = useState<CredentialSetSummary[]>([]);
+
   const [sourceType, setSourceType] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [credentialSetId, setCredentialSetId] = useState("");
   const [options, setOptions] = useState<Record<string, string>>({});
+
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
   const [result, setResult] = useState<BuildSourceManifestResponse | null>(null);
@@ -82,6 +85,16 @@ export function ManifestBuilder() {
 
   function setOption(name: string, value: string) {
     setOptions(current => ({ ...current, [name]: value }));
+  }
+
+  function isFolderListOption(name: string) {
+    const normalizedName = name.toLowerCase();
+
+    return sourceType.toLowerCase() === "aem" &&
+      (normalizedName === "folders" ||
+        normalizedName === "folderpaths" ||
+        normalizedName === "exportfolders" ||
+        normalizedName === "export.folders");
   }
 
   async function buildManifest() {
@@ -176,12 +189,22 @@ export function ManifestBuilder() {
             {selectedService?.options.map(option => (
               <label key={option.name}>
                 {option.label}
-                <input
-                  value={options[option.name] ?? ""}
-                  onChange={event => setOption(option.name, event.target.value)}
-                  placeholder={option.placeholder ?? ""}
-                  required={option.required}
-                />
+                {isFolderListOption(option.name) ? (
+                  <textarea
+                    value={options[option.name] ?? ""}
+                    onChange={event => setOption(option.name, event.target.value)}
+                    placeholder={option.placeholder ?? "/content/dam/example-folder"}
+                    required={option.required}
+                    rows={6}
+                  />
+                ) : (
+                  <input
+                    value={options[option.name] ?? ""}
+                    onChange={event => setOption(option.name, event.target.value)}
+                    placeholder={option.placeholder ?? ""}
+                    required={option.required}
+                  />
+                )}
                 {option.description && <span className="helpText">{option.description}</span>}
               </label>
             ))}
@@ -224,7 +247,6 @@ export function ManifestBuilder() {
             <a className="primaryButton" href={result.downloadUrl}>
               Download Manifest
             </a>
-
             <a className="secondaryButton" href="/artifacts">
               View in Artifacts
             </a>

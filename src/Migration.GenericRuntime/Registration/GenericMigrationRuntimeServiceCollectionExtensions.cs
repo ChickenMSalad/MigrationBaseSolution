@@ -66,6 +66,7 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
         AddSourceConnectors(services, configuration, options);
         AddTargetConnectors(services, configuration, options);
         AddMappingAndValidation(services);
+
         services.AddMigrationPreflight();
 
         return services;

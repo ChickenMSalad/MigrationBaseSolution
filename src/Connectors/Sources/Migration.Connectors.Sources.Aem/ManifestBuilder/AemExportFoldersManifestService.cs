@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using Migration.Connectors.Sources.Aem.Clients;
 using Migration.Connectors.Sources.Aem.Models;
 using Migration.ControlPlane.ManifestBuilder;
@@ -32,16 +34,16 @@ public sealed class AemExportFoldersManifestService : ISourceManifestService
             [
                 new ManifestBuilderOptionDescriptor(
                     "folders",
-                    "Folders",
-                    "One or more AEM folder paths to export. Use one path per line, or separate paths with commas or semicolons.",
+                    "Export folders",
+                    "One or more AEM DAM folder paths to export. Enter one path per line, or separate paths with commas. Example: /content/dam/site/folder",
                     Required: true,
-                    Placeholder: "/content/dam/example/folder-one\n/content/dam/example/folder-two"),
+                    Placeholder: "/content/dam/site/folder-one\n/content/dam/site/folder-two"),
                 new ManifestBuilderOptionDescriptor(
                     "recursive",
                     "Recursive",
-                    "Whether child folders should be included. Defaults to true.",
+                    "true/false. Defaults to true. When true, child folders are included.",
                     Required: false,
-                    Placeholder: "true or false")
+                    Placeholder: "true")
             ]);
     }
 
@@ -49,31 +51,34 @@ public sealed class AemExportFoldersManifestService : ISourceManifestService
         BuildSourceManifestRequest request,
         CancellationToken cancellationToken = default)
     {
-        var folders = GetFolders(request);
-        var recursive = GetBooleanOption(request, "recursive", defaultValue: true);
-        var useLastModifiedOnly = GetBooleanOption(request, "useLastModifiedOnly", defaultValue: false);
+        var folders = GetFolders(request.Options).ToArray();
 
-        if (folders.Count == 0)
+        if (folders.Length == 0)
         {
-            throw new ArgumentException("At least one AEM folder path is required. Populate the folders option with one or more /content/dam paths.");
+            throw new ArgumentException("At least one AEM export folder is required.");
         }
 
-        var assets = new List<AemAsset>();
+        var recursive = GetBooleanOption(request.Options, "recursive", defaultValue: true);
+        var rows = new List<AemManifestRow>();
 
         foreach (var folder in folders)
         {
-            _logger.LogInformation("Building AEM manifest for folder {Folder} (recursive={Recursive}).", folder, recursive);
+            _logger.LogInformation("Building AEM manifest rows for folder {Folder} (recursive={Recursive}).", folder, recursive);
 
-            await foreach (var asset in _aemClient.EnumerateAssetsAsync(folder, recursive, _logger, cancellationToken, useLastModifiedOnly))
+            await foreach (var asset in _aemClient.EnumerateAssetsAsync(folder, recursive, _logger, cancellationToken, useLastModifiedOnly: false))
             {
-                assets.Add(asset);
+                rows.Add(new AemManifestRow(
+                    SourceAssetId: string.IsNullOrWhiteSpace(asset.Id) ? asset.Path : asset.Id,
+                    SourcePath: asset.Path,
+                    FileName: asset.Name,
+                    FolderPath: GetFolderPath(asset.Path),
+                    MimeType: asset.MimeType,
+                    SizeBytes: asset.SizeBytes?.ToString(CultureInfo.InvariantCulture),
+                    Created: asset.Created,
+                    LastModified: asset.LastModified,
+                    ExportFolder: folder));
             }
         }
-
-        var distinctAssets = assets
-            .GroupBy(asset => !string.IsNullOrWhiteSpace(asset.Id) ? asset.Id : asset.Path, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First())
-            .ToList();
 
         return new BuildSourceManifestResult(
             SourceType,
@@ -81,94 +86,146 @@ public sealed class AemExportFoldersManifestService : ISourceManifestService
             $"aem-manifest-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.csv",
             "text/csv",
             Content: null,
-            ContentBytes: AemManifestCsvWriter.WriteManifestCsv(distinctAssets),
-            distinctAssets.Count);
+            ContentBytes: WriteCsv(rows),
+            rows.Count);
     }
 
-    private static IReadOnlyList<string> GetFolders(BuildSourceManifestRequest request)
+    private static IEnumerable<string> GetFolders(IReadOnlyDictionary<string, string>? options)
     {
-        var folders = new List<string>();
-
-        if (request.Options is not null)
+        if (options is null)
         {
-            AddOptionValues(request.Options, "folders", folders);
-            AddOptionValues(request.Options, "folder", folders);
+            yield break;
         }
 
-        return folders
-            .Select(NormalizeFolder)
-            .Where(folder => !string.IsNullOrWhiteSpace(folder))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static void AddOptionValues(
-        IReadOnlyDictionary<string, string> options,
-        string key,
-        ICollection<string> folders)
-    {
-        if (!options.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+        if (options.TryGetValue("folders", out var folders) && !string.IsNullOrWhiteSpace(folders))
         {
-            return;
-        }
-
-        foreach (var folder in raw.Split(['\r', '\n', ',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            if (!string.IsNullOrWhiteSpace(folder))
+            foreach (var folder in SplitFolderList(folders))
             {
-                folders.Add(folder);
+                yield return NormalizeFolder(folder);
             }
         }
+
+        if (options.TryGetValue("folder", out var folderValue) && !string.IsNullOrWhiteSpace(folderValue))
+        {
+            yield return NormalizeFolder(folderValue);
+        }
+    }
+
+    private static IEnumerable<string> SplitFolderList(string value)
+    {
+        return value
+            .Split(new[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(folder => !string.IsNullOrWhiteSpace(folder))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
     }
 
     private static string NormalizeFolder(string folder)
     {
         folder = folder.Trim();
 
-        if (folder.Length == 0)
-        {
-            return string.Empty;
-        }
-
-        if (!folder.StartsWith("/", StringComparison.Ordinal))
+        if (!folder.StartsWith('/'))
         {
             folder = "/" + folder;
         }
 
-        return folder.Length == 1 ? folder : folder.TrimEnd('/');
+        return folder.TrimEnd('/');
     }
 
-    private static bool GetBooleanOption(
-        BuildSourceManifestRequest request,
-        string key,
-        bool defaultValue)
+    private static bool GetBooleanOption(IReadOnlyDictionary<string, string>? options, string name, bool defaultValue)
     {
-        if (request.Options is null ||
-            !request.Options.TryGetValue(key, out var raw) ||
-            string.IsNullOrWhiteSpace(raw))
+        if (options is null || !options.TryGetValue(name, out var raw) || string.IsNullOrWhiteSpace(raw))
         {
             return defaultValue;
         }
 
-        if (bool.TryParse(raw, out var parsed))
+        if (bool.TryParse(raw.Trim(), out var parsed))
         {
             return parsed;
         }
 
-        if (string.Equals(raw, "1", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(raw, "yes", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(raw, "y", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (string.Equals(raw, "0", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(raw, "no", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(raw, "n", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
         return defaultValue;
     }
+
+    private static string GetFolderPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        var normalized = path.Replace('\\', '/');
+        var index = normalized.LastIndexOf('/');
+
+        return index <= 0 ? string.Empty : normalized[..index];
+    }
+
+    private static byte[] WriteCsv(IReadOnlyCollection<AemManifestRow> rows)
+    {
+        var sb = new StringBuilder();
+
+        AppendCsvLine(sb,
+            "SourceAssetId",
+            "SourcePath",
+            "FileName",
+            "FolderPath",
+            "MimeType",
+            "SizeBytes",
+            "Created",
+            "LastModified",
+            "ExportFolder");
+
+        foreach (var row in rows)
+        {
+            AppendCsvLine(sb,
+                row.SourceAssetId,
+                row.SourcePath,
+                row.FileName,
+                row.FolderPath,
+                row.MimeType,
+                row.SizeBytes,
+                row.Created,
+                row.LastModified,
+                row.ExportFolder);
+        }
+
+        return Encoding.UTF8.GetBytes(sb.ToString());
+    }
+
+    private static void AppendCsvLine(StringBuilder sb, params string?[] values)
+    {
+        for (var i = 0; i < values.Length; i++)
+        {
+            if (i > 0)
+            {
+                sb.Append(',');
+            }
+
+            sb.Append(EscapeCsv(values[i]));
+        }
+
+        sb.AppendLine();
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        value ??= string.Empty;
+
+        if (value.Contains('"') || value.Contains(',') || value.Contains('\r') || value.Contains('\n'))
+        {
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        }
+
+        return value;
+    }
+
+    private sealed record AemManifestRow(
+        string? SourceAssetId,
+        string? SourcePath,
+        string? FileName,
+        string? FolderPath,
+        string? MimeType,
+        string? SizeBytes,
+        string? Created,
+        string? LastModified,
+        string ExportFolder);
 }
