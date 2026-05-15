@@ -220,8 +220,8 @@ public sealed class AemExportFoldersManifestService : ISourceManifestService
                 Path.GetExtension(fileName).TrimStart('.'),
                 asset.MimeType,
                 asset.SizeBytes?.ToString(CultureInfo.InvariantCulture),
-                asset.Created?.ToString("O", CultureInfo.InvariantCulture),
-                asset.LastModified?.ToString("O", CultureInfo.InvariantCulture));
+                asset.Created?.ToString(),
+                asset.LastModified?.ToString());
         }
     }
 }
