@@ -15,14 +15,15 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<AemOptions>(configuration.GetSection("Aem"));
 
-        services.AddSingleton<IAemClient>(sp =>
-        {
-            var options = sp.GetRequiredService<IOptions<AemOptions>>().Value;
-            return new AemClient(new HttpClient(), options);
-        });
-
         services.AddSingleton<IAssetSourceConnector, AemSourceConnector>();
         services.AddSingleton<ISourceManifestService, AemExportFoldersManifestService>();
+
+        services.AddSingleton<IAemClient>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<AemOptions>>();
+            var httpClient = new HttpClient();
+            return new AemClient(httpClient, options.Value);
+        });
 
         return services;
     }

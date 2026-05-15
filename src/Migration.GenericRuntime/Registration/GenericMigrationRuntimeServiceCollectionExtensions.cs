@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Migration.Application.Abstractions;
-using Migration.Connectors.Sources.Aem;
+using Migration.Connectors.Sources.Aem.Registration;
 using Migration.Connectors.Sources.AzureBlob;
 using Migration.Connectors.Sources.LocalStorage.Registration;
 using Migration.Connectors.Sources.S3;
@@ -99,7 +99,7 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
     {
         if (IsEnabled(options.EnabledSources, "Aem", options.RegisterAllWhenEmpty))
         {
-            services.AddSingleton<IAssetSourceConnector, AemSourceConnector>();
+            services.AddAemSourceConnector(configuration);
         }
 
         if (IsEnabled(options.EnabledSources, "Sitecore", options.RegisterAllWhenEmpty))
