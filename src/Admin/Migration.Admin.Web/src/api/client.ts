@@ -24,17 +24,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: init?.body instanceof FormData
       ? init.headers
-      : { "Content-Type": "application/json", ...(init?.headers ?? {}) }
+      : {
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {})
+        }
   });
 
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`;
+
     try {
       const body = await response.json();
       message = body?.error ?? body?.message ?? JSON.stringify(body);
     } catch {
-      try { message = await response.text(); } catch { /* keep default */ }
+      try {
+        message = await response.text();
+      } catch {
+        /* keep default */
+      }
     }
+
     throw new Error(message);
   }
 
@@ -53,14 +62,14 @@ export function displayConnectorName(connector: ConnectorDescriptor | null | und
   return String(connector?.displayName ?? connector?.name ?? connector?.type ?? "Unnamed connector").trim();
 }
 
-
-// SharePoint UI descriptor augmentation only. Keeps existing pages/components/styles unchanged.
+// UI descriptor augmentation only. Keeps existing pages/components/styles unchanged.
 function normalizeConnectorKey(value: unknown) {
   return String(value ?? "").trim().toLowerCase();
 }
 
 function hasConnector(items: ConnectorDescriptor[] | undefined, connectorType: string) {
   const expected = normalizeConnectorKey(connectorType);
+
   return (items ?? []).some(item =>
     normalizeConnectorKey(item.type) === expected ||
     normalizeConnectorKey(item.name) === expected ||
@@ -86,7 +95,6 @@ const sharePointOptionFields = [
   { name: "IncludeFileNameMetadata", label: "Include file-name metadata", description: "Derive metadata from file naming conventions.", required: false },
   { name: "IncludeGraphMetadata", label: "Include Graph metadata", description: "Include Graph/SharePoint item metadata when Graph mode is used.", required: false }
 ];
-
 
 const s3CredentialFields = [
   { name: "AccessKey", label: "Access key", description: "AWS access key id for the S3 target bucket.", required: true, secret: true },
@@ -167,12 +175,11 @@ type ManifestBuilderSourceDescriptorLike = {
   }>;
 };
 
-function withSharePointManifestSources<T extends ManifestBuilderSourceDescriptorLike[]>(sources: T): T {
-  if ((sources ?? []).some(source => normalizeConnectorKey(source.sourceType) === "sharepoint")) return sources;
+function withFallbackManifestSources<T extends ManifestBuilderSourceDescriptorLike[]>(sources: T): T {
+  const result = [...(sources ?? [])] as ManifestBuilderSourceDescriptorLike[];
 
-  return [
-    ...sources,
-    {
+  if (!result.some(source => normalizeConnectorKey(source.sourceType) === "sharepoint")) {
+    result.push({
       sourceType: "SharePoint",
       displayName: "SharePoint",
       services: [
@@ -203,26 +210,65 @@ function withSharePointManifestSources<T extends ManifestBuilderSourceDescriptor
           ]
         }
       ]
-    }
-  ] as T;
+    });
+  }
+
+  if (!result.some(source => normalizeConnectorKey(source.sourceType) === "aem")) {
+    result.push({
+      sourceType: "AEM",
+      displayName: "AEM",
+      services: [
+        {
+          sourceType: "AEM",
+          serviceName: "ExportFolders",
+          displayName: "AEM folder export manifest",
+          description: "Builds an AEM manifest from one or more DAM folders.",
+          options: [
+            {
+              name: "Folders",
+              label: "Export folders",
+              description: "One AEM DAM folder path per line. Example: /content/dam/site/folder",
+              required: true,
+              placeholder: "/content/dam/site/folder-one\n/content/dam/site/folder-two"
+            },
+            {
+              name: "Recursive",
+              label: "Recursive",
+              description: "true/false. Include assets below each selected folder.",
+              required: false,
+              placeholder: "true"
+            }
+          ]
+        }
+      ]
+    });
+  }
+
+  return result as T;
 }
 
 function queryString(params: Record<string, unknown>) {
   const search = new URLSearchParams();
+
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== "") {
       search.set(key, String(value));
     }
   }
+
   const text = search.toString();
   return text ? `?${text}` : "";
 }
 
 function resolveProjectId(projectOrProjectId: ProjectRecord | string | null | undefined): string {
-  const projectId = typeof projectOrProjectId === "string" ? projectOrProjectId : projectOrProjectId?.projectId;
+  const projectId = typeof projectOrProjectId === "string"
+    ? projectOrProjectId
+    : projectOrProjectId?.projectId;
+
   if (!projectId || projectId === "undefined") {
     throw new Error("Project is not loaded yet; cannot save project credentials.");
   }
+
   return projectId;
 }
 
@@ -240,7 +286,6 @@ export type BuildManifestResponse = BuildSourceManifestResponse;
 export const api = {
   health: () => request<{ status: string; service: string; utc: string }>("/health"),
   connectors: () => request<ConnectorsResponse>("/api/connectors").then(withSharePointConnectors),
-
   projects: () => request<ProjectRecord[]>("/api/projects"),
   project: (projectId: string) => request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}`),
   createProject: (payload: CreateProjectRequest) => request<ProjectRecord>("/api/projects", { method: "POST", body: JSON.stringify(payload) }),
@@ -251,7 +296,6 @@ export const api = {
     const projectId = resolveProjectId(projectOrProjectId);
     return request<ProjectRecord>(`/api/projects/${encodeURIComponent(projectId)}/credentials`, { method: "PUT", body: JSON.stringify(payload) });
   },
-
   artifacts: (kind?: string) => request<ArtifactRecord[]>(`/api/artifacts${queryString({ kind })}`),
   artifactDownloadUrl: (artifactId: string) => `/api/artifacts/${encodeURIComponent(artifactId)}/download`,
   deleteArtifact: (artifactId: string) => request<void>(`/api/artifacts/${encodeURIComponent(artifactId)}`, { method: "DELETE" }),
@@ -262,11 +306,9 @@ export const api = {
     form.append("file", file);
     return request<ArtifactRecord>("/api/artifacts", { method: "POST", body: form });
   },
-
-  manifestBuilderSources: () => request<import("../types/api").ManifestBuilderSourceDescriptor[]>("/api/manifest-builder/sources").then(withSharePointManifestSources),
+  manifestBuilderSources: () => request<ManifestBuilderSourceDescriptorLike[]>("/api/manifest-builder/sources").then(withFallbackManifestSources),
   buildManifest: (payload: BuildSourceManifestRequest) => request<BuildSourceManifestResponse>("/api/manifest-builder/build", { method: "POST", body: JSON.stringify(payload) }),
   createManifestArtifact: (payload: BuildSourceManifestRequest) => request<BuildSourceManifestResponse>("/api/manifest-builder/build", { method: "POST", body: JSON.stringify(payload) }),
-
   runs: () => request<RunRecord[]>("/api/runs"),
   run: (runId: string) => request<RunRecord>(`/api/runs/${encodeURIComponent(runId)}`),
   createRun: (projectId: string, payload: CreateRunRequest) => request<RunRecord>(`/api/projects/${encodeURIComponent(projectId)}/runs`, { method: "POST", body: JSON.stringify(payload) }),
@@ -276,7 +318,6 @@ export const api = {
   runEvents: (runId: string, take = 250) => request<RunEventsResponse>(`/api/runs/${encodeURIComponent(runId)}/events${queryString({ take })}`),
   runFailures: (runId: string) => request<RunFailuresResponse>(`/api/runs/${encodeURIComponent(runId)}/failures`),
   runWorkItems: (runId: string) => request<RunWorkItemsResponse>(`/api/runs/${encodeURIComponent(runId)}/work-items`),
-
   credentials: () => request<CredentialSetSummary[]>("/api/credentials"),
   createCredential: (payload: CreateCredentialSetRequest) => request<CredentialSetSummary>("/api/credentials", { method: "POST", body: JSON.stringify(payload) }),
   testCredential: (credentialSetId: string) => request<CredentialTestResult>(`/api/credentials/${encodeURIComponent(credentialSetId)}/test`, { method: "POST" }),
