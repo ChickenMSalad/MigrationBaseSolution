@@ -244,6 +244,37 @@ function withFallbackManifestSources<T extends ManifestBuilderSourceDescriptorLi
     });
   }
 
+  if (!result.some(source => normalizeConnectorKey(source.sourceType) === "contenthub")) {
+    result.push({
+      sourceType: "contenthub",
+      displayName: "ContentHub",
+      services: [
+        {
+          sourceType: "contenthub",
+          serviceName: "export-taxonomies",
+          displayName: "Content Hub taxonomy export manifest",
+          description: "Builds a Sitecore Content Hub manifest from one or more taxonomies.",
+          options: [
+            {
+              name: "taxonomies",
+              label: "Taxonomies",
+              description: "One Content Hub taxonomy value per line. Example: M.AssetType\\Products",
+              required: true,
+              placeholder: "M.AssetType\\Products\nM.AssetType\\Lifestyle"
+            },
+            {
+              name: "taxonomyRelation",
+              label: "Taxonomy relation",
+              description: "Content Hub relation used to find assets for each taxonomy.",
+              required: false,
+              placeholder: "AssetTypeToAsset"
+            }
+          ]
+        }
+      ]
+    });
+  }
+
   return result as T;
 }
 

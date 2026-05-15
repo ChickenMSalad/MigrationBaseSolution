@@ -89,12 +89,19 @@ export function ManifestBuilder() {
 
   function isFolderListOption(name: string) {
     const normalizedName = name.toLowerCase();
+    const normalizedSourceType = sourceType.toLowerCase();
 
-    return sourceType.toLowerCase() === "aem" &&
+    return (normalizedSourceType === "aem" &&
       (normalizedName === "folders" ||
         normalizedName === "folderpaths" ||
         normalizedName === "exportfolders" ||
-        normalizedName === "export.folders");
+        normalizedName === "export.folders")) ||
+      (normalizedSourceType === "contenthub" &&
+        (normalizedName === "taxonomies" ||
+          normalizedName === "taxonomy" ||
+          normalizedName === "taxonomylist" ||
+          normalizedName === "exporttaxonomies" ||
+          normalizedName === "export.taxonomies"));
   }
 
   async function buildManifest() {
@@ -193,7 +200,7 @@ export function ManifestBuilder() {
                   <textarea
                     value={options[option.name] ?? ""}
                     onChange={event => setOption(option.name, event.target.value)}
-                    placeholder={option.placeholder ?? "/content/dam/example-folder"}
+                    placeholder={option.placeholder ?? ""}
                     required={option.required}
                     rows={6}
                   />
