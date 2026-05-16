@@ -70,36 +70,7 @@ api.MapCredentialEndpoints();
 api.MapProjectArtifactBindingEndpoints();
 api.MapProjectCredentialBindingEndpoints();
 api.MapPreflightEndpoints();
-
-api.MapGet("/connectors", (IConnectorCatalog catalog) => Results.Ok(new
-    {
-        sources = catalog.GetSources(),
-        targets = catalog.GetTargets(),
-        manifestProviders = catalog.GetManifestProviders()
-    }))
-    .WithName("GetConnectorCatalog")
-    .WithTags("Connectors")
-    .WithSummary("Gets all registered source, target, and manifest connector descriptors.");
-
-api.MapGet("/connectors/sources", (IConnectorCatalog catalog) => Results.Ok(catalog.GetSources()))
-    .WithName("GetSourceConnectors")
-    .WithTags("Connectors")
-    .WithSummary("Gets source connector descriptors.");
-
-api.MapGet("/connectors/targets", (IConnectorCatalog catalog) => Results.Ok(catalog.GetTargets()))
-    .WithName("GetTargetConnectors")
-    .WithTags("Connectors")
-    .WithSummary("Gets target connector descriptors.");
-
-api.MapGet("/connectors/manifests", (IConnectorCatalog catalog) => Results.Ok(catalog.GetManifestProviders()))
-    .WithName("GetManifestProviders")
-    .WithTags("Connectors")
-    .WithSummary("Gets manifest provider descriptors.");
-
-api.MapGet("/manifest-providers", (IConnectorCatalog catalog) => Results.Ok(catalog.GetManifestProviders()))
-    .WithName("GetManifestProvidersLegacy")
-    .WithTags("Connectors")
-    .WithSummary("Legacy alias for manifest provider descriptors.");
+api.MapConnectorCatalogEndpoints();
 
 api.MapGet("/projects", async (IAdminProjectStore store, CancellationToken cancellationToken) =>
         Results.Ok((await store.ListProjectsAsync(cancellationToken).ConfigureAwait(false)).OrderByDescending(x => x.UpdatedUtc)))
@@ -220,7 +191,7 @@ api.MapPost("/projects/{projectId}/runs", async (
         .ValidateRunCanStartAsync(project, resolvedRequest, cancellationToken)
         .ConfigureAwait(false);
 
-        if (gate.IsAllowed)
+        if (!gate.IsAllowed)
         {
             return Results.Conflict(new
             {
