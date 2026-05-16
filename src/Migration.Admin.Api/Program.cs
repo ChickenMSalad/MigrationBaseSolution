@@ -1,11 +1,10 @@
-using Migration.Admin.Api.Configuration;
 using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Registration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.ConfigureAdminApiConfiguration();
-builder.LogAdminApiConfiguration();
+Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.ConfigureAdminApiConfiguration(builder);
+Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.LogAdminApiConfiguration(builder);
 
 Migration.Admin.Api.Registration.AdminApiOpenApiServiceCollectionExtensions.AddMigrationAdminApiOpenApi(builder.Services);
 builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);

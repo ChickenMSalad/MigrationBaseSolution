@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
@@ -6,23 +5,24 @@ namespace Migration.Workers.QueueExecutor.Configuration;
 
 public static class QueueExecutorConfigurationExtensions
 {
-    public static HostApplicationBuilder ConfigureQueueExecutorConfiguration(this HostApplicationBuilder builder)
+    public static HostApplicationBuilder ConfigureMigrationQueueExecutorConfiguration(this HostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.Configuration.Sources.Clear();
+
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
             .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.local.json", optional: true, reloadOnChange: true)
-            .AddUserSecrets(Assembly.GetExecutingAssembly(), optional: true)
+            .AddUserSecrets<Program>(optional: true)
             .AddEnvironmentVariables(prefix: "MIGRATION_");
 
         return builder;
     }
 
-    public static HostApplicationBuilder LogQueueExecutorConfiguration(this HostApplicationBuilder builder)
+    public static HostApplicationBuilder LogMigrationQueueExecutorConfiguration(this HostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 

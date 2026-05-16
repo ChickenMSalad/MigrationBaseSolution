@@ -10,6 +10,8 @@ public static class RunEndpointExtensions
 {
     public static RouteGroupBuilder MapRunEndpoints(this RouteGroupBuilder api)
     {
+        ArgumentNullException.ThrowIfNull(api);
+
         api.MapPost("/projects/{projectId}/preflight", async (
                 string projectId,
                 CreatePreflightRequest request,
@@ -136,7 +138,11 @@ public static class RunEndpointExtensions
             .WithTags("Runs")
             .WithSummary("Marks a queued or running migration run as canceled in the control-plane store.");
 
-        api.MapGet("/runs/{runId}/work-items", async (string runId, IAdminProjectStore store, IMigrationExecutionStateMaintenance state, CancellationToken cancellationToken) =>
+        api.MapGet("/runs/{runId}/work-items", async (
+                string runId,
+                IAdminProjectStore store,
+                IMigrationExecutionStateMaintenance state,
+                CancellationToken cancellationToken) =>
             {
                 var run = await store.GetRunAsync(runId, cancellationToken).ConfigureAwait(false);
                 if (run is null)

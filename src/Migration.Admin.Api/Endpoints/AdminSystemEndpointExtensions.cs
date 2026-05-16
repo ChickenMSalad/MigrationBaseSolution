@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-
 namespace Migration.Admin.Api.Endpoints;
 
 public static class AdminSystemEndpointExtensions
@@ -32,7 +27,10 @@ public static class AdminSystemEndpointExtensions
             ControlPlaneStorageRoot = configuration["ControlPlane:StorageRoot"],
             QueueProvider = configuration["MigrationRunQueue:Provider"],
             QueueName = configuration["MigrationRunQueue:QueueName"]
-        }));
+        }))
+        .WithName("DebugConfig")
+        .WithTags("Debug")
+        .WithSummary("Returns non-secret runtime configuration values used by the Admin API host.");
 
         return app;
     }

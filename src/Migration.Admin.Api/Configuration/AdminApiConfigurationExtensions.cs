@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 
@@ -11,12 +10,13 @@ public static class AdminApiConfigurationExtensions
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.Configuration.Sources.Clear();
+
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
             .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.local.json", optional: true, reloadOnChange: true)
-            .AddUserSecrets(Assembly.GetExecutingAssembly(), optional: true)
+            .AddUserSecrets<Program>(optional: true)
             .AddEnvironmentVariables(prefix: "MIGRATION_");
 
         return builder;

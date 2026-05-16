@@ -4,7 +4,6 @@ namespace Migration.Admin.Api.Endpoints;
 
 /// <summary>
 /// Centralized Admin API connector-catalog endpoints.
-///
 /// Keep connector catalog routes in one place so Program.cs does not accumulate
 /// duplicate route mappings as the cloud roadmap adds connector descriptors,
 /// credential schemas, and dynamic UI metadata.

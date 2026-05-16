@@ -7,6 +7,8 @@ public static class ProjectEndpointExtensions
 {
     public static RouteGroupBuilder MapProjectEndpoints(this RouteGroupBuilder api)
     {
+        ArgumentNullException.ThrowIfNull(api);
+
         api.MapGet("/projects", async (IAdminProjectStore store, CancellationToken cancellationToken) =>
                 Results.Ok((await store.ListProjectsAsync(cancellationToken).ConfigureAwait(false)).OrderByDescending(x => x.UpdatedUtc)))
             .WithName("GetProjects")
@@ -22,7 +24,11 @@ public static class ProjectEndpointExtensions
             .WithTags("Projects")
             .WithSummary("Gets a migration project by id.");
 
-        api.MapPost("/projects", async (CreateMigrationProjectRequest request, AdminRunFactory factory, IAdminProjectStore store, CancellationToken cancellationToken) =>
+        api.MapPost("/projects", async (
+                CreateMigrationProjectRequest request,
+                AdminRunFactory factory,
+                IAdminProjectStore store,
+                CancellationToken cancellationToken) =>
             {
                 if (string.IsNullOrWhiteSpace(request.DisplayName) ||
                     string.IsNullOrWhiteSpace(request.SourceType) ||
@@ -40,7 +46,12 @@ public static class ProjectEndpointExtensions
             .WithTags("Projects")
             .WithSummary("Creates a migration project definition.");
 
-        api.MapPut("/projects/{projectId}", async (string projectId, UpdateMigrationProjectRequest request, AdminRunFactory factory, IAdminProjectStore store, CancellationToken cancellationToken) =>
+        api.MapPut("/projects/{projectId}", async (
+                string projectId,
+                UpdateMigrationProjectRequest request,
+                AdminRunFactory factory,
+                IAdminProjectStore store,
+                CancellationToken cancellationToken) =>
             {
                 var existing = await store.GetProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
                 if (existing is null)
