@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { api, connectorValue, displayConnectorName } from "../api/client";
 import { Card, EmptyState, JsonBlock } from "../components/Card";
 import { LoadingError } from "../components/LoadingError";
@@ -202,7 +202,7 @@ function normalizeCredentialFields(role: Role | undefined, connector: ConnectorD
   }
 
   return descriptorFields(connector.credentials)
-    .map(field => {
+    .map<CredentialField | null>(field => {
       const key = getFieldKey(field);
       if (!key) return null;
       const requiredFromSchema = Boolean(field.required ?? field.isRequired ?? false);
@@ -524,7 +524,7 @@ export function Credentials() {
                     {requiredCredentialFields.map(field => (
                       <li key={field.key}>
                         <code>{field.key}</code>
-                        {field.description ? <> — {field.description}</> : null}
+                        {field.description ? <> â€” {field.description}</> : null}
                       </li>
                     ))}
                   </ul>
@@ -540,7 +540,7 @@ export function Credentials() {
                     {optionalCredentialFields.map(field => (
                       <li key={field.key}>
                         <code>{field.key}</code>
-                        {field.description ? <> — {field.description}</> : null}
+                        {field.description ? <> â€” {field.description}</> : null}
                       </li>
                     ))}
                   </ul>
@@ -649,3 +649,4 @@ export function Credentials() {
     </div>
   );
 }
+

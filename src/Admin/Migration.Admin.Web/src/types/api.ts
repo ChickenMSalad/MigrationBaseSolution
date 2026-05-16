@@ -1,8 +1,10 @@
+export type JsonObject = Record<string, unknown>;
+
 export type ConnectorDescriptor = {
   type?: string;
   name?: string;
   displayName?: string;
-  description?: string;
+  description?: string | null;
   direction?: string;
   capabilities?: unknown;
   credentials?: unknown[];
@@ -22,7 +24,7 @@ export type CredentialSetSummary = {
   connectorRole: string;
   createdUtc: string;
   updatedUtc: string;
-  values: Record<string, unknown>;
+  values: JsonObject;
   secretKeys: string[];
 };
 
@@ -30,7 +32,7 @@ export type CreateCredentialSetRequest = {
   displayName: string;
   connectorType: string;
   connectorRole: string;
-  values: Record<string, unknown>;
+  values: JsonObject;
   secretKeys?: string[];
 };
 
@@ -53,7 +55,7 @@ export type ArtifactRecord = {
   uploadedUtc?: string;
   projectId?: string | null;
   description?: string | null;
-  metadata?: Record<string, unknown>;
+  metadata?: JsonObject;
 };
 
 export type ProjectRecord = {
@@ -69,7 +71,7 @@ export type ProjectRecord = {
   taxonomyArtifactId?: string | null;
   sourceCredentialSetId?: string | null;
   targetCredentialSetId?: string | null;
-  settings?: Record<string, unknown>;
+  settings?: Record<string, string | null | undefined>;
 };
 
 export type CreateProjectRequest = {
@@ -77,7 +79,7 @@ export type CreateProjectRequest = {
   sourceType: string;
   targetType: string;
   manifestType: string;
-  settings?: Record<string, unknown>;
+  settings?: Record<string, string | null | undefined>;
 };
 
 export type BindProjectArtifactsRequest = {
@@ -113,7 +115,7 @@ export type CreateRunRequest = {
   mappingArtifactId?: string | null;
   dryRun: boolean;
   parallelism: number;
-  settings?: Record<string, unknown>;
+  settings?: Record<string, string | null | undefined>;
 };
 
 export type RunSummary = {
@@ -130,15 +132,30 @@ export type RunSummary = {
   [key: string]: unknown;
 };
 
-export type RunEventsResponse = { runId: string; count: number; events: unknown[] };
-export type RunFailuresResponse = { runId: string; count: number; failures: unknown[] };
-export type RunWorkItemsResponse = { runId: string; jobName: string; count: number; workItems: unknown[] };
+export type RunEventsResponse = {
+  runId: string;
+  count: number;
+  events: unknown[];
+};
+
+export type RunFailuresResponse = {
+  runId: string;
+  count: number;
+  failures: unknown[];
+};
+
+export type RunWorkItemsResponse = {
+  runId: string;
+  jobName: string;
+  count: number;
+  workItems: unknown[];
+};
 
 export type ManifestPreview = {
   artifactId: string;
   fileName: string;
   columns: string[];
-  sampleRows: Record<string, unknown>[];
+  sampleRows: JsonObject[];
 };
 
 export type MappingBuilderFieldMap = {
@@ -166,25 +183,26 @@ export type SaveMappingArtifactResponse = {
 
 export type ManifestBuilderOptionDescriptor = {
   name: string;
-  label?: string;
-  description?: string;
-  placeholder?: string;
+  label?: string | null;
+  description?: string | null;
+  placeholder?: string | null;
   required?: boolean;
   defaultValue?: unknown;
   type?: string;
 };
 
 export type ManifestBuilderServiceDescriptor = {
+  sourceType?: string;
   serviceName: string;
   displayName: string;
-  description?: string;
+  description?: string | null;
   options: ManifestBuilderOptionDescriptor[];
 };
 
 export type ManifestBuilderSourceDescriptor = {
   sourceType: string;
   displayName: string;
-  description?: string;
+  description?: string | null;
   services: ManifestBuilderServiceDescriptor[];
 };
 
@@ -194,7 +212,7 @@ export type BuildSourceManifestRequest = {
   credentialSetId?: string | null;
   projectId?: string | null;
   fileName?: string | null;
-  options?: Record<string, unknown>;
+  options?: Record<string, string | null | undefined>;
 };
 
 export type BuildSourceManifestResponse = {
@@ -206,4 +224,38 @@ export type BuildSourceManifestResponse = {
   sourceType?: string;
   serviceName?: string;
   message?: string;
+  downloadUrl?: string;
+};
+
+export type PreflightIssue = {
+    severity?: string | null;
+    message?: string | null;
+    code?: string | null;
+    field?: string | null;
+    path?: string | null;
+    rowId?: string | number | null;
+    [key: string]: unknown;
+};
+
+export type PreflightSummary = {
+    totalRows?: number;
+    checkedRows?: number;
+    errorCount?: number;
+    warningCount?: number;
+    [key: string]: unknown;
+};
+
+export type PreflightResult = {
+    preflightId?: string;
+    projectId?: string;
+    runId?: string;
+    status?: string;
+    success?: boolean;
+    passed?: boolean;
+    issueCount?: number;
+    summary?: PreflightSummary;
+    issues?: PreflightIssue[];
+    warnings?: PreflightIssue[];
+    errors?: PreflightIssue[];
+    [key: string]: unknown;
 };

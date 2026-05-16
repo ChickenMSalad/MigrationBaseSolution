@@ -127,10 +127,10 @@ export function Preflight() {
         <Card title="Preflight result" subtitle={result.preflightId}>
           <div className="metricGrid">
             <div className="metric"><span>Status</span><strong><span className={statusClass(result.status)}>{result.status}</span></strong></div>
-            <div className="metric"><span>Total rows</span><strong>{result.summary.totalRows}</strong></div>
-            <div className="metric"><span>Checked</span><strong>{result.summary.checkedRows}</strong></div>
-            <div className="metric"><span>Errors</span><strong>{result.summary.errorCount}</strong></div>
-            <div className="metric"><span>Warnings</span><strong>{result.summary.warningCount}</strong></div>
+            <div className="metric"><span>Total rows</span><strong>{result.summary?.totalRows ?? 0}</strong></div>
+            <div className="metric"><span>Checked</span><strong>{result.summary?.checkedRows ?? 0}</strong></div>
+            <div className="metric"><span>Errors</span><strong>{result.summary?.errorCount ?? 0}</strong></div>
+            <div className="metric"><span>Warnings</span><strong>{result.summary?.warningCount ?? 0}</strong></div>
           </div>
         </Card>
       )}
@@ -143,7 +143,7 @@ export function Preflight() {
               <tbody>
                 {visibleIssues.map((issue, index) => (
                   <tr key={`${issue.code}-${index}`}>
-                    <td><span className={statusClass(issue.severity)}>{issue.severity}</span></td>
+                    <td><span className={statusClass(issue.severity ?? undefined)}>{issue.severity}</span></td>
                     <td>{issue.code}</td>
                     <td>{issue.rowId ?? ""}</td>
                     <td>{issue.field ?? ""}</td>

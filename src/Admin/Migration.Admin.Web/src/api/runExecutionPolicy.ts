@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta.env.VITE_ADMIN_API_BASE_URL ?? '').replace(/\/$/, '');
+import { apiGet } from './core/adminApiClient';
 
 export type RunExecutionPolicyDescriptor = {
   runId: string;
@@ -22,19 +22,10 @@ export type RunExecutionPolicyDescriptor = {
   completedUtc?: string | null;
 };
 
-async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed with status ${response.status}`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
-export async function getRunExecutionPolicy(runId: string): Promise<RunExecutionPolicyDescriptor> {
-  return getJson<RunExecutionPolicyDescriptor>(
+export async function getRunExecutionPolicy(
+  runId: string
+): Promise<RunExecutionPolicyDescriptor> {
+  return apiGet<RunExecutionPolicyDescriptor>(
     `/api/runs/${encodeURIComponent(runId)}/execution-policy`
   );
 }
