@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Migration.Admin.Api.Contracts;
 using Migration.ControlPlane.Models;
 using Migration.ControlPlane.Queues;
 using Migration.ControlPlane.Services;
@@ -8,6 +9,9 @@ namespace Migration.Admin.Api.Endpoints;
 
 public static class RunEndpointExtensions
 {
+    private const string RunPreflightRequiredAction =
+        "Run project preflight and wait for it to complete successfully before starting a non-dry-run migration.";
+
     public static RouteGroupBuilder MapRunEndpoints(this RouteGroupBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
@@ -24,27 +28,34 @@ public static class RunEndpointExtensions
                 var project = await store.GetProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
                 if (project is null)
                 {
-                    return Results.NotFound(new { error = $"Project '{projectId}' was not found." });
+                    return Results.NotFound(new AdminApiErrorResponse($"Project '{projectId}' was not found."));
                 }
 
                 CreatePreflightRequest resolvedRequest;
                 try
                 {
-                    resolvedRequest = await artifactPathResolver.ResolvePreflightRequestAsync(project, request, cancellationToken).ConfigureAwait(false);
+                    resolvedRequest = await artifactPathResolver
+                        .ResolvePreflightRequestAsync(project, request, cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException)
                 {
-                    return Results.BadRequest(new { error = ex.Message });
+                    return Results.BadRequest(new AdminApiErrorResponse(ex.Message));
                 }
 
                 var run = factory.CreatePreflight(project, resolvedRequest);
+
                 await queue.EnqueueAsync(run, cancellationToken).ConfigureAwait(false);
                 await store.SaveRunAsync(run, cancellationToken).ConfigureAwait(false);
+
                 return Results.Accepted($"/api/runs/{run.RunId}", run);
             })
             .WithName("QueuePreflight")
             .WithTags("Runs")
-            .WithSummary("Queues a preflight-only run for a project.");
+            .WithSummary("Queues a preflight-only run for a project.")
+            .Produces<MigrationRunControlRecord>(StatusCodes.Status202Accepted)
+            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<AdminApiErrorResponse>(StatusCodes.Status404NotFound);
 
         api.MapPost("/projects/{projectId}/runs", async (
                 string projectId,
@@ -59,17 +70,19 @@ public static class RunEndpointExtensions
                 var project = await store.GetProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
                 if (project is null)
                 {
-                    return Results.NotFound(new { error = $"Project '{projectId}' was not found." });
+                    return Results.NotFound(new AdminApiErrorResponse($"Project '{projectId}' was not found."));
                 }
 
                 CreateRunRequest resolvedRequest;
                 try
                 {
-                    resolvedRequest = await artifactPathResolver.ResolveRunRequestAsync(project, request, cancellationToken).ConfigureAwait(false);
+                    resolvedRequest = await artifactPathResolver
+                        .ResolveRunRequestAsync(project, request, cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException)
                 {
-                    return Results.BadRequest(new { error = ex.Message });
+                    return Results.BadRequest(new AdminApiErrorResponse(ex.Message));
                 }
 
                 var gate = await preflightGate
@@ -78,39 +91,53 @@ public static class RunEndpointExtensions
 
                 if (!gate.IsAllowed)
                 {
-                    return Results.Conflict(new
-                    {
-                        error = gate.Message,
-                        projectId = project.ProjectId,
-                        requiredAction = "Run project preflight and wait for it to complete successfully before starting a non-dry-run migration."
-                    });
+                    return Results.Conflict(new RunPreflightGateBlockedResponse(
+                        gate.Message,
+                        project.ProjectId,
+                        RunPreflightRequiredAction));
                 }
 
                 var run = factory.CreateRun(project, resolvedRequest);
+
                 await store.SaveRunAsync(run, cancellationToken).ConfigureAwait(false);
                 await queue.EnqueueAsync(run, cancellationToken).ConfigureAwait(false);
+
                 return Results.Accepted($"/api/runs/{run.RunId}", run);
             })
             .WithName("QueueRun")
             .WithTags("Runs")
-            .WithSummary("Queues a migration run for a project.");
+            .WithSummary("Queues a migration run for a project.")
+            .Produces<MigrationRunControlRecord>(StatusCodes.Status202Accepted)
+            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<AdminApiErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<RunPreflightGateBlockedResponse>(StatusCodes.Status409Conflict);
 
-        api.MapGet("/runs", async (IAdminProjectStore store, CancellationToken cancellationToken) =>
+        api.MapGet("/runs", async (
+                IAdminProjectStore store,
+                CancellationToken cancellationToken) =>
                 Results.Ok(await store.ListRunsAsync(cancellationToken).ConfigureAwait(false)))
             .WithName("GetRuns")
             .WithTags("Runs")
             .WithSummary("Lists migration runs.");
 
-        api.MapGet("/runs/{runId}", async (string runId, IAdminProjectStore store, CancellationToken cancellationToken) =>
+        api.MapGet("/runs/{runId}", async (
+                string runId,
+                IAdminProjectStore store,
+                CancellationToken cancellationToken) =>
             {
                 var run = await store.GetRunAsync(runId, cancellationToken).ConfigureAwait(false);
                 return run is null ? Results.NotFound() : Results.Ok(run);
             })
             .WithName("GetRun")
             .WithTags("Runs")
-            .WithSummary("Gets a migration run by id.");
+            .WithSummary("Gets a migration run by id.")
+            .Produces<MigrationRunControlRecord>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
-        api.MapPost("/runs/{runId}/cancel", async (string runId, IAdminProjectStore store, CancellationToken cancellationToken) =>
+        api.MapPost("/runs/{runId}/cancel", async (
+                string runId,
+                IAdminProjectStore store,
+                CancellationToken cancellationToken) =>
             {
                 var run = await store.GetRunAsync(runId, cancellationToken).ConfigureAwait(false);
                 if (run is null)
@@ -120,7 +147,7 @@ public static class RunEndpointExtensions
 
                 if (run.Status is AdminRunStatuses.Completed or AdminRunStatuses.Failed or AdminRunStatuses.Canceled)
                 {
-                    return Results.Conflict(new { error = $"Run is already terminal: {run.Status}." });
+                    return Results.Conflict(new RunStateConflictResponse($"Run is already terminal: {run.Status}."));
                 }
 
                 var canceled = run with
@@ -132,11 +159,15 @@ public static class RunEndpointExtensions
                 };
 
                 await store.SaveRunAsync(canceled, cancellationToken).ConfigureAwait(false);
+
                 return Results.Ok(canceled);
             })
             .WithName("CancelRun")
             .WithTags("Runs")
-            .WithSummary("Marks a queued or running migration run as canceled in the control-plane store.");
+            .WithSummary("Marks a queued or running migration run as canceled in the control-plane store.")
+            .Produces<MigrationRunControlRecord>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces<RunStateConflictResponse>(StatusCodes.Status409Conflict);
 
         api.MapGet("/runs/{runId}/work-items", async (
                 string runId,
@@ -152,8 +183,9 @@ public static class RunEndpointExtensions
 
                 var items = await state.ListWorkItemsAsync(run.JobName, cancellationToken).ConfigureAwait(false);
                 var matching = items
-                    .Where(x => string.Equals(x.RunId, run.RunId, StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(x.JobName, run.JobName, StringComparison.OrdinalIgnoreCase))
+                    .Where(x =>
+                        string.Equals(x.RunId, run.RunId, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(x.JobName, run.JobName, StringComparison.OrdinalIgnoreCase))
                     .OrderByDescending(x => x.UpdatedUtc)
                     .ToList();
 
@@ -161,7 +193,9 @@ public static class RunEndpointExtensions
             })
             .WithName("GetRunWorkItems")
             .WithTags("Runs")
-            .WithSummary("Lists state-store work items associated with a migration run.");
+            .WithSummary("Lists state-store work items associated with a migration run.")
+            .Produces<RunWorkItemsResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
         return api;
     }
