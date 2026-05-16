@@ -9,21 +9,30 @@ namespace Migration.Workers.QueueExecutor.Registration;
 
 public static class QueueExecutorServiceCollectionExtensions
 {
-    public static IServiceCollection AddMigrationQueueExecutor(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddMigrationQueueExecutor(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        services.Configure<QueueExecutorOptions>(configuration.GetSection(QueueExecutorOptions.SectionName));
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
 
-        services.AddGenericMigrationRuntime(configuration);
+        services.Configure<QueueExecutorOptions>(
+            configuration.GetSection(QueueExecutorOptions.SectionName));
+
+        // Shared execution/runtime path used by API and worker hosts.
+        services.AddMigrationRuntime(configuration);
+
+        // Control-plane storage, queues, project/run stores, credentials,
+        // artifact helpers, progress monitoring, and manifest builders.
         services.AddMigrationControlPlane(configuration);
 
-        // Explicitly call the connector module registration extension to avoid ambiguity with
-        // Migration.GenericRuntime.Registration.ServiceCollectionExtensions.AddMigrationConnectorModules(...).
-        Migration.Connectors.Registration.ConnectorModuleRegistrationExtensions.AddMigrationConnectorModules(
-            services,
-            configuration);
+        // Explicitly call the connector module registration extension to avoid
+        // ambiguity with similarly named extension methods in runtime projects.
+        // This preserves the existing QueueExecutor behavior while keeping the
+        // generic runtime composition centralized.
+        Migration.Connectors.Registration.ConnectorModuleRegistrationExtensions
+            .AddMigrationConnectorModules(services, configuration);
 
-        services.AddSingleton<ProjectCredentialJobSettingsHydrator>();
-        services.AddHostedService<MigrationRunQueueWorker>();
 
         return services;
     }
