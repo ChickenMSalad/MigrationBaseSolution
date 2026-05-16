@@ -30,6 +30,7 @@ api.MapPreflightEndpoints();
 api.MapProjectEndpoints();
 api.MapRunEndpoints();
 api.MapRunExecutionPolicyEndpoints();
+api.MapCloudPlatformEndpoints();
 api.MapConnectorCatalogEndpoints();
 api.MapConnectorCapabilityEndpoints();
 
@@ -41,5 +42,6 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
