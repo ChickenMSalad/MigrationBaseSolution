@@ -195,6 +195,7 @@ api.MapPost("/projects/{projectId}/runs", async (
         CreateRunRequest request,
         AdminRunFactory factory,
         IAdminProjectStore store,
+        RunPreflightGateService preflightGate,
         IMigrationRunQueue queue,
         [FromServices] ArtifactPathResolver artifactPathResolver,
         CancellationToken cancellationToken) =>
@@ -214,6 +215,21 @@ api.MapPost("/projects/{projectId}/runs", async (
         {
             return Results.BadRequest(new { error = ex.Message });
         }
+
+        var gate = await preflightGate
+        .ValidateRunCanStartAsync(project, resolvedRequest, cancellationToken)
+        .ConfigureAwait(false);
+
+        if (gate.IsAllowed)
+        {
+            return Results.Conflict(new
+            {
+                error = gate.Message,
+                projectId = project.ProjectId,
+                requiredAction = "Run project preflight and wait for it to complete successfully before starting a non-dry-run migration."
+            });
+        }
+
 
         var run = factory.CreateRun(project, resolvedRequest);
         await store.SaveRunAsync(run, cancellationToken).ConfigureAwait(false);

@@ -22,6 +22,7 @@ public static class ControlPlaneServiceCollectionExtensions
         services.AddHttpClient();
 
         services.AddSingleton<AdminRunFactory>();
+        services.AddSingleton<RunPreflightGateService>();
         services.AddSingleton<IArtifactStore, FileBackedArtifactStore>();
         services.AddSingleton<ArtifactPathResolver>();
         services.AddSingleton<IAdminProjectStore, FileBackedAdminProjectStore>();
