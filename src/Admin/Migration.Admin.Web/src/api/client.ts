@@ -123,6 +123,31 @@ const s3TargetDescriptor: ConnectorDescriptor = {
   options: s3TargetOptionFields
 };
 
+const bynderCredentialFields = [
+  { name: "BaseUrl", label: "Base URL", description: "Bynder portal base URL, for example https://example.getbynder.com.", required: true },
+  { name: "ClientId", label: "Client ID", description: "Bynder OAuth client id.", required: true, secret: true },
+  { name: "ClientSecret", label: "Client Secret", description: "Bynder OAuth client secret.", required: true, secret: true },
+  { name: "Scopes", label: "Scopes", description: "OAuth scopes used by the Bynder SDK.", required: true, defaultValue: "asset:read asset:write asset:delete meta.assetbank:read" },
+  { name: "BrandStoreId", label: "Brand store ID", description: "Required when Bynder is used as a target. Optional for source-only workflows.", required: false }
+];
+
+const bynderSourceOptionFields = [
+  { name: "SourceUriField", label: "Source URI field", description: "Manifest field containing the Bynder download/source URL. Defaults to sourceUri/downloadUrl/url.", required: false },
+  { name: "FileNameField", label: "File name field", description: "Manifest field containing the filename. Defaults to fileName/name.", required: false }
+];
+
+const bynderSourceDescriptor: ConnectorDescriptor = {
+  type: "Bynder",
+  name: "Bynder",
+  displayName: "Bynder",
+  description: "Bynder source connector for manifest-driven migrations using Bynder asset/download URLs.",
+  direction: "Source",
+  capabilities: { canReadAssets: true },
+  credentials: bynderCredentialFields,
+  options: bynderSourceOptionFields
+};
+
+
 const sharePointSourceDescriptor: ConnectorDescriptor = {
   type: "SharePoint",
   name: "SharePoint",
@@ -151,6 +176,7 @@ function withSharePointConnectors(data: ConnectorsResponse): ConnectorsResponse 
   const manifestProviders = [...(data?.manifestProviders ?? [])];
 
   if (!hasConnector(sources, "SharePoint")) sources.push(sharePointSourceDescriptor);
+  if (!hasConnector(sources, "Bynder")) sources.push(bynderSourceDescriptor);
   if (!hasConnector(targets, "S3")) targets.push(s3TargetDescriptor);
   if (!hasConnector(manifestProviders, "SharePoint")) manifestProviders.push(sharePointManifestProviderDescriptor);
 
@@ -237,37 +263,6 @@ function withFallbackManifestSources<T extends ManifestBuilderSourceDescriptorLi
               description: "true/false. Include assets below each selected folder.",
               required: false,
               placeholder: "true"
-            }
-          ]
-        }
-      ]
-    });
-  }
-
-  if (!result.some(source => normalizeConnectorKey(source.sourceType) === "contenthub")) {
-    result.push({
-      sourceType: "contenthub",
-      displayName: "ContentHub",
-      services: [
-        {
-          sourceType: "contenthub",
-          serviceName: "export-taxonomies",
-          displayName: "Content Hub taxonomy export manifest",
-          description: "Builds a Sitecore Content Hub manifest from one or more taxonomies.",
-          options: [
-            {
-              name: "taxonomies",
-              label: "Taxonomies",
-              description: "One Content Hub taxonomy value per line. Example: M.AssetType\\Products",
-              required: true,
-              placeholder: "M.AssetType\\Products\nM.AssetType\\Lifestyle"
-            },
-            {
-              name: "taxonomyRelation",
-              label: "Taxonomy relation",
-              description: "Content Hub relation used to find assets for each taxonomy.",
-              required: false,
-              placeholder: "AssetTypeToAsset"
             }
           ]
         }

@@ -1,6 +1,8 @@
 using System.Globalization;
+using System.Net.Http.Json;
 using System.Text;
-using Migration.ControlPlane.ManifestBuilder;
+using System.Text.Json;
+using Migration.ControlPlane.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stylelabs.M.Base.Querying;
@@ -16,13 +18,19 @@ public sealed class ContentHubTaxonomiesSourceManifestService : ISourceManifestS
     private const string Service = "export-taxonomies";
 
     private readonly IServiceProvider _serviceProvider;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ICredentialResolver _credentialResolver;
     private readonly ILogger<ContentHubTaxonomiesSourceManifestService> _logger;
 
     public ContentHubTaxonomiesSourceManifestService(
         IServiceProvider serviceProvider,
+        IHttpClientFactory httpClientFactory,
+        ICredentialResolver credentialResolver,
         ILogger<ContentHubTaxonomiesSourceManifestService> logger)
     {
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _credentialResolver = credentialResolver ?? throw new ArgumentNullException(nameof(credentialResolver));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -50,7 +58,13 @@ public sealed class ContentHubTaxonomiesSourceManifestService : ISourceManifestS
                     "Taxonomy relation",
                     "Content Hub relation used to find assets for each taxonomy. Defaults to AssetTypeToAsset.",
                     Required: false,
-                    Placeholder: "AssetTypeToAsset")
+                    Placeholder: "AssetTypeToAsset"),
+                new ManifestBuilderOptionDescriptor(
+                    "baseUrl",
+                    "Base URL",
+                    "Optional Content Hub/fake Content Hub base URL. Credential BaseUrl is used when selected.",
+                    Required: false,
+                    Placeholder: "http://98.81.167.252:8095/")
             });
     }
 
@@ -58,10 +72,7 @@ public sealed class ContentHubTaxonomiesSourceManifestService : ISourceManifestS
         BuildSourceManifestRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request is null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
+        ArgumentNullException.ThrowIfNull(request);
 
         var options = request.Options ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var taxonomies = GetTaxonomies(options);
@@ -77,19 +88,57 @@ public sealed class ContentHubTaxonomiesSourceManifestService : ISourceManifestS
             taxonomyRelation = "AssetTypeToAsset";
         }
 
-        var client = _serviceProvider.GetService<IWebMClient>();
-        if (client is null)
+        var credentialValues = await ResolveCredentialValuesAsync(request.CredentialSetId, cancellationToken).ConfigureAwait(false);
+
+        var rows = new List<ContentHubManifestRow>();
+
+        var sdkClient = _serviceProvider.GetService<IWebMClient>();
+        if (sdkClient is not null)
         {
-            throw new InvalidOperationException("No Sitecore Content Hub IWebMClient is registered. Verify the Sitecore/Content Hub source connector registration is included in the Admin API runtime.");
+            rows.AddRange(await BuildWithSdkAsync(
+                sdkClient,
+                taxonomies,
+                taxonomyRelation,
+                cancellationToken).ConfigureAwait(false));
+        }
+        else
+        {
+            rows.AddRange(await BuildWithHttpFallbackAsync(
+                credentialValues,
+                options,
+                taxonomies,
+                taxonomyRelation,
+                cancellationToken).ConfigureAwait(false));
         }
 
+        var csv = BuildCsv(rows);
+        var fileName = $"contenthub-manifest-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.csv";
+
+        return new BuildSourceManifestResult(
+            Source,
+            Service,
+            fileName,
+            "text/csv",
+            csv,
+            ContentBytes: null,
+            rows.Count);
+    }
+
+    private async Task<IReadOnlyList<ContentHubManifestRow>> BuildWithSdkAsync(
+        IWebMClient client,
+        IReadOnlyList<string> taxonomies,
+        string taxonomyRelation,
+        CancellationToken cancellationToken)
+    {
         var rows = new List<ContentHubManifestRow>();
         var rowId = 1;
 
         foreach (var taxonomy in taxonomies)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             _logger.LogInformation(
-                "Building Content Hub manifest rows for taxonomy {Taxonomy} using relation {Relation}.",
+                "Building Content Hub manifest rows through IWebMClient for taxonomy {Taxonomy} using relation {Relation}.",
                 taxonomy,
                 taxonomyRelation);
 
@@ -110,30 +159,186 @@ public sealed class ContentHubTaxonomiesSourceManifestService : ISourceManifestS
                       entity.Parent(relation) == taxonomyId
                 select entity);
 
-            var scroller = client.Querying.CreateEntityScroller(query, TimeSpan.FromMinutes(5));
+            var queryResult = await client.Querying.QueryIdsAsync(query).ConfigureAwait(false);
 
-            while (await scroller.MoveNextAsync().ConfigureAwait(false))
+            foreach (var id in queryResult.Items)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                foreach (var entity in scroller.Current.Items)
-                {
-                    rows.Add(ContentHubManifestRow.From(rowId++, taxonomy, entity));
-                }
+                rows.Add(new ContentHubManifestRow(
+                    rowId++,
+                    taxonomy,
+                    id.ToString() ?? string.Empty,
+                    "M.Asset",
+                    string.Empty,
+                    string.Empty,
+                    string.Empty));
             }
         }
 
-        var csv = BuildCsv(rows);
-        var fileName = $"contenthub-manifest-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.csv";
+        return rows;
+    }
 
-        return new BuildSourceManifestResult(
-            Source,
-            Service,
-            fileName,
-            "text/csv",
-            csv,
-            ContentBytes: null,
-            rows.Count);
+    private async Task<IReadOnlyList<ContentHubManifestRow>> BuildWithHttpFallbackAsync(
+        IReadOnlyDictionary<string, string> credentialValues,
+        IReadOnlyDictionary<string, string> options,
+        IReadOnlyList<string> taxonomies,
+        string taxonomyRelation,
+        CancellationToken cancellationToken)
+    {
+        var baseUrl = GetValue(options, "baseUrl", "BaseUrl")
+            ?? GetValue(credentialValues, "BaseUrl", "baseUrl", "ContentHubBaseUrl", "Url", "url");
+
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw new InvalidOperationException(
+                "No Sitecore Content Hub IWebMClient is registered and no BaseUrl was supplied. Select a ContentHub credential set with BaseUrl or enter baseUrl in options.");
+        }
+
+        var http = _httpClientFactory.CreateClient();
+        http.BaseAddress = new Uri(EnsureTrailingSlash(baseUrl));
+
+        ApplyAuthorization(http, credentialValues);
+
+        var rows = new List<ContentHubManifestRow>();
+        var rowId = 1;
+
+        foreach (var taxonomy in taxonomies)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _logger.LogInformation(
+                "Building Content Hub manifest rows through HTTP fallback for taxonomy {Taxonomy} using relation {Relation}.",
+                taxonomy,
+                taxonomyRelation);
+
+            var payload = await QueryFakeContentHubAsync(http, taxonomy, taxonomyRelation, cancellationToken).ConfigureAwait(false);
+
+            foreach (var row in payload)
+            {
+                rows.Add(row with
+                {
+                    RowId = rowId++,
+                    Taxonomy = string.IsNullOrWhiteSpace(row.Taxonomy) ? taxonomy : row.Taxonomy
+                });
+            }
+        }
+
+        return rows;
+    }
+
+    private static async Task<IReadOnlyList<ContentHubManifestRow>> QueryFakeContentHubAsync(
+        HttpClient http,
+        string taxonomy,
+        string taxonomyRelation,
+        CancellationToken cancellationToken)
+    {
+        var query = $"taxonomy={Uri.EscapeDataString(taxonomy)}&taxonomyRelation={Uri.EscapeDataString(taxonomyRelation)}";
+
+        var candidates = new[]
+        {
+            $"api/manifest-builder/contenthub/assets?{query}",
+            $"api/contenthub/assets?{query}",
+            $"contenthub/assets?{query}",
+            $"assets?{query}"
+        };
+
+        HttpResponseMessage? lastResponse = null;
+
+        foreach (var candidate in candidates)
+        {
+            var response = await http.GetAsync(candidate, cancellationToken).ConfigureAwait(false);
+            lastResponse = response;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                continue;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            return ParseRows(document.RootElement, taxonomy);
+        }
+
+        var status = lastResponse is null
+            ? "no response"
+            : $"{(int)lastResponse.StatusCode} {lastResponse.ReasonPhrase}";
+
+        throw new InvalidOperationException(
+            $"Unable to query fake Content Hub at {http.BaseAddress}. Tried known manifest endpoints and received {status}.");
+    }
+
+    private static IReadOnlyList<ContentHubManifestRow> ParseRows(JsonElement root, string taxonomy)
+    {
+        var rows = new List<ContentHubManifestRow>();
+
+        if (root.ValueKind == JsonValueKind.Object)
+        {
+            if (TryGetProperty(root, "items", out var items) ||
+                TryGetProperty(root, "assets", out items) ||
+                TryGetProperty(root, "data", out items) ||
+                TryGetProperty(root, "results", out items))
+            {
+                AddArrayRows(rows, items, taxonomy);
+                return rows;
+            }
+
+            rows.Add(ParseRow(root, taxonomy));
+            return rows;
+        }
+
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            AddArrayRows(rows, root, taxonomy);
+        }
+
+        return rows;
+    }
+
+    private static void AddArrayRows(List<ContentHubManifestRow> rows, JsonElement array, string taxonomy)
+    {
+        if (array.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        foreach (var item in array.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.Object)
+            {
+                rows.Add(ParseRow(item, taxonomy));
+            }
+            else if (item.ValueKind == JsonValueKind.String)
+            {
+                rows.Add(new ContentHubManifestRow(
+                    0,
+                    taxonomy,
+                    item.GetString() ?? string.Empty,
+                    "M.Asset",
+                    string.Empty,
+                    string.Empty,
+                    string.Empty));
+            }
+        }
+    }
+
+    private static ContentHubManifestRow ParseRow(JsonElement item, string taxonomy)
+    {
+        var id = GetJsonValue(item, "id", "Id", "assetId", "AssetId", "sourceAssetId", "SourceAssetId");
+        var definitionName = GetJsonValue(item, "definitionName", "DefinitionName") ?? "M.Asset";
+        var fileName = GetJsonValue(item, "fileName", "FileName", "filename", "Filename", "name", "Name");
+        var title = GetJsonValue(item, "title", "Title", "assetTitle", "AssetTitle");
+        var rowTaxonomy = GetJsonValue(item, "taxonomy", "Taxonomy") ?? taxonomy;
+
+        return new ContentHubManifestRow(
+            0,
+            rowTaxonomy,
+            id ?? string.Empty,
+            definitionName,
+            fileName ?? string.Empty,
+            title ?? string.Empty,
+            item.GetRawText());
     }
 
     private static IReadOnlyList<string> GetTaxonomies(IReadOnlyDictionary<string, string> options)
@@ -153,6 +358,72 @@ public sealed class ContentHubTaxonomiesSourceManifestService : ISourceManifestS
             .ToArray();
     }
 
+    private async Task<IReadOnlyDictionary<string, string>> ResolveCredentialValuesAsync(
+        string? credentialSetId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(credentialSetId))
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        return await _credentialResolver.ResolveAsync(credentialSetId, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static void ApplyAuthorization(HttpClient http, IReadOnlyDictionary<string, string> credentialValues)
+    {
+        var token = GetValue(credentialValues, "AccessToken", "BearerToken", "Token", "ApiToken");
+
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+    }
+
+    private static string? GetJsonValue(JsonElement item, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            if (TryGetProperty(item, name, out var property))
+            {
+                return property.ValueKind switch
+                {
+                    JsonValueKind.String => property.GetString(),
+                    JsonValueKind.Number => property.GetRawText(),
+                    JsonValueKind.True => "true",
+                    JsonValueKind.False => "false",
+                    _ => property.GetRawText()
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryGetProperty(JsonElement item, string name, out JsonElement value)
+    {
+        if (item.ValueKind == JsonValueKind.Object && item.TryGetProperty(name, out value))
+        {
+            return true;
+        }
+
+        if (item.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in item.EnumerateObject())
+            {
+                if (property.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
     private static string? GetValue(IReadOnlyDictionary<string, string> options, params string[] keys)
     {
         foreach (var key in keys)
@@ -164,6 +435,12 @@ public sealed class ContentHubTaxonomiesSourceManifestService : ISourceManifestS
         }
 
         return null;
+    }
+
+    private static string EnsureTrailingSlash(string value)
+    {
+        value = value.Trim();
+        return value.EndsWith("/", StringComparison.Ordinal) ? value : value + "/";
     }
 
     private static string BuildCsv(IReadOnlyList<ContentHubManifestRow> rows)
@@ -222,48 +499,5 @@ public sealed class ContentHubTaxonomiesSourceManifestService : ISourceManifestS
         string? DefinitionName,
         string? FileName,
         string? Title,
-        string Properties)
-    {
-        public static ContentHubManifestRow From(int rowId, string taxonomy, IEntity entity)
-        {
-            var sourceAssetId = entity.Id?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-            var fileName = TryGetPropertyValue(entity, "FileName")
-                ?? TryGetPropertyValue(entity, "Filename")
-                ?? TryGetPropertyValue(entity, "fileName")
-                ?? string.Empty;
-
-            var title = TryGetPropertyValue(entity, "Title")
-                ?? TryGetPropertyValue(entity, "AssetTitle")
-                ?? TryGetPropertyValue(entity, "Name")
-                ?? string.Empty;
-
-            var properties = string.Join(
-                "|",
-                entity.Properties
-                    .Select(property => $"{property.Name}={TryGetPropertyValue(entity, property.Name)}")
-                    .Where(value => !string.IsNullOrWhiteSpace(value)));
-
-            return new ContentHubManifestRow(
-                rowId,
-                taxonomy,
-                sourceAssetId,
-                entity.DefinitionName,
-                fileName,
-                title,
-                properties);
-        }
-
-        private static string? TryGetPropertyValue(IEntity entity, string propertyName)
-        {
-            try
-            {
-                var value = entity.GetPropertyValue(propertyName);
-                return value?.ToString();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-    }
+        string Properties);
 }

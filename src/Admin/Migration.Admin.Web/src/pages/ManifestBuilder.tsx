@@ -30,9 +30,7 @@ export function ManifestBuilder() {
   );
 
   const matchingCredentials = useMemo(
-    () => credentials.filter(credential =>
-      credential.connectorRole?.toLowerCase() === "source" &&
-      credential.connectorType?.toLowerCase() === sourceType.toLowerCase()),
+    () => credentials.filter(credential => credentialMatchesSource(credential, sourceType)),
     [credentials, sourceType]
   );
 
@@ -85,6 +83,24 @@ export function ManifestBuilder() {
 
   function setOption(name: string, value: string) {
     setOptions(current => ({ ...current, [name]: value }));
+  }
+
+  function credentialMatchesSource(credential: CredentialSetSummary, selectedSourceType: string) {
+    if (credential.connectorRole?.toLowerCase() !== "source") {
+      return false;
+    }
+
+    const credentialType = credential.connectorType?.toLowerCase();
+    const normalizedSourceType = selectedSourceType.toLowerCase();
+
+    if (credentialType === normalizedSourceType) {
+      return true;
+    }
+
+    return normalizedSourceType === "contenthub" &&
+      (credentialType === "sitecore" ||
+        credentialType === "content hub" ||
+        credentialType === "contenthub");
   }
 
   function isFolderListOption(name: string) {
@@ -200,7 +216,7 @@ export function ManifestBuilder() {
                   <textarea
                     value={options[option.name] ?? ""}
                     onChange={event => setOption(option.name, event.target.value)}
-                    placeholder={option.placeholder ?? ""}
+                    placeholder={option.placeholder ?? "/content/dam/example-folder"}
                     required={option.required}
                     rows={6}
                   />

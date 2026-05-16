@@ -107,6 +107,11 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
             services.AddSingleton<IAssetSourceConnector, SitecoreSourceConnector>();
         }
 
+        if (IsEnabled(options.EnabledSources, "Bynder", options.RegisterAllWhenEmpty))
+        {
+            services.AddBynderSourceConnector(configuration);
+        }
+
         if (IsEnabled(options.EnabledSources, "WebDam", options.RegisterAllWhenEmpty))
         {
             services.AddWebDamSourceConnector(configuration);
