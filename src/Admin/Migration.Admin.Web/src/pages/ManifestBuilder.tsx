@@ -29,10 +29,27 @@ export function ManifestBuilder() {
     [selectedSource, serviceName]
   );
 
-  const matchingCredentials = useMemo(
-    () => credentials.filter(credential => credentialMatchesSource(credential, sourceType)),
-    [credentials, sourceType]
-  );
+    const matchingCredentials = useMemo(
+        () => credentials.filter(credential => {
+            const role = credential.connectorRole?.toLowerCase();
+            const credentialType = credential.connectorType?.toLowerCase();
+            const selectedSourceType = sourceType.toLowerCase();
+
+            if (role !== "source") {
+                return false;
+            }
+
+            if (credentialType === selectedSourceType) {
+                return true;
+            }
+
+            return selectedSourceType === "contenthub" &&
+                (credentialType === "sitecore" ||
+                    credentialType === "contenthub" ||
+                    credentialType === "content hub");
+        }),
+        [credentials, sourceType]
+    );
 
   useEffect(() => {
     async function load() {

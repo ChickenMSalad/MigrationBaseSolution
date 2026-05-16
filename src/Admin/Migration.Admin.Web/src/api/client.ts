@@ -244,18 +244,39 @@ function withFallbackManifestSources<T extends ManifestBuilderSourceDescriptorLi
     });
   }
 
-
-  if (!result.some(source => normalizeConnectorKey(source.sourceType) === "bynder")) {
+  if (!result.some(source => normalizeConnectorKey(source.sourceType) === "contenthub")) {
     result.push({
-      sourceType: "Bynder",
-      displayName: "Bynder",
+      sourceType: "contenthub",
+      displayName: "ContentHub",
       services: [
         {
-          sourceType: "Bynder",
-          serviceName: "ExportAssets",
-          displayName: "Bynder asset export manifest",
-          description: "Builds a Bynder manifest by exporting all assets.",
-          options: []
+          sourceType: "contenthub",
+          serviceName: "export-taxonomies",
+          displayName: "Content Hub taxonomy export manifest",
+          description: "Builds a Sitecore Content Hub manifest from one or more taxonomies. Use * or all to export all assets.",
+          options: [
+            {
+              name: "taxonomies",
+              label: "Taxonomies",
+              description: "One Content Hub taxonomy value per line. Use * or all to export all assets.",
+              required: true,
+              placeholder: "*"
+            },
+            {
+              name: "taxonomyRelation",
+              label: "Taxonomy relation",
+              description: "Content Hub relation used to find assets for each taxonomy.",
+              required: false,
+              placeholder: "AssetTypeToAsset"
+            },
+            {
+              name: "baseUrl",
+              label: "Base URL",
+              description: "Optional Content Hub/fake Content Hub base URL. Credential BaseUrl is used when selected.",
+              required: false,
+              placeholder: "http://98.81.167.252:8095/"
+            }
+          ]
         }
       ]
     });
