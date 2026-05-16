@@ -134,6 +134,22 @@ public static class RunEndpointExtensions
             .Produces<MigrationRunControlRecord>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
+        api.MapGet("/runs/{runId}/lifecycle", async (
+                string runId,
+                IAdminProjectStore store,
+                CancellationToken cancellationToken) =>
+            {
+                var run = await store.GetRunAsync(runId, cancellationToken).ConfigureAwait(false);
+                return run is null
+                    ? Results.NotFound()
+                    : Results.Ok(RunLifecycleClassifier.Describe(run));
+            })
+            .WithName("GetRunLifecycle")
+            .WithTags("Runs")
+            .WithSummary("Gets normalized lifecycle semantics for a migration run.")
+            .Produces<RunLifecycleDescriptor>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
         api.MapPost("/runs/{runId}/cancel", async (
                 string runId,
                 IAdminProjectStore store,
@@ -145,7 +161,7 @@ public static class RunEndpointExtensions
                     return Results.NotFound();
                 }
 
-                if (run.Status is AdminRunStatuses.Completed or AdminRunStatuses.Failed or AdminRunStatuses.Canceled)
+                if (!RunLifecycleClassifier.CanCancel(run.Status))
                 {
                     return Results.Conflict(new RunStateConflictResponse($"Run is already terminal: {run.Status}."));
                 }
