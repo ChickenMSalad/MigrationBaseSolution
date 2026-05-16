@@ -13,29 +13,29 @@ public static class ConnectorCapabilityProjection
     {
         ArgumentNullException.ThrowIfNull(descriptor);
 
-        var key = FirstNonEmpty(
+        var rawKey = FirstNonEmpty(
             GetString(descriptor, "Type"),
             GetString(descriptor, "SourceType"),
             GetString(descriptor, "TargetType"),
             GetString(descriptor, "ManifestType"),
             GetString(descriptor, "Name"));
 
-        key = ConnectorDescriptorAliases.Normalize(key);
+        var normalizedKey = ConnectorDescriptorAliases.Normalize(rawKey);
 
         var displayName = FirstNonEmpty(
             GetString(descriptor, "DisplayName"),
             GetString(descriptor, "Name"),
-            key);
+            normalizedKey);
 
         var catalogDescription = FirstNonEmptyOrNull(GetString(descriptor, "Description"));
-        var enrichment = ConnectorCapabilityRegistry.Get(role, key);
+        var enrichment = ConnectorCapabilityRegistry.Get(role, normalizedKey);
 
         return new ConnectorCapabilityDescriptor(
-            Key: key,
+            Key: normalizedKey,
             DisplayName: displayName,
             Role: role,
             Description: catalogDescription ?? enrichment.Description,
-            Aliases: ConnectorDescriptorAliases.GetAliases(key).ToArray(),
+            Aliases: ConnectorDescriptorAliases.GetAliases(normalizedKey).ToArray(),
             SupportedOperations: MergeOperations(GetSupportedOperations(role), enrichment.SupportedOperations),
             ConfigurationFields: enrichment.ConfigurationFields,
             CredentialRequirements: enrichment.CredentialRequirements,
