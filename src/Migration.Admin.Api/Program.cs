@@ -31,6 +31,7 @@ api.MapProjectEndpoints();
 api.MapRunEndpoints();
 api.MapRunExecutionPolicyEndpoints();
 api.MapCloudPlatformEndpoints();
+api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
 api.MapQueueProviderPlanEndpoints();
 api.MapArtifactStoragePlanEndpoints();
@@ -48,6 +49,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
