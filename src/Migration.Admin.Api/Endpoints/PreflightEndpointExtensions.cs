@@ -14,75 +14,93 @@ public static class PreflightEndpointExtensions
                 IMigrationPreflightService preflight,
                 CancellationToken cancellationToken) =>
             {
-                var result = await preflight.RunAsync(new PreflightRequest(null, job), cancellationToken).ConfigureAwait(false);
+                var result = await preflight
+                    .RunAsync(new PreflightRequest(null, job), cancellationToken)
+                    .ConfigureAwait(false);
+
                 return Results.Ok(result);
             })
             .WithTags("Preflight")
             .WithSummary("Runs synchronous preflight validation for a supplied job definition without queueing a worker run.");
 
-        //api.MapPost("/projects/{projectId}/preflight", async (
-        //        string projectId,
-        //        CreatePreflightRequest request,
-        //        IAdminProjectStore store,
-        //        ArtifactPathResolver artifactPathResolver,
-        //        IMigrationPreflightService preflight,
-        //        CancellationToken cancellationToken) =>
-        //    {
-        //        var project = await store.GetProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
-        //        if (project is null)
-        //        {
-        //            return Results.NotFound(new { error = $"Project '{projectId}' was not found." });
-        //        }
+        // UI-safe synchronous preflight endpoint.
+        // Keep this separate from POST /api/projects/{projectId}/preflight, which queues a worker preflight run.
+        api.MapPost("/projects/{projectId}/preflight/run", async (
+                string projectId,
+                CreatePreflightRequest request,
+                IAdminProjectStore store,
+                ArtifactPathResolver artifactPathResolver,
+                IMigrationPreflightService preflight,
+                CancellationToken cancellationToken) =>
+            {
+                var project = await store.GetProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
+                if (project is null)
+                {
+                    return Results.NotFound(new { error = $"Project '{projectId}' was not found." });
+                }
 
-        //        CreatePreflightRequest resolvedRequest;
-        //        try
-        //        {
-        //            resolvedRequest = await artifactPathResolver.ResolvePreflightRequestAsync(project, request, cancellationToken).ConfigureAwait(false);
-        //        }
-        //        catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException)
-        //        {
-        //            return Results.BadRequest(new { error = ex.Message });
-        //        }
+                CreatePreflightRequest resolvedRequest;
+                try
+                {
+                    resolvedRequest = await artifactPathResolver
+                        .ResolvePreflightRequestAsync(project, request, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException)
+                {
+                    return Results.BadRequest(new { error = ex.Message });
+                }
 
-        //        if (string.IsNullOrWhiteSpace(resolvedRequest.ManifestPath) || string.IsNullOrWhiteSpace(resolvedRequest.MappingProfilePath))
-        //        {
-        //            return Results.BadRequest(new { error = "ManifestPath and MappingProfilePath are required. Bind artifacts to the project or supply path overrides." });
-        //        }
+                if (string.IsNullOrWhiteSpace(resolvedRequest.ManifestPath) ||
+                    string.IsNullOrWhiteSpace(resolvedRequest.MappingProfilePath))
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = "ManifestPath and MappingProfilePath are required. Bind artifacts to the project or supply path overrides."
+                    });
+                }
 
-        //        var jobName = string.IsNullOrWhiteSpace(resolvedRequest.JobName)
-        //            ? $"{project.ProjectId}-preflight-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"
-        //            : resolvedRequest.JobName.Trim();
+                var jobName = string.IsNullOrWhiteSpace(resolvedRequest.JobName)
+                    ? $"{project.ProjectId}-preflight-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"
+                    : resolvedRequest.JobName.Trim();
 
-        //        var settings = MergeSettings(project.Settings, resolvedRequest.Settings);
-        //        var validateSourceSample = GetBoolean(settings, "Preflight:ValidateSourceSample") || GetBoolean(settings, "ValidateSourceSample");
-        //        var sourceSampleSize = GetInt(settings, "Preflight:SourceSampleSize", 0);
-        //        var maxRows = GetInt(settings, "Preflight:MaxRows", 250);
+                var settings = MergeSettings(project.Settings, resolvedRequest.Settings);
+                var validateSourceSample = GetBoolean(settings, "Preflight:ValidateSourceSample") ||
+                                           GetBoolean(settings, "ValidateSourceSample");
+                var sourceSampleSize = GetInt(settings, "Preflight:SourceSampleSize", 0);
+                var maxRows = GetInt(settings, "Preflight:MaxRows", 250);
 
-        //        var job = new MigrationJobDefinition
-        //        {
-        //            JobName = jobName,
-        //            SourceType = project.SourceType,
-        //            TargetType = project.TargetType,
-        //            ManifestType = project.ManifestType,
-        //            ManifestPath = resolvedRequest.ManifestPath,
-        //            MappingProfilePath = resolvedRequest.MappingProfilePath,
-        //            DryRun = true,
-        //            Parallelism = 1,
-        //            Settings = settings
-        //        };
+                var job = new MigrationJobDefinition
+                {
+                    JobName = jobName,
+                    SourceType = project.SourceType,
+                    TargetType = project.TargetType,
+                    ManifestType = project.ManifestType,
+                    ManifestPath = resolvedRequest.ManifestPath,
+                    MappingProfilePath = resolvedRequest.MappingProfilePath,
+                    DryRun = true,
+                    Parallelism = 1,
+                    Settings = settings
+                };
 
-        //        var result = await preflight.RunAsync(new PreflightRequest(project.ProjectId, job, maxRows, validateSourceSample, sourceSampleSize), cancellationToken).ConfigureAwait(false);
-        //        return Results.Ok(result);
-        //    })
-        //    .WithTags("Preflight")
-        //    .WithSummary("Runs synchronous preflight validation for a project using bound artifacts or path overrides.");
+                var result = await preflight
+                    .RunAsync(new PreflightRequest(project.ProjectId, job, maxRows, validateSourceSample, sourceSampleSize), cancellationToken)
+                    .ConfigureAwait(false);
+
+                return Results.Ok(result);
+            })
+            .WithTags("Preflight")
+            .WithSummary("Runs synchronous preflight validation for a project using bound artifacts or path overrides.");
 
         return api;
     }
 
-    private static Dictionary<string, string?> MergeSettings(Dictionary<string, string?> projectSettings, Dictionary<string, string?>? requestSettings)
+    private static Dictionary<string, string?> MergeSettings(
+        Dictionary<string, string?> projectSettings,
+        Dictionary<string, string?>? requestSettings)
     {
         var merged = new Dictionary<string, string?>(projectSettings, StringComparer.OrdinalIgnoreCase);
+
         if (requestSettings is not null)
         {
             foreach (var pair in requestSettings)
@@ -90,12 +108,13 @@ public static class PreflightEndpointExtensions
                 merged[pair.Key] = pair.Value;
             }
         }
+
         return merged;
     }
 
-    private static bool GetBoolean(Dictionary<string, string?> settings, string key)
-        => settings.TryGetValue(key, out var raw) && bool.TryParse(raw, out var parsed) && parsed;
+    private static bool GetBoolean(Dictionary<string, string?> settings, string key) =>
+        settings.TryGetValue(key, out var raw) && bool.TryParse(raw, out var parsed) && parsed;
 
-    private static int GetInt(Dictionary<string, string?> settings, string key, int fallback)
-        => settings.TryGetValue(key, out var raw) && int.TryParse(raw, out var parsed) ? parsed : fallback;
+    private static int GetInt(Dictionary<string, string?> settings, string key, int fallback) =>
+        settings.TryGetValue(key, out var raw) && int.TryParse(raw, out var parsed) ? parsed : fallback;
 }

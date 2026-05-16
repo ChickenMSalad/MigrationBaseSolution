@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../api/client";
+import { api } from "../api/client"; import { runProjectPreflight } from "../api/preflight";
 import { Card, EmptyState, JsonBlock } from "../components/Card";
 import { LoadingError } from "../components/LoadingError";
 import type { ArtifactRecord, PreflightResult, ProjectRecord } from "../types/api";
@@ -65,7 +65,7 @@ export function Preflight() {
     setError(null);
     setResult(null);
     try {
-      const preflight = await api.runPreflight(projectId, {
+      const preflight = await runProjectPreflight(projectId, {
         jobName,
         manifestPath: manifestPath.trim() || null,
         mappingProfilePath: mappingProfilePath.trim() || null,
