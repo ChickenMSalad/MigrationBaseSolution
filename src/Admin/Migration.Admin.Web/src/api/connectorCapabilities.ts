@@ -2,10 +2,33 @@ const API_BASE_URL = (import.meta.env.VITE_ADMIN_API_BASE_URL ?? '').replace(/\/
 
 export type ConnectorRole = 'source' | 'target' | 'manifestProvider';
 
+export type ConnectorFieldType =
+  | 'text'
+  | 'password'
+  | 'url'
+  | 'path'
+  | 'boolean'
+  | 'number'
+  | 'select'
+  | 'multiText'
+  | 'json';
+
+export type ConnectorSecretKind =
+  | 'username'
+  | 'password'
+  | 'bearerToken'
+  | 'apiKey'
+  | 'apiSecret'
+  | 'oauthClientId'
+  | 'oauthClientSecret'
+  | 'connectionString'
+  | 'accessKeyId'
+  | 'secretAccessKey';
+
 export type ConnectorConfigurationFieldDescriptor = {
   name: string;
   label: string;
-  fieldType: string;
+  fieldType: ConnectorFieldType | string;
   required: boolean;
   description?: string | null;
   defaultValue?: string | null;
@@ -15,7 +38,7 @@ export type ConnectorConfigurationFieldDescriptor = {
 export type ConnectorCredentialRequirementDescriptor = {
   name: string;
   label: string;
-  secretKind: string;
+  secretKind: ConnectorSecretKind | string;
   required: boolean;
   description?: string | null;
 };
@@ -75,4 +98,16 @@ export function hasConnectorOperation(
   return descriptor.supportedOperations.some(
     (candidate) => candidate.toLocaleLowerCase() === operation.toLocaleLowerCase()
   );
+}
+
+export function getRequiredConfigurationFields(
+  descriptor: ConnectorCapabilityDescriptor | undefined | null
+): ConnectorConfigurationFieldDescriptor[] {
+  return descriptor?.configurationFields.filter((field) => field.required) ?? [];
+}
+
+export function getRequiredCredentialRequirements(
+  descriptor: ConnectorCapabilityDescriptor | undefined | null
+): ConnectorCredentialRequirementDescriptor[] {
+  return descriptor?.credentialRequirements.filter((requirement) => requirement.required) ?? [];
 }

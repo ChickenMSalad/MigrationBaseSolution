@@ -4,9 +4,8 @@ namespace Migration.ControlPlane.Connectors;
 
 /// <summary>
 /// Converts existing connector catalog descriptors into a stable capability
-/// contract. The projection is deliberately conservative: it preserves existing
-/// descriptor metadata when present and supplies cloud-roadmap defaults without
-/// changing connector registrations or runtime behavior.
+/// contract. The projection preserves the existing catalog as source of truth
+/// and enriches the output with cloud-facing configuration/credential metadata.
 /// </summary>
 public static class ConnectorCapabilityProjection
 {
@@ -28,20 +27,21 @@ public static class ConnectorCapabilityProjection
             GetString(descriptor, "Name"),
             key);
 
-        var description = FirstNonEmptyOrNull(GetString(descriptor, "Description"));
+        var catalogDescription = FirstNonEmptyOrNull(GetString(descriptor, "Description"));
+        var enrichment = ConnectorCapabilityRegistry.Get(role, key);
 
         return new ConnectorCapabilityDescriptor(
             Key: key,
             DisplayName: displayName,
             Role: role,
-            Description: description,
+            Description: catalogDescription ?? enrichment.Description,
             Aliases: ConnectorDescriptorAliases.GetAliases(key).ToArray(),
-            SupportedOperations: GetSupportedOperations(role),
-            ConfigurationFields: Array.Empty<ConnectorConfigurationFieldDescriptor>(),
-            CredentialRequirements: Array.Empty<ConnectorCredentialRequirementDescriptor>(),
-            SupportsManifestGeneration: role is ConnectorCapabilityRoles.Source or ConnectorCapabilityRoles.ManifestProvider,
-            SupportsValidation: true,
-            SupportsDryRun: true);
+            SupportedOperations: MergeOperations(GetSupportedOperations(role), enrichment.SupportedOperations),
+            ConfigurationFields: enrichment.ConfigurationFields,
+            CredentialRequirements: enrichment.CredentialRequirements,
+            SupportsManifestGeneration: enrichment.SupportsManifestGeneration || role is ConnectorCapabilityRoles.Source or ConnectorCapabilityRoles.ManifestProvider,
+            SupportsValidation: enrichment.SupportsValidation,
+            SupportsDryRun: enrichment.SupportsDryRun);
     }
 
     private static IReadOnlyList<string> GetSupportedOperations(string role) =>
@@ -52,6 +52,22 @@ public static class ConnectorCapabilityProjection
             ConnectorCapabilityRoles.ManifestProvider => new[] { "load", "validate", "schema" },
             _ => new[] { "validate" }
         };
+
+    private static IReadOnlyList<string> MergeOperations(
+        IReadOnlyList<string> defaults,
+        IReadOnlyList<string> configured)
+    {
+        if (configured.Count == 0)
+        {
+            return defaults;
+        }
+
+        return defaults
+            .Concat(configured)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
 
     private static string FirstNonEmpty(params string?[] values)
     {
