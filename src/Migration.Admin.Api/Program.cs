@@ -29,6 +29,7 @@ api.MapProjectCredentialBindingEndpoints();
 api.MapPreflightEndpoints();
 api.MapProjectEndpoints();
 api.MapRunEndpoints();
+api.MapRunExecutionPolicyEndpoints();
 api.MapConnectorCatalogEndpoints();
 api.MapConnectorCapabilityEndpoints();
 
@@ -40,4 +41,5 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
