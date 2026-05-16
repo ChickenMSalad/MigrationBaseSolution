@@ -81,43 +81,34 @@ export function ManifestBuilder() {
     setResult(null);
   }, [selectedSource, serviceName]);
 
+  function credentialMatchesSource(credential: CredentialSetSummary, selectedSourceType: string) {
+    const credentialType = credential.connectorType?.toLowerCase();
+    const credentialRole = credential.connectorRole?.toLowerCase();
+    const normalizedSourceType = selectedSourceType.toLowerCase();
+
+    if (credentialType !== normalizedSourceType) {
+      return false;
+    }
+
+    if (normalizedSourceType === "bynder") {
+      return credentialRole === "source" || credentialRole === "target";
+    }
+
+    return credentialRole === "source";
+  }
+
   function setOption(name: string, value: string) {
     setOptions(current => ({ ...current, [name]: value }));
   }
 
-  function credentialMatchesSource(credential: CredentialSetSummary, selectedSourceType: string) {
-    if (credential.connectorRole?.toLowerCase() !== "source") {
-      return false;
-    }
-
-    const credentialType = credential.connectorType?.toLowerCase();
-    const normalizedSourceType = selectedSourceType.toLowerCase();
-
-    if (credentialType === normalizedSourceType) {
-      return true;
-    }
-
-    return normalizedSourceType === "contenthub" &&
-      (credentialType === "sitecore" ||
-        credentialType === "content hub" ||
-        credentialType === "contenthub");
-  }
-
   function isFolderListOption(name: string) {
     const normalizedName = name.toLowerCase();
-    const normalizedSourceType = sourceType.toLowerCase();
 
-    return (normalizedSourceType === "aem" &&
+    return sourceType.toLowerCase() === "aem" &&
       (normalizedName === "folders" ||
         normalizedName === "folderpaths" ||
         normalizedName === "exportfolders" ||
-        normalizedName === "export.folders")) ||
-      (normalizedSourceType === "contenthub" &&
-        (normalizedName === "taxonomies" ||
-          normalizedName === "taxonomy" ||
-          normalizedName === "taxonomylist" ||
-          normalizedName === "exporttaxonomies" ||
-          normalizedName === "export.taxonomies"));
+        normalizedName === "export.folders");
   }
 
   async function buildManifest() {

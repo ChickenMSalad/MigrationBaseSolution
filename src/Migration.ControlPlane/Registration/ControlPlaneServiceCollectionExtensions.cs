@@ -36,7 +36,7 @@ public static class ControlPlaneServiceCollectionExtensions
         // Manifest builders exposed through /api/manifest-builder.
         services.AddSingleton<ISourceManifestService, SharePointRcloneSourceManifestService>();
         services.AddSingleton<ISourceManifestService, AemExportFoldersSourceManifestService>();
-        services.AddSingleton<ISourceManifestService, ContentHubTaxonomiesSourceManifestService>();
+        services.AddSingleton<ISourceManifestService, BynderExportAssetsSourceManifestService>();
 
         // Credential management is additive. Legacy hosts continue to use existing appsettings/user-secrets binding.
         services.AddSingleton<CredentialSetFactory>();
