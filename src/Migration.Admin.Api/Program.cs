@@ -1,4 +1,4 @@
-using Migration.Admin.Api.Endpoints;
+﻿using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Registration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +30,7 @@ api.MapPreflightEndpoints();
 api.MapProjectEndpoints();
 api.MapRunEndpoints();
 api.MapConnectorCatalogEndpoints();
+api.MapConnectorCapabilityEndpoints();
 
 // These extensions include their /api route prefix internally. Keep them on app, not on the /api group.
 app.MapArtifactEndpoints();
@@ -39,3 +40,4 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
