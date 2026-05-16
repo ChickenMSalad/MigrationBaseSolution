@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.ConfigureAdminApiConfiguration();
 builder.LogAdminApiConfiguration();
 
-builder.Services.AddMigrationAdminApiOpenApi();
+Migration.Admin.Api.Registration.AdminApiOpenApiServiceCollectionExtensions.AddMigrationAdminApiOpenApi(builder.Services);
 builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);
 
 var app = builder.Build();
@@ -19,7 +19,7 @@ app.UseSwaggerUI(options =>
     options.DocumentTitle = "Migration Admin API";
 });
 
-app.MapAdminSystemEndpoints();
+Migration.Admin.Api.Endpoints.AdminSystemEndpointExtensions.MapAdminSystemEndpoints(app);
 
 var api = app.MapGroup("/api");
 

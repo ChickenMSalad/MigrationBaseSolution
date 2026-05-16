@@ -1,12 +1,12 @@
 using System.Reflection;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
-namespace Migration.Admin.Api.Configuration;
+namespace Migration.Workers.QueueExecutor.Configuration;
 
-public static class AdminApiConfigurationExtensions
+public static class QueueExecutorConfigurationExtensions
 {
-    public static WebApplicationBuilder ConfigureAdminApiConfiguration(this WebApplicationBuilder builder)
+    public static HostApplicationBuilder ConfigureQueueExecutorConfiguration(this HostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
@@ -22,7 +22,7 @@ public static class AdminApiConfigurationExtensions
         return builder;
     }
 
-    public static WebApplicationBuilder LogAdminApiConfiguration(this WebApplicationBuilder builder)
+    public static HostApplicationBuilder LogQueueExecutorConfiguration(this HostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
