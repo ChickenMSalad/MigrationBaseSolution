@@ -1,0 +1,38 @@
+{
+  "Cloud": {
+    "DeploymentProfile": "test",
+    "HostKind": "azureAppService",
+    "Region": "eastus",
+    "Sku": "P1v3",
+    "CredentialMode": "managedIdentity",
+    "ArtifactMode": "azureBlob",
+    "KeyVaultUri": "https://<key-vault-name>.vault.azure.net/",
+    "ArtifactContainerName": "migration-artifacts-test",
+    "ArtifactStorageAccountName": "<storage-account-name>",
+    "QueueStorageAccountName": "<storage-account-name>",
+    "RequiresHttps": true,
+    "RequiresAuth": true,
+    "RequiresPrivateNetworking": true,
+    "EnablesDiagnostics": true,
+    "EnablesHealthProbes": true
+  },
+  "Workspace": {
+    "TenantMode": "singleTenant",
+    "TenantEnforced": true,
+    "TenantId": "<tenant-id>",
+    "WorkspaceId": "test",
+    "DisplayName": "Test Workspace"
+  },
+  "ControlPlane": {
+    "StorageRoot": "az://migration-control-plane-test"
+  },
+  "MigrationRunQueue": {
+    "Provider": "AzureQueue",
+    "QueueName": "migration-runs-test",
+    "StorageAccountName": "<storage-account-name>"
+  },
+  "Auth": {
+    "Authority": "https://login.microsoftonline.com/<tenant-id>/v2.0",
+    "Audience": "api://<admin-api-client-id>"
+  }
+}

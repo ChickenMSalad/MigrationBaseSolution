@@ -1,0 +1,29 @@
+{
+  "Cloud": {
+    "DeploymentProfile": "local-dev",
+    "HostKind": "localDevelopment",
+    "Region": "local",
+    "Sku": "local",
+    "CredentialMode": "userSecrets",
+    "ArtifactMode": "localFileSystem",
+    "RequiresHttps": false,
+    "RequiresAuth": false,
+    "RequiresPrivateNetworking": false,
+    "EnablesDiagnostics": true,
+    "EnablesHealthProbes": true
+  },
+  "Workspace": {
+    "TenantMode": "development",
+    "TenantEnforced": false,
+    "WorkspaceId": "default",
+    "DisplayName": "Default Workspace"
+  },
+  "ControlPlane": {
+    "StorageRoot": ".migration-control-plane"
+  },
+  "MigrationRunQueue": {
+    "Provider": "AzureQueue",
+    "QueueName": "migration-runs",
+    "StorageAccountName": ""
+  }
+}
