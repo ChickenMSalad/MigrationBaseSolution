@@ -1,4 +1,5 @@
-﻿using Migration.ControlPlane.Telemetry;
+﻿using Migration.ControlPlane.Operations;
+using Migration.ControlPlane.Telemetry;
 using Migration.ControlPlane.Audit;
 using Migration.ControlPlane.Queues;
 using Migration.ControlPlane.Credentials;
@@ -32,6 +33,7 @@ builder.Services.AddAuditPersistence(builder.Configuration);
 builder.Services.AddAuditEventWriter();
 builder.Services.AddTelemetrySink(builder.Configuration);
 builder.Services.AddTelemetryEventWriter();
+builder.Services.AddOperationalReadiness();
 
 var app = builder.Build();
 
@@ -80,6 +82,7 @@ api.MapTelemetrySinkEndpoints();
 api.MapTelemetryEventWriterEndpoints();
 api.MapQueueTelemetryEventEndpoints();
 api.MapCloudOperationTelemetryEndpoints();
+api.MapOperationalReadinessEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
@@ -111,6 +114,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
