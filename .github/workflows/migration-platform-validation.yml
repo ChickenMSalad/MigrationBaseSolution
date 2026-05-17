@@ -1,0 +1,77 @@
+name: migration-platform-validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+
+jobs:
+  backend:
+    name: Backend build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Admin API
+        run: dotnet restore .\src\Migration.Admin.Api\Migration.Admin.Api.csproj
+
+      - name: Build Admin API
+        run: dotnet build .\src\Migration.Admin.Api\Migration.Admin.Api.csproj --no-restore
+
+      - name: Restore Queue Executor
+        run: dotnet restore .\src\Workers\Migration.Workers.QueueExecutor\Migration.Workers.QueueExecutor.csproj
+
+      - name: Build Queue Executor
+        run: dotnet build .\src\Workers\Migration.Workers.QueueExecutor\Migration.Workers.QueueExecutor.csproj --no-restore
+
+  frontend:
+    name: Frontend build
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        working-directory: src/Admin/Migration.Admin.Web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: src/Admin/Migration.Admin.Web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+  cloud-diagnostics:
+    name: Cloud diagnostics template validation
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate cloud diagnostic templates
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File .\tools\cloud\validate-cloud-diagnostics.ps1 -SkipHttp -Strict
