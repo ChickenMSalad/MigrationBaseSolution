@@ -39,6 +39,7 @@ builder.Services.AddAuthPolicyReadiness();
 builder.Services.AddEndpointPolicyInventory();
 builder.Services.AddCredentialAccessPolicyReadiness();
 builder.Services.AddAuthEnforcementDiagnostics();
+builder.Services.AddProductionSafetyGates();
 
 var app = builder.Build();
 
@@ -92,6 +93,7 @@ api.MapAuthPolicyReadinessEndpoints();
 api.MapEndpointPolicyInventoryEndpoints();
 api.MapCredentialAccessPolicyReadinessEndpoints();
 api.MapAuthEnforcementDiagnosticsEndpoints();
+api.MapProductionSafetyGateEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
@@ -123,6 +125,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
