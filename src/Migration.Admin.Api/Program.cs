@@ -61,6 +61,7 @@ api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
 api.MapQueueProviderPlanEndpoints();
+api.MapQueueContractDiagnosticsEndpoints();
 api.MapArtifactStoragePlanEndpoints();
 api.MapCredentialProviderPlanEndpoints();
 api.MapWorkspaceContextEndpoints();
@@ -76,6 +77,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
