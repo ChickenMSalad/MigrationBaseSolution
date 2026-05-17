@@ -20,6 +20,7 @@ builder.Services.AddArtifactManifestIndex();
 builder.Services.AddCloudCredentialPlanning(builder.Configuration);
 builder.Services.AddCloudCredentialValueProvider(builder.Configuration);
 builder.Services.AddQueueDispatchProvider(builder.Configuration);
+builder.Services.AddQueueReceiveProvider(builder.Configuration);
 
 var app = builder.Build();
 
@@ -66,6 +67,7 @@ api.MapQueueProviderPlanEndpoints();
 api.MapQueueContractDiagnosticsEndpoints();
 api.MapQueueIdempotencyEndpoints();
 api.MapQueueDispatchDiagnosticsEndpoints();
+api.MapQueueReceiveDiagnosticsEndpoints();
 api.MapArtifactStoragePlanEndpoints();
 api.MapCredentialProviderPlanEndpoints();
 api.MapWorkspaceContextEndpoints();
@@ -81,6 +83,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
