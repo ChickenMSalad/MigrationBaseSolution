@@ -1,0 +1,40 @@
+services:
+  admin-api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/AdminApi.Dockerfile
+    image: migration-admin-api:local
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ControlPlane__StorageRoot: /data/control-plane
+      MigrationRunQueue__Provider: AzureQueue
+      MigrationRunQueue__QueueName: migration-runs
+      Cloud__DeploymentProfile: local-container
+      Cloud__HostKind: containerApp
+      Cloud__CredentialMode: userSecrets
+      Cloud__ArtifactMode: localFileSystem
+    volumes:
+      - migration-control-plane:/data/control-plane
+
+  queue-executor:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/QueueExecutor.Dockerfile
+    image: migration-queue-executor:local
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ControlPlane__StorageRoot: /data/control-plane
+      MigrationRunQueue__Provider: AzureQueue
+      MigrationRunQueue__QueueName: migration-runs
+      Cloud__DeploymentProfile: local-container
+      Cloud__HostKind: containerApp
+      Cloud__CredentialMode: userSecrets
+      Cloud__ArtifactMode: localFileSystem
+    volumes:
+      - migration-control-plane:/data/control-plane
+
+volumes:
+  migration-control-plane:
