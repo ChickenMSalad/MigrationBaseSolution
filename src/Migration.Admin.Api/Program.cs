@@ -1,4 +1,5 @@
-﻿using Migration.ControlPlane.Credentials;
+﻿using Migration.ControlPlane.Queues;
+using Migration.ControlPlane.Credentials;
 using Migration.ControlPlane.Storage;
 using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Registration;
@@ -18,6 +19,7 @@ builder.Services.AddArtifactStorage();
 builder.Services.AddArtifactManifestIndex();
 builder.Services.AddCloudCredentialPlanning(builder.Configuration);
 builder.Services.AddCloudCredentialValueProvider(builder.Configuration);
+builder.Services.AddQueueDispatchProvider(builder.Configuration);
 
 var app = builder.Build();
 
@@ -63,6 +65,7 @@ api.MapCloudReadinessEndpoints();
 api.MapQueueProviderPlanEndpoints();
 api.MapQueueContractDiagnosticsEndpoints();
 api.MapQueueIdempotencyEndpoints();
+api.MapQueueDispatchDiagnosticsEndpoints();
 api.MapArtifactStoragePlanEndpoints();
 api.MapCredentialProviderPlanEndpoints();
 api.MapWorkspaceContextEndpoints();
@@ -78,6 +81,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
