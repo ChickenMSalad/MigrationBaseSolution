@@ -1,4 +1,5 @@
-﻿using Migration.ControlPlane.Queues;
+﻿using Migration.ControlPlane.Audit;
+using Migration.ControlPlane.Queues;
 using Migration.ControlPlane.Credentials;
 using Migration.ControlPlane.Storage;
 using Migration.Admin.Api.Endpoints;
@@ -26,6 +27,7 @@ builder.Services.AddQueueExecutionPlanning();
 builder.Services.AddQueueExecutorCoordinator(builder.Configuration);
 builder.Services.AddQueueExecutionObservability();
 builder.Services.AddQueueExecutionReadiness();
+builder.Services.AddAuditPersistence(builder.Configuration);
 
 var app = builder.Build();
 
@@ -64,6 +66,7 @@ api.MapArtifactStorageBridgeEndpoints();
 api.MapAuthorizationPolicyPlanEndpoints();
 api.MapAuthenticationConfigurationEndpoints();
 api.MapAuditEventContractEndpoints();
+api.MapAuditPersistenceEndpoints();
 api.MapTelemetryCorrelationEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
@@ -96,6 +99,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
