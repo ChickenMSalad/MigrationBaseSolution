@@ -1,0 +1,27 @@
+{
+  "MigrationRunQueue": {
+    "Provider": "AzureQueue",
+    "QueueName": "migration-runs",
+    "StorageAccountName": ""
+  },
+  "QueueWorkerLoop": {
+    "Enabled": false,
+    "DryRun": true,
+    "MaxMessages": 1,
+    "PollIntervalSeconds": 10,
+    "VisibilityTimeoutSeconds": 300,
+    "CompleteMessages": false
+  },
+  "QueueExecutorCoordinator": {
+    "DryRun": true,
+    "CompleteMessages": false,
+    "WriteFailureArtifacts": true,
+    "MaxMessages": 1
+  },
+  "QueuePoisonHandling": {
+    "MaxAttempts": 5,
+    "Strategy": "failureArtifact",
+    "PersistFailureArtifact": true,
+    "FailureArtifactKind": "queue-failures"
+  }
+}
