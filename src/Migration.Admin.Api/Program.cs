@@ -14,6 +14,7 @@ builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, build
 builder.Services.AddCloudStoragePathResolution(builder.Configuration);
 builder.Services.AddCloudBinaryStorage(builder.Configuration);
 builder.Services.AddArtifactStorage();
+builder.Services.AddArtifactManifestIndex();
 
 var app = builder.Build();
 
@@ -44,6 +45,7 @@ api.MapCloudPlatformEndpoints();
 api.MapCloudStoragePlanEndpoints();
 api.MapCloudBinaryStorageProbeEndpoints();
 api.MapArtifactStorageProbeEndpoints();
+api.MapArtifactManifestIndexEndpoints();
 api.MapAuthorizationPolicyPlanEndpoints();
 api.MapAuthenticationConfigurationEndpoints();
 api.MapAuditEventContractEndpoints();
@@ -67,6 +69,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
