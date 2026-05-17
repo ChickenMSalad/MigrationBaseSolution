@@ -37,6 +37,7 @@ builder.Services.AddTelemetryEventWriter();
 builder.Services.AddOperationalReadiness();
 builder.Services.AddAuthPolicyReadiness();
 builder.Services.AddEndpointPolicyInventory();
+builder.Services.AddCredentialAccessPolicyReadiness();
 
 var app = builder.Build();
 
@@ -88,6 +89,7 @@ api.MapCloudOperationTelemetryEndpoints();
 api.MapOperationalReadinessEndpoints();
 api.MapAuthPolicyReadinessEndpoints();
 api.MapEndpointPolicyInventoryEndpoints();
+api.MapCredentialAccessPolicyReadinessEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
@@ -119,6 +121,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
