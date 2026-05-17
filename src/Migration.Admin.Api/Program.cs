@@ -1,4 +1,5 @@
-﻿using Migration.Admin.Api.Endpoints;
+﻿using Migration.ControlPlane.Storage;
+using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
 
@@ -10,6 +11,7 @@ Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.LogAdminApiCon
 Migration.Admin.Api.Registration.AdminApiOpenApiServiceCollectionExtensions.AddMigrationAdminApiOpenApi(builder.Services);
 builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
+builder.Services.AddCloudStoragePathResolution(builder.Configuration);
 
 var app = builder.Build();
 
@@ -37,6 +39,7 @@ api.MapProjectEndpoints();
 api.MapRunEndpoints();
 api.MapRunExecutionPolicyEndpoints();
 api.MapCloudPlatformEndpoints();
+api.MapCloudStoragePlanEndpoints();
 api.MapAuthorizationPolicyPlanEndpoints();
 api.MapAuthenticationConfigurationEndpoints();
 api.MapAuditEventContractEndpoints();
@@ -60,6 +63,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
