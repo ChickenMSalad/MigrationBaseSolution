@@ -40,6 +40,7 @@ builder.Services.AddEndpointPolicyInventory();
 builder.Services.AddCredentialAccessPolicyReadiness();
 builder.Services.AddAuthEnforcementDiagnostics();
 builder.Services.AddProductionSafetyGates();
+builder.Services.AddOperationalMode();
 
 var app = builder.Build();
 
@@ -94,6 +95,7 @@ api.MapEndpointPolicyInventoryEndpoints();
 api.MapCredentialAccessPolicyReadinessEndpoints();
 api.MapAuthEnforcementDiagnosticsEndpoints();
 api.MapProductionSafetyGateEndpoints();
+api.MapOperationalModeEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
@@ -125,6 +127,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
