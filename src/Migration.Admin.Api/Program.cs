@@ -20,6 +20,8 @@ app.UseSwaggerUI(options =>
 
 Migration.Admin.Api.Endpoints.AdminSystemEndpointExtensions.MapAdminSystemEndpoints(app);
 
+app.MapOperationalHealthEndpoints();
+
 var api = app.MapGroup("/api");
 
 api.MapRunMonitoringEndpoints();
@@ -50,6 +52,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
