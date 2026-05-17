@@ -22,6 +22,7 @@ builder.Services.AddCloudCredentialValueProvider(builder.Configuration);
 builder.Services.AddQueueDispatchProvider(builder.Configuration);
 builder.Services.AddQueueReceiveProvider(builder.Configuration);
 builder.Services.AddQueueFailureHandling();
+builder.Services.AddQueueExecutionPlanning();
 
 var app = builder.Build();
 
@@ -73,6 +74,7 @@ api.MapQueueWorkerLoopDiagnosticsEndpoints();
 api.MapQueuePoisonHandlingEndpoints();
 api.MapQueueFailureArtifactEndpoints();
 api.MapQueueFailureHandlerEndpoints();
+api.MapQueueExecutionPlannerEndpoints();
 api.MapArtifactStoragePlanEndpoints();
 api.MapCredentialProviderPlanEndpoints();
 api.MapWorkspaceContextEndpoints();
@@ -88,6 +90,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
