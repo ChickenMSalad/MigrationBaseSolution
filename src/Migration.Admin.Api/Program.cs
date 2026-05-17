@@ -44,6 +44,7 @@ api.MapRunExecutionPolicyEndpoints();
 api.MapCloudPlatformEndpoints();
 api.MapCloudStoragePlanEndpoints();
 api.MapCloudBinaryStorageProbeEndpoints();
+api.MapAzureBlobStorageDiagnosticsEndpoints();
 api.MapArtifactStorageProbeEndpoints();
 api.MapArtifactManifestIndexEndpoints();
 api.MapArtifactStorageBridgeEndpoints();
@@ -70,6 +71,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
