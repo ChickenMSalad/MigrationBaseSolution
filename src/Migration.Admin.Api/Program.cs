@@ -24,6 +24,7 @@ builder.Services.AddQueueReceiveProvider(builder.Configuration);
 builder.Services.AddQueueFailureHandling();
 builder.Services.AddQueueExecutionPlanning();
 builder.Services.AddQueueExecutorCoordinator(builder.Configuration);
+builder.Services.AddQueueExecutionObservability();
 
 var app = builder.Build();
 
@@ -77,6 +78,7 @@ api.MapQueueFailureArtifactEndpoints();
 api.MapQueueFailureHandlerEndpoints();
 api.MapQueueExecutionPlannerEndpoints();
 api.MapQueueExecutorCoordinatorEndpoints();
+api.MapQueueExecutionObservabilityEndpoints();
 api.MapArtifactStoragePlanEndpoints();
 api.MapCredentialProviderPlanEndpoints();
 api.MapWorkspaceContextEndpoints();
@@ -92,6 +94,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
