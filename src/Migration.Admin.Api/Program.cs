@@ -42,6 +42,7 @@ builder.Services.AddAuthEnforcementDiagnostics();
 builder.Services.AddProductionSafetyGates();
 builder.Services.AddOperationalMode();
 builder.Services.AddQueueExecutionGovernance();
+builder.Services.AddP2ReadinessReport();
 
 var app = builder.Build();
 
@@ -98,6 +99,7 @@ api.MapAuthEnforcementDiagnosticsEndpoints();
 api.MapProductionSafetyGateEndpoints();
 api.MapOperationalModeEndpoints();
 api.MapQueueExecutionGovernanceEndpoints();
+api.MapP2ReadinessReportEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
@@ -129,6 +131,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
