@@ -69,6 +69,7 @@ api.MapQueueIdempotencyEndpoints();
 api.MapQueueDispatchDiagnosticsEndpoints();
 api.MapQueueReceiveDiagnosticsEndpoints();
 api.MapQueueWorkerLoopDiagnosticsEndpoints();
+api.MapQueuePoisonHandlingEndpoints();
 api.MapArtifactStoragePlanEndpoints();
 api.MapCredentialProviderPlanEndpoints();
 api.MapWorkspaceContextEndpoints();
@@ -84,6 +85,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
