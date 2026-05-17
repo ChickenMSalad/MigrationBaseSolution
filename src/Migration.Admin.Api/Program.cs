@@ -67,6 +67,7 @@ api.MapAuthorizationPolicyPlanEndpoints();
 api.MapAuthenticationConfigurationEndpoints();
 api.MapAuditEventContractEndpoints();
 api.MapAuditPersistenceEndpoints();
+api.MapAuditArtifactPersistenceEndpoints();
 api.MapTelemetryCorrelationEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
@@ -99,6 +100,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
