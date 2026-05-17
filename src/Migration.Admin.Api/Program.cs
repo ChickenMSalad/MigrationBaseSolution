@@ -71,6 +71,7 @@ api.MapAuditPersistenceEndpoints();
 api.MapAuditArtifactPersistenceEndpoints();
 api.MapAuditEventWriterEndpoints();
 api.MapQueueAuditEventEndpoints();
+api.MapCloudOperationAuditEndpoints();
 api.MapTelemetryCorrelationEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
@@ -103,6 +104,8 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
+
 
 
 
