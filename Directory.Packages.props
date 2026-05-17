@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
@@ -50,5 +50,7 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
 
+      <PackageVersion Include="Azure.Identity" Version="1.13.2" />
   </ItemGroup>
 </Project>
+
