@@ -31,6 +31,7 @@ builder.Services.AddQueueExecutionReadiness();
 builder.Services.AddAuditPersistence(builder.Configuration);
 builder.Services.AddAuditEventWriter();
 builder.Services.AddTelemetrySink(builder.Configuration);
+builder.Services.AddTelemetryEventWriter();
 
 var app = builder.Build();
 
@@ -76,6 +77,7 @@ api.MapQueueAuditEventEndpoints();
 api.MapCloudOperationAuditEndpoints();
 api.MapTelemetryCorrelationEndpoints();
 api.MapTelemetrySinkEndpoints();
+api.MapTelemetryEventWriterEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
@@ -107,6 +109,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
