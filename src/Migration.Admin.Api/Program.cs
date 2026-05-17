@@ -1,4 +1,5 @@
-﻿using Migration.ControlPlane.Storage;
+﻿using Migration.ControlPlane.Credentials;
+using Migration.ControlPlane.Storage;
 using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
@@ -15,6 +16,7 @@ builder.Services.AddCloudStoragePathResolution(builder.Configuration);
 builder.Services.AddCloudBinaryStorage(builder.Configuration);
 builder.Services.AddArtifactStorage();
 builder.Services.AddArtifactManifestIndex();
+builder.Services.AddCloudCredentialPlanning(builder.Configuration);
 
 var app = builder.Build();
 
@@ -42,6 +44,7 @@ api.MapProjectEndpoints();
 api.MapRunEndpoints();
 api.MapRunExecutionPolicyEndpoints();
 api.MapCloudPlatformEndpoints();
+api.MapCloudCredentialDiagnosticsEndpoints();
 api.MapCloudStoragePlanEndpoints();
 api.MapCloudBinaryStorageProbeEndpoints();
 api.MapAzureBlobStorageDiagnosticsEndpoints();
@@ -71,6 +74,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
