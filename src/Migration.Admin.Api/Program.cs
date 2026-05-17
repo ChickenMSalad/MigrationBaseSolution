@@ -12,6 +12,7 @@ Migration.Admin.Api.Registration.AdminApiOpenApiServiceCollectionExtensions.AddM
 builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddCloudStoragePathResolution(builder.Configuration);
+builder.Services.AddCloudBinaryStorage();
 
 var app = builder.Build();
 
@@ -63,6 +64,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
