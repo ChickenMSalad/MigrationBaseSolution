@@ -17,6 +17,7 @@ builder.Services.AddCloudBinaryStorage(builder.Configuration);
 builder.Services.AddArtifactStorage();
 builder.Services.AddArtifactManifestIndex();
 builder.Services.AddCloudCredentialPlanning(builder.Configuration);
+builder.Services.AddCloudCredentialValueProvider(builder.Configuration);
 
 var app = builder.Build();
 
@@ -45,6 +46,7 @@ api.MapRunEndpoints();
 api.MapRunExecutionPolicyEndpoints();
 api.MapCloudPlatformEndpoints();
 api.MapCloudCredentialDiagnosticsEndpoints();
+api.MapCloudCredentialValueProbeEndpoints();
 api.MapCloudStoragePlanEndpoints();
 api.MapCloudBinaryStorageProbeEndpoints();
 api.MapAzureBlobStorageDiagnosticsEndpoints();
