@@ -79,6 +79,7 @@ api.MapTelemetryCorrelationEndpoints();
 api.MapTelemetrySinkEndpoints();
 api.MapTelemetryEventWriterEndpoints();
 api.MapQueueTelemetryEventEndpoints();
+api.MapCloudOperationTelemetryEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
@@ -110,6 +111,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
