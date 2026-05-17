@@ -46,6 +46,7 @@ api.MapCloudStoragePlanEndpoints();
 api.MapCloudBinaryStorageProbeEndpoints();
 api.MapArtifactStorageProbeEndpoints();
 api.MapArtifactManifestIndexEndpoints();
+api.MapArtifactStorageBridgeEndpoints();
 api.MapAuthorizationPolicyPlanEndpoints();
 api.MapAuthenticationConfigurationEndpoints();
 api.MapAuditEventContractEndpoints();
@@ -69,6 +70,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
