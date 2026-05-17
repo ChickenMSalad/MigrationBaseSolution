@@ -28,6 +28,7 @@ builder.Services.AddQueueExecutorCoordinator(builder.Configuration);
 builder.Services.AddQueueExecutionObservability();
 builder.Services.AddQueueExecutionReadiness();
 builder.Services.AddAuditPersistence(builder.Configuration);
+builder.Services.AddAuditEventWriter();
 
 var app = builder.Build();
 
@@ -68,6 +69,7 @@ api.MapAuthenticationConfigurationEndpoints();
 api.MapAuditEventContractEndpoints();
 api.MapAuditPersistenceEndpoints();
 api.MapAuditArtifactPersistenceEndpoints();
+api.MapAuditEventWriterEndpoints();
 api.MapTelemetryCorrelationEndpoints();
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
@@ -100,6 +102,7 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
+
 
 
 
