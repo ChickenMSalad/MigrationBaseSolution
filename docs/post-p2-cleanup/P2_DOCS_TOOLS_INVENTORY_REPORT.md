@@ -1,6 +1,6 @@
 ﻿# Post-P2 Docs and Tools Inventory
 
-Generated: 2026-05-17T21:06:06.2708240-04:00
+Generated: 2026-05-18T09:17:08.1572510-04:00
 
 ## Missing expected docs
 - None
@@ -66,6 +66,7 @@ Generated: 2026-05-17T21:06:06.2708240-04:00
 - tools\dropins\apply-p2-set053.ps1
 - tools\dropins\apply-post-p2-cleanup-set001-fix.ps1
 - tools\dropins\apply-post-p2-cleanup-set001-fix2.ps1
+- tools\dropins\apply-post-p2-cleanup-set009-fix.ps1
 - tools\dropins\p2-set001-blob-storage-abstractions
 - tools\dropins\p2-set002-blob-storage-provider-contracts
 - tools\dropins\p2-set003-local-binary-storage-provider
@@ -182,6 +183,7 @@ git rm -r -- 'tools/dropins/apply-p2-set052.ps1'
 git rm -r -- 'tools/dropins/apply-p2-set053.ps1'
 git rm -r -- 'tools/dropins/apply-post-p2-cleanup-set001-fix.ps1'
 git rm -r -- 'tools/dropins/apply-post-p2-cleanup-set001-fix2.ps1'
+git rm -r -- 'tools/dropins/apply-post-p2-cleanup-set009-fix.ps1'
 git rm -r -- 'tools/dropins/p2-set001-blob-storage-abstractions'
 git rm -r -- 'tools/dropins/p2-set002-blob-storage-provider-contracts'
 git rm -r -- 'tools/dropins/p2-set003-local-binary-storage-provider'

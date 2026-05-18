@@ -1,15 +1,15 @@
 ﻿# P2 Documentation Inventory Report
 
-Generated: 2026-05-17T21:22:22.3747970-04:00
+Generated: 2026-05-18T09:17:08.9239620-04:00
 
 ## Summary
 
 | Category | Count |
 |---|---:|
 | Final reference docs | 7 |
-| Checkpoint docs | 6 |
+| Checkpoint docs | 7 |
 | Set-history docs | 47 |
-| Post-P2 cleanup docs | 7 |
+| Post-P2 cleanup docs | 15 |
 | Review candidates | 27 |
 
 ## Final reference docs
@@ -28,6 +28,7 @@ Generated: 2026-05-17T21:22:22.3747970-04:00
 - docs\cloud-roadmap-cleanup\P2_SET_042_OPERATIONAL_DIAGNOSTICS_CHECKPOINT.md
 - docs\cloud-roadmap-cleanup\P2_SET_050_AUTH_OPERATIONS_CHECKPOINT.md
 - docs\cloud-roadmap-cleanup\P2_SET_053_COMPLETION_CHECKPOINT.md
+- docs\post-p2-cleanup\POST_P2_CLEANUP_SET_009_CLEANUP_CHECKPOINT.md
 
 ## Set-history docs
 - docs\cloud-roadmap-cleanup\P2_SET_001_BLOB_STORAGE_ABSTRACTIONS.md
@@ -79,13 +80,21 @@ Generated: 2026-05-17T21:22:22.3747970-04:00
 - docs\cloud-roadmap-cleanup\P2_SET_052_FINAL_READINESS_REPORT.md
 
 ## Post-P2 cleanup docs
+- docs\post-p2-cleanup\P2_COMMENT_COVERAGE_REPORT.md
+- docs\post-p2-cleanup\P2_DOC_INVENTORY_REPORT.md
 - docs\post-p2-cleanup\P2_DOCS_TOOLS_CLEANUP_GUIDE.md
 - docs\post-p2-cleanup\P2_DOCS_TOOLS_INVENTORY_REPORT.md
 - docs\post-p2-cleanup\P2_DROPIN_ARTIFACT_CLEANUP_REPORT.md
+- docs\post-p2-cleanup\P2_SOURCE_STRUCTURE_INVENTORY_REPORT.md
 - docs\post-p2-cleanup\P2_TEST_TOOL_INVENTORY_REPORT.md
 - docs\post-p2-cleanup\POST_P2_CLEANUP_SET_002_DROPIN_ARTIFACTS.md
 - docs\post-p2-cleanup\POST_P2_CLEANUP_SET_003_TEST_TOOL_INVENTORY.md
 - docs\post-p2-cleanup\POST_P2_CLEANUP_SET_004_DOC_INVENTORY.md
+- docs\post-p2-cleanup\POST_P2_CLEANUP_SET_005_SOURCE_INVENTORY.md
+- docs\post-p2-cleanup\POST_P2_CLEANUP_SET_006_CODE_COMMENTS_POLICY.md
+- docs\post-p2-cleanup\POST_P2_CLEANUP_SET_007_P3_SQL_BASELINE.md
+- docs\post-p2-cleanup\POST_P2_CLEANUP_SET_008_PROGRAM_LOCAL_HELPERS.md
+- docs\post-p2-cleanup\POST_P2_CLEANUP_SET_009_FIX.md
 
 ## Review candidates
 - docs\cloud-roadmap-cleanup\P1_PHASE_SUMMARY.md
