@@ -133,6 +133,70 @@ public static class OperationalWorkItemLeaseEndpointExtensions
             .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
             .WithOpenApi();
 
+        api.MapPost(
+                "/operational/work-items/{workItemId:guid}/release",
+                async (
+                    Guid workItemId,
+                    OperationalWorkItemReleaseRequest request,
+                    IOperationalWorkItemRecoveryService recoveryService,
+                    CancellationToken cancellationToken) =>
+                {
+                    try
+                    {
+                        var response = await recoveryService.ReleaseAsync(
+                            workItemId,
+                            request,
+                            cancellationToken);
+
+                        return response.Success
+                            ? Results.Ok(response)
+                            : Results.Conflict(response);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return Results.BadRequest(new AdminApiErrorResponse(ex.Message));
+                    }
+                })
+            .WithName("ReleaseOperationalWorkItem")
+            .WithTags("Operational Store")
+            .WithSummary("Releases a leased operational work item back to Created.")
+            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status200OK)
+            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status409Conflict)
+            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .WithOpenApi();
+
+        api.MapPost(
+                "/operational/work-items/{workItemId:guid}/reset",
+                async (
+                    Guid workItemId,
+                    OperationalWorkItemResetRequest request,
+                    IOperationalWorkItemRecoveryService recoveryService,
+                    CancellationToken cancellationToken) =>
+                {
+                    try
+                    {
+                        var response = await recoveryService.ResetAsync(
+                            workItemId,
+                            request,
+                            cancellationToken);
+
+                        return response.Success
+                            ? Results.Ok(response)
+                            : Results.Conflict(response);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return Results.BadRequest(new AdminApiErrorResponse(ex.Message));
+                    }
+                })
+            .WithName("ResetOperationalWorkItem")
+            .WithTags("Operational Store")
+            .WithSummary("Resets an operational work item to Created for recovery/testing.")
+            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status200OK)
+            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status409Conflict)
+            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .WithOpenApi();
+
         return api;
     }
 }
