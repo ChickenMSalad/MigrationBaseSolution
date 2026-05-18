@@ -1,0 +1,177 @@
+using Migration.Application.Abstractions.OperationalStore;
+using Migration.Application.Models.OperationalStore;
+using Migration.Application.Models.OperationalStore.Statuses;
+using Migration.ControlPlane.Models;
+using Microsoft.Extensions.Options;
+
+namespace Migration.Admin.Api.OperationalStore;
+
+public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirrorService
+{
+    private readonly IOperationalStore _operationalStore;
+    private readonly IOptions<OperationalRunMirrorOptions> _options;
+    private readonly ILogger<AdminOperationalRunMirrorService> _logger;
+
+    public AdminOperationalRunMirrorService(
+        IOperationalStore operationalStore,
+        IOptions<OperationalRunMirrorOptions> options,
+        ILogger<AdminOperationalRunMirrorService> logger)
+    {
+        _operationalStore = operationalStore;
+        _options = options;
+        _logger = logger;
+    }
+
+    public async Task MirrorRunAsync(
+        MigrationProjectRecord project,
+        MigrationRunControlRecord run,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(run);
+
+        if (!_options.Value.Enabled)
+        {
+            _logger.LogDebug(
+                "Operational run mirror is disabled. Skipping mirror for run {RunId}.",
+                run.RunId);
+
+            return;
+        }
+
+        try
+        {
+            await MirrorRunCoreAsync(
+                project,
+                run,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Operational run mirror failed for run {RunId}. Legacy run flow will continue.",
+                run.RunId);
+        }
+    }
+
+    private async Task MirrorRunCoreAsync(
+        MigrationProjectRecord project,
+        MigrationRunControlRecord run,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var operationalRunId = OperationalMirrorIdFactory.CreateGuid(
+            $"legacy-run:{run.RunId}");
+
+        var existingRun = await _operationalStore.Runs.GetAsync(
+            operationalRunId,
+            cancellationToken);
+
+        if (existingRun is null)
+        {
+            await _operationalStore.Runs.CreateAsync(
+                new MigrationRunRecord
+                {
+                    RunId = operationalRunId,
+                    SourceSystem = project.SourceType,
+                    TargetSystem = project.TargetType,
+                    Status = MigrationRunStatuses.Created,
+                    CreatedAt = now
+                },
+                cancellationToken);
+        }
+
+        var manifestRecordId = OperationalMirrorIdFactory.CreateGuid(
+            $"legacy-run:{run.RunId}:manifest");
+
+        var existingManifestRecord = await _operationalStore.ManifestRecords.GetAsync(
+            manifestRecordId,
+            cancellationToken);
+
+        if (existingManifestRecord is null)
+        {
+            await _operationalStore.ManifestRecords.AddAsync(
+                new MigrationManifestRecord
+                {
+                    ManifestRecordId = manifestRecordId,
+                    RunId = operationalRunId,
+                    SequenceNumber = 1,
+                    SourceId = run.Job.ManifestPath,
+                    SourcePath = run.Job.ManifestPath,
+                    SourceName = Path.GetFileName(run.Job.ManifestPath),
+                    Status = MigrationManifestStatuses.Created,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                cancellationToken);
+        }
+
+        var workItemId = OperationalMirrorIdFactory.CreateGuid(
+            $"legacy-run:{run.RunId}:work-item");
+
+        var existingWorkItem = await _operationalStore.WorkItems.GetAsync(
+            workItemId,
+            cancellationToken);
+
+        if (existingWorkItem is null)
+        {
+            await _operationalStore.WorkItems.AddAsync(
+                new MigrationWorkItemRecord
+                {
+                    WorkItemId = workItemId,
+                    RunId = operationalRunId,
+                    ManifestRecordId = manifestRecordId,
+                    Status = MigrationWorkItemStatuses.Created,
+                    AttemptCount = 0,
+                    CreatedAt = now
+                },
+                cancellationToken);
+        }
+
+        await _operationalStore.Checkpoints.UpsertAsync(
+            new MigrationCheckpointRecord
+            {
+                CheckpointId = OperationalMirrorIdFactory.CreateGuid(
+                    $"legacy-run:{run.RunId}:checkpoint:legacy-run-id"),
+                RunId = operationalRunId,
+                CheckpointName = "LegacyRunId",
+                CheckpointValue = run.RunId,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            cancellationToken);
+
+        await _operationalStore.Checkpoints.UpsertAsync(
+            new MigrationCheckpointRecord
+            {
+                CheckpointId = OperationalMirrorIdFactory.CreateGuid(
+                    $"legacy-run:{run.RunId}:checkpoint:legacy-job-name"),
+                RunId = operationalRunId,
+                CheckpointName = "LegacyJobName",
+                CheckpointValue = run.JobName,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            cancellationToken);
+
+        await _operationalStore.Checkpoints.UpsertAsync(
+            new MigrationCheckpointRecord
+            {
+                CheckpointId = OperationalMirrorIdFactory.CreateGuid(
+                    $"legacy-run:{run.RunId}:checkpoint:legacy-project-id"),
+                RunId = operationalRunId,
+                CheckpointName = "LegacyProjectId",
+                CheckpointValue = project.ProjectId,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            cancellationToken);
+
+        _logger.LogInformation(
+            "Mirrored legacy run {RunId} into operational store as {OperationalRunId}.",
+            run.RunId,
+            operationalRunId);
+    }
+}

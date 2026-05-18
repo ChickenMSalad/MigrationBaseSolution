@@ -4,6 +4,7 @@ using Migration.ControlPlane.Models;
 using Migration.ControlPlane.Queues;
 using Migration.ControlPlane.Services;
 using Migration.Orchestration.Abstractions;
+using Migration.Admin.Api.OperationalStore;
 
 namespace Migration.Admin.Api.Endpoints;
 
@@ -21,6 +22,7 @@ public static class RunEndpointExtensions
                 CreatePreflightRequest request,
                 AdminRunFactory factory,
                 IAdminProjectStore store,
+                IAdminOperationalRunMirrorService operationalRunMirror,
                 IMigrationRunQueue queue,
                 [FromServices] ArtifactPathResolver artifactPathResolver,
                 CancellationToken cancellationToken) =>
@@ -46,6 +48,7 @@ public static class RunEndpointExtensions
                 var run = factory.CreatePreflight(project, resolvedRequest);
 
                 await queue.EnqueueAsync(run, cancellationToken).ConfigureAwait(false);
+                await operationalRunMirror.MirrorRunAsync(project, run, cancellationToken).ConfigureAwait(false);
                 await store.SaveRunAsync(run, cancellationToken).ConfigureAwait(false);
 
                 return Results.Accepted($"/api/runs/{run.RunId}", run);

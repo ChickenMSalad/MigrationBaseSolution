@@ -11,6 +11,7 @@ Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.LogAdminApiCon
 Migration.Admin.Api.Registration.AdminApiOpenApiServiceCollectionExtensions.AddMigrationAdminApiOpenApi(builder.Services);
 builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);
 builder.Services.AddOperationalStore(builder.Configuration);
+builder.Services.AddMigrationAdminApiOperationalRunMirror(builder.Configuration);
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
 var app = builder.Build();
