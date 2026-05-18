@@ -21,6 +21,8 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IMigrationCheckpointStore, SqlMigrationCheckpointStore>();
         services.AddScoped<IMigrationIdentifierMapStore, SqlMigrationIdentifierMapStore>();
 
+        services.AddScoped<IOperationalStore, SqlOperationalStore>();
+
         services.AddSingleton<IOperationalStoreSchemaValidator, OperationalStoreSchemaValidator>();
         services.AddSingleton<OperationalStoreHealthCheck>();
 
