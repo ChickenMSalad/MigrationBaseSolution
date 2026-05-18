@@ -7,6 +7,7 @@ public static class AdminApiEndpointStartupExtensions
     public static void MapMigrationAdminApiRouteGroupEndpoints(
         RouteGroupBuilder api)
     {
+        api.MapOperationalDispatchEndpoints();
         ArgumentNullException.ThrowIfNull(api);
 
         api.MapRunMonitoringEndpoints();

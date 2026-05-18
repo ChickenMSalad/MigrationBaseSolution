@@ -31,7 +31,6 @@ app.MapOperationalHealthEndpoints();
 var api = app.MapGroup("/api");
 
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
-api.MapOperationalDispatchEndpoints();
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
 
 app.Run();
