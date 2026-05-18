@@ -30,6 +30,7 @@ public static class OperationalStoreRegistrationExtensions
 
         services.AddScoped<IOperationalExecutionContextFactory, OperationalExecutionContextFactory>();
         services.AddScoped<IOperationalQueueMessageFactory, OperationalQueueMessageFactory>();
+        services.AddScoped<IOperationalWorkItemExecutionSynchronizer, OperationalWorkItemExecutionSynchronizer>();
 
         services.AddSingleton<IOperationalStoreSchemaValidator, OperationalStoreSchemaValidator>();
         services.AddSingleton<OperationalStoreHealthCheck>();
