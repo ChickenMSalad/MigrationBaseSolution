@@ -18,6 +18,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddSingleton<IValidateOptions<OperationalRunMirrorOptions>, OperationalRunMirrorOptionsValidator>();
 
         services.AddScoped<IAdminOperationalRunMirrorService, AdminOperationalRunMirrorService>();
+        services.AddScoped<IOperationalMirrorReadinessEvaluator, OperationalMirrorReadinessEvaluator>();
 
         return services;
     }

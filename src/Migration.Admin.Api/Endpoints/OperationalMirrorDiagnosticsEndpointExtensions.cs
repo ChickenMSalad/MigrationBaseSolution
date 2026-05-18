@@ -32,6 +32,20 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .Produces<OperationalMirrorConfigurationStatusResponse>(StatusCodes.Status200OK)
             .WithOpenApi();
 
+        app.MapGet(
+                "/api/operational/mirror/readiness",
+                (IOperationalMirrorReadinessEvaluator evaluator) =>
+                {
+                    var response = evaluator.Evaluate();
+
+                    return Results.Ok(response);
+                })
+            .WithName("GetOperationalMirrorReadiness")
+            .WithTags("Operational Store")
+            .WithSummary("Returns readiness status for operational run mirror activation.")
+            .Produces<OperationalMirrorReadinessStatus>(StatusCodes.Status200OK)
+            .WithOpenApi();
+
         return app;
     }
 }
