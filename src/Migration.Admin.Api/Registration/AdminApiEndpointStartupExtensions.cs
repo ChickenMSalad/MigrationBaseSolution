@@ -9,6 +9,7 @@ public static class AdminApiEndpointStartupExtensions
     {
         api.MapOperationalDispatchEndpoints();
         api.MapOperationalMirrorReadEndpoints();
+        api.MapOperationalRunStatusProjectionEndpoints();
         ArgumentNullException.ThrowIfNull(api);
 
         api.MapRunMonitoringEndpoints();
