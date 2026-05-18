@@ -44,7 +44,10 @@ public static class OperationalDispatchEndpointExtensions
                 })
             .WithName("DispatchOperationalRun")
             .WithTags("Operational Store")
-            .WithSummary("Creates an operational SQL-backed run, persists manifest records, creates work items, and publishes operational queue messages.");
+            .WithSummary("Creates an operational SQL-backed run, persists manifest records, creates work items, and publishes operational queue messages.")
+            .Produces<OperationalRunDispatchResponse>(StatusCodes.Status202Accepted)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .WithOpenApi();
 
         return api;
     }

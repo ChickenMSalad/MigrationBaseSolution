@@ -34,6 +34,7 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IOperationalRunDispatchRequestHandler, OperationalRunDispatchRequestHandler>();
         services.AddScoped<IOperationalRunDispatchRequestValidator, OperationalRunDispatchRequestValidator>();
         services.AddScoped<IOperationalManifestRecordBuilder, OperationalManifestRecordBuilder>();
+        services.AddSingleton<IOperationalRunDispatchSampleRequestFactory, OperationalRunDispatchSampleRequestFactory>();
 
         services.AddScoped<IOperationalExecutionContextFactory, OperationalExecutionContextFactory>();
         services.AddScoped<IOperationalQueueMessageFactory, OperationalQueueMessageFactory>();
