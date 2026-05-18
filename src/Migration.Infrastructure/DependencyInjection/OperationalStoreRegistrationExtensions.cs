@@ -17,6 +17,7 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IMigrationWorkItemStore, SqlMigrationWorkItemStore>();
         services.AddScoped<IMigrationFailureStore, SqlMigrationFailureStore>();
         services.AddScoped<IMigrationCheckpointStore, SqlMigrationCheckpointStore>();
+        services.AddScoped<IMigrationIdentifierMapStore, SqlMigrationIdentifierMapStore>();
 
         return services;
     }
