@@ -4,15 +4,26 @@ using Migration.Infrastructure.State.OperationalStore.Sql;
 using Migration.Infrastructure.State.OperationalStore.Sql.Health;
 using Migration.Infrastructure.State.OperationalStore.Sql.Stores;
 using Migration.Infrastructure.State.OperationalStore.Sql.Validation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Migration.Infrastructure.DependencyInjection;
 
 public static class OperationalStoreRegistrationExtensions
 {
     public static IServiceCollection AddOperationalStore(
-        this IServiceCollection services)
+        this IServiceCollection services,
+        IConfiguration? configuration = null)
     {
+        if (configuration is not null)
+        {
+            services.Configure<SqlOperationalStoreOptions>(
+                configuration.GetSection(SqlOperationalStoreOptions.SectionName));
+        }
+
+        services.AddSingleton<IValidateOptions<SqlOperationalStoreOptions>, SqlOperationalStoreOptionsValidator>();
+        services.AddSingleton<ISqlOperationalStoreConnectionStringResolver, SqlOperationalStoreConnectionStringResolver>();
         services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
 
         services.AddScoped<IMigrationRunStore, SqlMigrationRunStore>();

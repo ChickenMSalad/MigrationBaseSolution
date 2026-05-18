@@ -1,0 +1,40 @@
+@baseUrl = https://localhost:7001
+@count = 3
+
+### Get a sample operational dispatch request
+GET {{baseUrl}}/api/operational/runs/dispatch/sample?count={{count}}
+
+### Dispatch an operational run
+POST {{baseUrl}}/api/operational/runs/dispatch
+Content-Type: application/json
+
+{
+  "sourceSystem": "SampleSource",
+  "targetSystem": "SampleTarget",
+  "manifestRecords": [
+    {
+      "sequenceNumber": 1,
+      "sourceId": "sample-source-1",
+      "sourcePath": "/sample/path/1",
+      "sourceName": "sample-file-1.bin",
+      "contentType": "application/octet-stream",
+      "contentLength": 1024
+    },
+    {
+      "sequenceNumber": 2,
+      "sourceId": "sample-source-2",
+      "sourcePath": "/sample/path/2",
+      "sourceName": "sample-file-2.bin",
+      "contentType": "application/octet-stream",
+      "contentLength": 2048
+    },
+    {
+      "sequenceNumber": 3,
+      "sourceId": "sample-source-3",
+      "sourcePath": "/sample/path/3",
+      "sourceName": "sample-file-3.bin",
+      "contentType": "application/octet-stream",
+      "contentLength": 3072
+    }
+  ]
+}

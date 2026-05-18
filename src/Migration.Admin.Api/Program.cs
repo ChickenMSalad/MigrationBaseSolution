@@ -9,8 +9,8 @@ Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.ConfigureAdmin
 Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.LogAdminApiConfiguration(builder);
 
 Migration.Admin.Api.Registration.AdminApiOpenApiServiceCollectionExtensions.AddMigrationAdminApiOpenApi(builder.Services);
-builder.Services.AddMigrationAdminApiRuntime(builder.Configuration); 
-builder.Services.AddOperationalStore();
+builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);
+builder.Services.AddOperationalStore(builder.Configuration);
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
 var app = builder.Build();
@@ -31,5 +31,7 @@ app.MapOperationalHealthEndpoints();
 var api = app.MapGroup("/api");
 
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
+api.MapOperationalDispatchEndpoints();
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
+
 app.Run();
