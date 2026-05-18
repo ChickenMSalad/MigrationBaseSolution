@@ -30,6 +30,7 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IOperationalWorkItemDispatchService, OperationalWorkItemDispatchService>();
         services.AddScoped<IOperationalManifestDispatchService, OperationalManifestDispatchService>();
         services.AddScoped<IOperationalRunDispatchService, OperationalRunDispatchService>();
+        services.AddScoped<IOperationalManifestRecordBuilder, OperationalManifestRecordBuilder>();
 
         services.AddScoped<IOperationalExecutionContextFactory, OperationalExecutionContextFactory>();
         services.AddScoped<IOperationalQueueMessageFactory, OperationalQueueMessageFactory>();
