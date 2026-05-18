@@ -27,6 +27,7 @@ app.UseMigrationAdminApiAuthenticationState();
 Migration.Admin.Api.Endpoints.AdminSystemEndpointExtensions.MapAdminSystemEndpoints(app);
 
 app.MapOperationalHealthEndpoints();
+app.MapAdminEndpointDiagnostics();
 
 var api = app.MapGroup("/api");
 
