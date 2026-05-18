@@ -46,6 +46,23 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .Produces<OperationalMirrorReadinessStatus>(StatusCodes.Status200OK)
             .WithOpenApi();
 
+        app.MapGet(
+                "/api/operational/mirror/enablement-guard",
+                async (
+                    IOperationalMirrorEnablementGuard guard,
+                    CancellationToken cancellationToken) =>
+                {
+                    var response = await guard.EvaluateAsync(
+                        cancellationToken);
+
+                    return Results.Ok(response);
+                })
+            .WithName("GetOperationalMirrorEnablementGuard")
+            .WithTags("Operational Store")
+            .WithSummary("Returns whether operational mirror writes are currently allowed.")
+            .Produces<OperationalMirrorEnablementGuardResult>(StatusCodes.Status200OK)
+            .WithOpenApi();
+
         return app;
     }
 }

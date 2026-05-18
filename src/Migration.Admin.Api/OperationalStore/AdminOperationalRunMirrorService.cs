@@ -2,23 +2,22 @@ using Migration.Application.Abstractions.OperationalStore;
 using Migration.Application.Models.OperationalStore;
 using Migration.Application.Models.OperationalStore.Statuses;
 using Migration.ControlPlane.Models;
-using Microsoft.Extensions.Options;
 
 namespace Migration.Admin.Api.OperationalStore;
 
 public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirrorService
 {
     private readonly IOperationalStore _operationalStore;
-    private readonly IOptions<OperationalRunMirrorOptions> _options;
+    private readonly IOperationalMirrorEnablementGuard _enablementGuard;
     private readonly ILogger<AdminOperationalRunMirrorService> _logger;
 
     public AdminOperationalRunMirrorService(
         IOperationalStore operationalStore,
-        IOptions<OperationalRunMirrorOptions> options,
+        IOperationalMirrorEnablementGuard enablementGuard,
         ILogger<AdminOperationalRunMirrorService> logger)
     {
         _operationalStore = operationalStore;
-        _options = options;
+        _enablementGuard = enablementGuard;
         _logger = logger;
     }
 
@@ -30,11 +29,15 @@ public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirro
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(run);
 
-        if (!_options.Value.Enabled)
+        var guard = await _enablementGuard.EvaluateAsync(
+            cancellationToken);
+
+        if (!guard.CanMirror)
         {
             _logger.LogDebug(
-                "Operational run mirror is disabled. Skipping mirror for run {RunId}.",
-                run.RunId);
+                "Operational run mirror skipped for run {RunId}. Reasons: {Reasons}",
+                run.RunId,
+                string.Join("; ", guard.Messages));
 
             return;
         }
