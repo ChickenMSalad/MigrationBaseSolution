@@ -19,6 +19,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
 
         services.AddScoped<IAdminOperationalRunMirrorService, AdminOperationalRunMirrorService>();
         services.AddScoped<IOperationalMirrorReadinessEvaluator, OperationalMirrorReadinessEvaluator>();
+        services.AddScoped<IOperationalSqlSchemaSmokeTestService, OperationalSqlSchemaSmokeTestService>();
 
         return services;
     }
