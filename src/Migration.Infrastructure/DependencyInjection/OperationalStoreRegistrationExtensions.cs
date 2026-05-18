@@ -23,10 +23,13 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IMigrationIdentifierMapStore, SqlMigrationIdentifierMapStore>();
 
         services.AddScoped<IOperationalStore, SqlOperationalStore>();
+
         services.AddScoped<IOperationalRunLifecycleService, OperationalRunLifecycleService>();
         services.AddScoped<IOperationalManifestLifecycleService, OperationalManifestLifecycleService>();
         services.AddScoped<IOperationalWorkItemLifecycleService, OperationalWorkItemLifecycleService>();
+
         services.AddScoped<IOperationalExecutionContextFactory, OperationalExecutionContextFactory>();
+        services.AddScoped<IOperationalQueueMessageFactory, OperationalQueueMessageFactory>();
 
         services.AddSingleton<IOperationalStoreSchemaValidator, OperationalStoreSchemaValidator>();
         services.AddSingleton<OperationalStoreHealthCheck>();
