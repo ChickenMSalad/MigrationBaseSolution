@@ -11,7 +11,7 @@ SELECT
     TargetId,
     TargetPath,
     CreatedAt
-FROM dbo.MigrationIdentifierMaps
+FROM migration.MigrationIdentifierMaps
 WHERE RunId = @RunId
   AND SourceId = @SourceId;
 """;
@@ -25,12 +25,12 @@ SELECT
     TargetId,
     TargetPath,
     CreatedAt
-FROM dbo.MigrationIdentifierMaps
+FROM migration.MigrationIdentifierMaps
 WHERE ManifestRecordId = @ManifestRecordId;
 """;
 
     public const string Insert = """
-INSERT INTO dbo.MigrationIdentifierMaps
+INSERT INTO migration.MigrationIdentifierMaps
 (
     IdentifierMapId,
     RunId,

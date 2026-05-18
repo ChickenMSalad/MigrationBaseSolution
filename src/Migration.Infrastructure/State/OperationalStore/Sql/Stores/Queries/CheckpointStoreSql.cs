@@ -10,7 +10,7 @@ SELECT
     CheckpointValue,
     CreatedAt,
     UpdatedAt
-FROM dbo.MigrationCheckpoints
+FROM migration.MigrationCheckpoints
 WHERE RunId = @RunId
   AND CheckpointName = @CheckpointName;
 """;
@@ -23,13 +23,13 @@ SELECT
     CheckpointValue,
     CreatedAt,
     UpdatedAt
-FROM dbo.MigrationCheckpoints
+FROM migration.MigrationCheckpoints
 WHERE RunId = @RunId
 ORDER BY CheckpointName;
 """;
 
     public const string Upsert = """
-MERGE dbo.MigrationCheckpoints AS target
+MERGE migration.MigrationCheckpoints AS target
 USING
 (
     SELECT

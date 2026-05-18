@@ -13,12 +13,12 @@ SELECT
     CompletedAt,
     FailedAt,
     FailureReason
-FROM dbo.MigrationRuns
+FROM migration.MigrationRuns
 WHERE RunId = @RunId;
 """;
 
     public const string Insert = """
-INSERT INTO dbo.MigrationRuns
+INSERT INTO migration.MigrationRuns
 (
     RunId,
     SourceSystem,
@@ -45,7 +45,7 @@ VALUES
 """;
 
     public const string MarkStarted = """
-UPDATE dbo.MigrationRuns
+UPDATE migration.MigrationRuns
 SET
     Status = @Status,
     StartedAt = @StartedAt
@@ -53,7 +53,7 @@ WHERE RunId = @RunId;
 """;
 
     public const string MarkCompleted = """
-UPDATE dbo.MigrationRuns
+UPDATE migration.MigrationRuns
 SET
     Status = @Status,
     CompletedAt = @CompletedAt
@@ -61,7 +61,7 @@ WHERE RunId = @RunId;
 """;
 
     public const string MarkFailed = """
-UPDATE dbo.MigrationRuns
+UPDATE migration.MigrationRuns
 SET
     Status = @Status,
     FailedAt = @FailedAt,

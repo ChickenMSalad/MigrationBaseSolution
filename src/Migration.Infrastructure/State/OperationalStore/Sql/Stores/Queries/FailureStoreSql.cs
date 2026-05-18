@@ -3,7 +3,7 @@ namespace Migration.Infrastructure.State.OperationalStore.Sql.Stores.Queries;
 internal static class FailureStoreSql
 {
     public const string Insert = """
-INSERT INTO dbo.MigrationFailures
+INSERT INTO migration.MigrationFailures
 (
     FailureId,
     RunId,
@@ -40,7 +40,7 @@ SELECT
     Details,
     IsRetriable,
     CreatedAt
-FROM dbo.MigrationFailures
+FROM migration.MigrationFailures
 WHERE RunId = @RunId
 ORDER BY CreatedAt DESC
 OFFSET @Skip ROWS
@@ -58,7 +58,7 @@ SELECT
     Details,
     IsRetriable,
     CreatedAt
-FROM dbo.MigrationFailures
+FROM migration.MigrationFailures
 WHERE ManifestRecordId = @ManifestRecordId
 ORDER BY CreatedAt DESC;
 """;
@@ -74,7 +74,7 @@ SELECT
     Details,
     IsRetriable,
     CreatedAt
-FROM dbo.MigrationFailures
+FROM migration.MigrationFailures
 WHERE WorkItemId = @WorkItemId
 ORDER BY CreatedAt DESC;
 """;

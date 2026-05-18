@@ -15,7 +15,7 @@ SELECT
     Status,
     CreatedAt,
     UpdatedAt
-FROM dbo.MigrationManifestRecords
+FROM migration.MigrationManifestRecords
 WHERE ManifestRecordId = @ManifestRecordId;
 """;
 
@@ -32,7 +32,7 @@ SELECT
     Status,
     CreatedAt,
     UpdatedAt
-FROM dbo.MigrationManifestRecords
+FROM migration.MigrationManifestRecords
 WHERE RunId = @RunId
 ORDER BY SequenceNumber
 OFFSET @Skip ROWS
@@ -40,7 +40,7 @@ FETCH NEXT @Take ROWS ONLY;
 """;
 
     public const string Insert = """
-INSERT INTO dbo.MigrationManifestRecords
+INSERT INTO migration.MigrationManifestRecords
 (
     ManifestRecordId,
     RunId,
@@ -71,7 +71,7 @@ VALUES
 """;
 
     public const string UpdateStatus = """
-UPDATE dbo.MigrationManifestRecords
+UPDATE migration.MigrationManifestRecords
 SET
     Status = @Status,
     UpdatedAt = @UpdatedAt

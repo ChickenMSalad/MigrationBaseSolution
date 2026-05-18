@@ -15,12 +15,12 @@ SELECT
     CompletedAt,
     FailedAt,
     LastFailureReason
-FROM dbo.MigrationWorkItems
+FROM migration.MigrationWorkItems
 WHERE WorkItemId = @WorkItemId;
 """;
 
     public const string Insert = """
-INSERT INTO dbo.MigrationWorkItems
+INSERT INTO migration.MigrationWorkItems
 (
     WorkItemId,
     RunId,
@@ -51,7 +51,7 @@ VALUES
 """;
 
     public const string MarkLocked = """
-UPDATE dbo.MigrationWorkItems
+UPDATE migration.MigrationWorkItems
 SET
     LockedAt = @LockedAt,
     LockedBy = @LockedBy
@@ -59,7 +59,7 @@ WHERE WorkItemId = @WorkItemId;
 """;
 
     public const string MarkCompleted = """
-UPDATE dbo.MigrationWorkItems
+UPDATE migration.MigrationWorkItems
 SET
     Status = @Status,
     CompletedAt = @CompletedAt
@@ -67,7 +67,7 @@ WHERE WorkItemId = @WorkItemId;
 """;
 
     public const string MarkFailed = """
-UPDATE dbo.MigrationWorkItems
+UPDATE migration.MigrationWorkItems
 SET
     Status = @Status,
     FailedAt = @FailedAt,

@@ -67,6 +67,7 @@ public static class RunEndpointExtensions
                 IAdminProjectStore store,
                 RunPreflightGateService preflightGate,
                 IMigrationRunQueue queue,
+                IAdminOperationalRunMirrorService operationalRunMirror,
                 [FromServices] ArtifactPathResolver artifactPathResolver,
                 CancellationToken cancellationToken) =>
             {
@@ -104,6 +105,7 @@ public static class RunEndpointExtensions
 
                 await store.SaveRunAsync(run, cancellationToken).ConfigureAwait(false);
                 await queue.EnqueueAsync(run, cancellationToken).ConfigureAwait(false);
+                await operationalRunMirror.MirrorRunAsync(project, run, cancellationToken).ConfigureAwait(false);
 
                 return Results.Accepted($"/api/runs/{run.RunId}", run);
             })
