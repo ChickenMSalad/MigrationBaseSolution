@@ -14,12 +14,14 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
                 "/api/operational/mirror/status",
                 (
                     IOptions<OperationalRunMirrorOptions> options,
-                    IAdminOperationalRunMirrorService mirrorService) =>
+                    IAdminOperationalRunMirrorService mirrorService,
+                    IValidateOptions<OperationalRunMirrorOptions> validator) =>
                 {
-                    var response = new OperationalMirrorStatusResponse
+                    var response = new OperationalMirrorConfigurationStatusResponse
                     {
                         Enabled = options.Value.Enabled,
-                        MirrorServiceRegistered = mirrorService is not null
+                        MirrorServiceRegistered = mirrorService is not null,
+                        OptionsValidatorRegistered = validator is not null
                     };
 
                     return Results.Ok(response);
@@ -27,7 +29,7 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .WithName("GetOperationalMirrorStatus")
             .WithTags("Operational Store")
             .WithSummary("Returns operational run mirror registration and feature-toggle status.")
-            .Produces<OperationalMirrorStatusResponse>(StatusCodes.Status200OK)
+            .Produces<OperationalMirrorConfigurationStatusResponse>(StatusCodes.Status200OK)
             .WithOpenApi();
 
         return app;

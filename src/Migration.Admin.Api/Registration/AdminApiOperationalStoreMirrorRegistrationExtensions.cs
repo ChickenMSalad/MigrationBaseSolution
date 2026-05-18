@@ -1,4 +1,5 @@
 using Migration.Admin.Api.OperationalStore;
+using Microsoft.Extensions.Options;
 
 namespace Migration.Admin.Api.Registration;
 
@@ -13,6 +14,8 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
 
         services.Configure<OperationalRunMirrorOptions>(
             configuration.GetSection(OperationalRunMirrorOptions.SectionName));
+
+        services.AddSingleton<IValidateOptions<OperationalRunMirrorOptions>, OperationalRunMirrorOptionsValidator>();
 
         services.AddScoped<IAdminOperationalRunMirrorService, AdminOperationalRunMirrorService>();
 
