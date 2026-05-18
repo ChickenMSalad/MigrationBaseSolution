@@ -63,6 +63,23 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .Produces<OperationalMirrorEnablementGuardResult>(StatusCodes.Status200OK)
             .WithOpenApi();
 
+        app.MapGet(
+                "/api/operational/mirror/write-verification",
+                async (
+                    IOperationalMirrorWriteVerificationService verificationService,
+                    CancellationToken cancellationToken) =>
+                {
+                    var response = await verificationService.VerifyAsync(
+                        cancellationToken);
+
+                    return Results.Ok(response);
+                })
+            .WithName("GetOperationalMirrorWriteVerification")
+            .WithTags("Operational Store")
+            .WithSummary("Verifies whether operational mirror writes exist in SQL.")
+            .Produces<OperationalMirrorWriteVerificationResult>(StatusCodes.Status200OK)
+            .WithOpenApi();
+
         return app;
     }
 }
