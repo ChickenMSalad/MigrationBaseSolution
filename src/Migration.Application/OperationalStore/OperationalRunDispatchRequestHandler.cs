@@ -5,18 +5,21 @@ namespace Migration.Application.OperationalStore;
 public sealed class OperationalRunDispatchRequestHandler : IOperationalRunDispatchRequestHandler
 {
     private readonly IOperationalRunDispatchCommandService _commandService;
+    private readonly IOperationalRunDispatchRequestValidator _validator;
 
     public OperationalRunDispatchRequestHandler(
-        IOperationalRunDispatchCommandService commandService)
+        IOperationalRunDispatchCommandService commandService,
+        IOperationalRunDispatchRequestValidator validator)
     {
         _commandService = commandService;
+        _validator = validator;
     }
 
     public async Task<OperationalRunDispatchResponse> HandleAsync(
         OperationalRunDispatchRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        _validator.Validate(request);
 
         var result = await _commandService.DispatchAsync(
             new OperationalRunDispatchCommand
