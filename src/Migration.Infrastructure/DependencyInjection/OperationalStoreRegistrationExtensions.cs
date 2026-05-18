@@ -26,6 +26,7 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IOperationalRunLifecycleService, OperationalRunLifecycleService>();
         services.AddScoped<IOperationalManifestLifecycleService, OperationalManifestLifecycleService>();
         services.AddScoped<IOperationalWorkItemLifecycleService, OperationalWorkItemLifecycleService>();
+        services.AddScoped<IOperationalExecutionContextFactory, OperationalExecutionContextFactory>();
 
         services.AddSingleton<IOperationalStoreSchemaValidator, OperationalStoreSchemaValidator>();
         services.AddSingleton<OperationalStoreHealthCheck>();
