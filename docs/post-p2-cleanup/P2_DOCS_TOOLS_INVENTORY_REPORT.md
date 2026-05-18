@@ -1,0 +1,238 @@
+﻿# Post-P2 Docs and Tools Inventory
+
+Generated: 2026-05-17T21:06:06.2708240-04:00
+
+## Missing expected docs
+- None
+
+## Missing expected tools
+- None
+
+## Candidate cleanup targets
+- tools\dropins\apply-p2-set001.ps1
+- tools\dropins\apply-p2-set002.ps1
+- tools\dropins\apply-p2-set003.ps1
+- tools\dropins\apply-p2-set004.ps1
+- tools\dropins\apply-p2-set005.ps1
+- tools\dropins\apply-p2-set006.ps1
+- tools\dropins\apply-p2-set007.ps1
+- tools\dropins\apply-p2-set008.ps1
+- tools\dropins\apply-p2-set008-fix-cpm.ps1
+- tools\dropins\apply-p2-set009.ps1
+- tools\dropins\apply-p2-set010.ps1
+- tools\dropins\apply-p2-set011.ps1
+- tools\dropins\apply-p2-set012.ps1
+- tools\dropins\apply-p2-set012-fix.ps1
+- tools\dropins\apply-p2-set013.ps1
+- tools\dropins\apply-p2-set014.ps1
+- tools\dropins\apply-p2-set015.ps1
+- tools\dropins\apply-p2-set016.ps1
+- tools\dropins\apply-p2-set017.ps1
+- tools\dropins\apply-p2-set018.ps1
+- tools\dropins\apply-p2-set019.ps1
+- tools\dropins\apply-p2-set020.ps1
+- tools\dropins\apply-p2-set021.ps1
+- tools\dropins\apply-p2-set022.ps1
+- tools\dropins\apply-p2-set023.ps1
+- tools\dropins\apply-p2-set024.ps1
+- tools\dropins\apply-p2-set025.ps1
+- tools\dropins\apply-p2-set026.ps1
+- tools\dropins\apply-p2-set027.ps1
+- tools\dropins\apply-p2-set028.ps1
+- tools\dropins\apply-p2-set029.ps1
+- tools\dropins\apply-p2-set030.ps1
+- tools\dropins\apply-p2-set031.ps1
+- tools\dropins\apply-p2-set032.ps1
+- tools\dropins\apply-p2-set033.ps1
+- tools\dropins\apply-p2-set034.ps1
+- tools\dropins\apply-p2-set035.ps1
+- tools\dropins\apply-p2-set036.ps1
+- tools\dropins\apply-p2-set037.ps1
+- tools\dropins\apply-p2-set038.ps1
+- tools\dropins\apply-p2-set039.ps1
+- tools\dropins\apply-p2-set040.ps1
+- tools\dropins\apply-p2-set041.ps1
+- tools\dropins\apply-p2-set042.ps1
+- tools\dropins\apply-p2-set043.ps1
+- tools\dropins\apply-p2-set044.ps1
+- tools\dropins\apply-p2-set045.ps1
+- tools\dropins\apply-p2-set046.ps1
+- tools\dropins\apply-p2-set047.ps1
+- tools\dropins\apply-p2-set048.ps1
+- tools\dropins\apply-p2-set049.ps1
+- tools\dropins\apply-p2-set050.ps1
+- tools\dropins\apply-p2-set051.ps1
+- tools\dropins\apply-p2-set052.ps1
+- tools\dropins\apply-p2-set053.ps1
+- tools\dropins\apply-post-p2-cleanup-set001-fix.ps1
+- tools\dropins\apply-post-p2-cleanup-set001-fix2.ps1
+- tools\dropins\p2-set001-blob-storage-abstractions
+- tools\dropins\p2-set002-blob-storage-provider-contracts
+- tools\dropins\p2-set003-local-binary-storage-provider
+- tools\dropins\p2-set004-artifact-storage-contracts
+- tools\dropins\p2-set005-artifact-manifest-index
+- tools\dropins\p2-set006-artifact-storage-bridge
+- tools\dropins\p2-set007-artifact-bridge-validation
+- tools\dropins\p2-set008-azure-blob-provider-scaffold
+- tools\dropins\p2-set009-azure-blob-provider-validation
+- tools\dropins\p2-set010-blob-switch-templates
+- tools\dropins\p2-set011-key-vault-credential-contracts
+- tools\dropins\p2-set012-key-vault-secret-reader
+- tools\dropins\p2-set013-queue-message-contracts
+- tools\dropins\p2-set014-queue-idempotency
+- tools\dropins\p2-set015-queue-dispatch-contracts
+- tools\dropins\p2-set016-azure-queue-dispatch
+- tools\dropins\p2-set017-queue-receive-contracts
+- tools\dropins\p2-set018-queue-worker-loop
+- tools\dropins\p2-set019-queue-worker-loop-diagnostics
+- tools\dropins\p2-set020-queue-poison-planning
+- tools\dropins\p2-set021-queue-failure-artifacts
+- tools\dropins\p2-set022-queue-failure-handler
+- tools\dropins\p2-set023-queue-execution-planner
+- tools\dropins\p2-set024-queue-executor-coordinator
+- tools\dropins\p2-set025-worker-coordinator-registration-plan
+- tools\dropins\p2-set026-worker-bootstrap-templates
+- tools\dropins\p2-set027-queue-execution-observability
+- tools\dropins\p2-set028-queue-execution-readiness
+- tools\dropins\p2-set029-queue-execution-checkpoint
+- tools\dropins\p2-set030-audit-persistence-contracts
+- tools\dropins\p2-set031-audit-artifact-persistence
+- tools\dropins\p2-set032-audit-event-writer
+- tools\dropins\p2-set033-queue-audit-events
+- tools\dropins\p2-set034-cloud-operation-audit-events
+- tools\dropins\p2-set035-audit-persistence-checkpoint
+- tools\dropins\p2-set036-telemetry-provider-contracts
+- tools\dropins\p2-set037-telemetry-event-writer
+- tools\dropins\p2-set038-queue-telemetry-events
+- tools\dropins\p2-set039-cloud-operation-telemetry
+- tools\dropins\p2-set040-telemetry-checkpoint
+- tools\dropins\p2-set041-operational-readiness-rollups
+- tools\dropins\p2-set042-operational-diagnostics-checkpoint
+- tools\dropins\p2-set043-auth-policy-readiness
+- tools\dropins\p2-set044-endpoint-policy-inventory
+- tools\dropins\p2-set045-credential-access-policy-readiness
+- tools\dropins\p2-set046-auth-enforcement-diagnostics
+- tools\dropins\p2-set047-production-safety-gates
+- tools\dropins\p2-set048-operational-mode-state
+- tools\dropins\p2-set049-queue-execution-governance
+- tools\dropins\p2-set050-auth-operations-checkpoint
+- tools\dropins\p2-set051-full-p2-validation
+- tools\dropins\p2-set052-final-readiness-report
+- tools\dropins\p2-set053-completion-checkpoint
+
+## Suggested git cleanup commands
+
+Review before running:
+
+```powershell
+git rm -r -- 'tools/dropins/apply-p2-set001.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set002.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set003.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set004.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set005.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set006.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set007.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set008.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set008-fix-cpm.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set009.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set010.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set011.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set012.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set012-fix.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set013.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set014.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set015.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set016.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set017.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set018.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set019.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set020.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set021.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set022.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set023.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set024.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set025.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set026.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set027.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set028.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set029.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set030.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set031.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set032.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set033.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set034.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set035.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set036.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set037.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set038.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set039.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set040.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set041.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set042.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set043.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set044.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set045.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set046.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set047.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set048.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set049.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set050.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set051.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set052.ps1'
+git rm -r -- 'tools/dropins/apply-p2-set053.ps1'
+git rm -r -- 'tools/dropins/apply-post-p2-cleanup-set001-fix.ps1'
+git rm -r -- 'tools/dropins/apply-post-p2-cleanup-set001-fix2.ps1'
+git rm -r -- 'tools/dropins/p2-set001-blob-storage-abstractions'
+git rm -r -- 'tools/dropins/p2-set002-blob-storage-provider-contracts'
+git rm -r -- 'tools/dropins/p2-set003-local-binary-storage-provider'
+git rm -r -- 'tools/dropins/p2-set004-artifact-storage-contracts'
+git rm -r -- 'tools/dropins/p2-set005-artifact-manifest-index'
+git rm -r -- 'tools/dropins/p2-set006-artifact-storage-bridge'
+git rm -r -- 'tools/dropins/p2-set007-artifact-bridge-validation'
+git rm -r -- 'tools/dropins/p2-set008-azure-blob-provider-scaffold'
+git rm -r -- 'tools/dropins/p2-set009-azure-blob-provider-validation'
+git rm -r -- 'tools/dropins/p2-set010-blob-switch-templates'
+git rm -r -- 'tools/dropins/p2-set011-key-vault-credential-contracts'
+git rm -r -- 'tools/dropins/p2-set012-key-vault-secret-reader'
+git rm -r -- 'tools/dropins/p2-set013-queue-message-contracts'
+git rm -r -- 'tools/dropins/p2-set014-queue-idempotency'
+git rm -r -- 'tools/dropins/p2-set015-queue-dispatch-contracts'
+git rm -r -- 'tools/dropins/p2-set016-azure-queue-dispatch'
+git rm -r -- 'tools/dropins/p2-set017-queue-receive-contracts'
+git rm -r -- 'tools/dropins/p2-set018-queue-worker-loop'
+git rm -r -- 'tools/dropins/p2-set019-queue-worker-loop-diagnostics'
+git rm -r -- 'tools/dropins/p2-set020-queue-poison-planning'
+git rm -r -- 'tools/dropins/p2-set021-queue-failure-artifacts'
+git rm -r -- 'tools/dropins/p2-set022-queue-failure-handler'
+git rm -r -- 'tools/dropins/p2-set023-queue-execution-planner'
+git rm -r -- 'tools/dropins/p2-set024-queue-executor-coordinator'
+git rm -r -- 'tools/dropins/p2-set025-worker-coordinator-registration-plan'
+git rm -r -- 'tools/dropins/p2-set026-worker-bootstrap-templates'
+git rm -r -- 'tools/dropins/p2-set027-queue-execution-observability'
+git rm -r -- 'tools/dropins/p2-set028-queue-execution-readiness'
+git rm -r -- 'tools/dropins/p2-set029-queue-execution-checkpoint'
+git rm -r -- 'tools/dropins/p2-set030-audit-persistence-contracts'
+git rm -r -- 'tools/dropins/p2-set031-audit-artifact-persistence'
+git rm -r -- 'tools/dropins/p2-set032-audit-event-writer'
+git rm -r -- 'tools/dropins/p2-set033-queue-audit-events'
+git rm -r -- 'tools/dropins/p2-set034-cloud-operation-audit-events'
+git rm -r -- 'tools/dropins/p2-set035-audit-persistence-checkpoint'
+git rm -r -- 'tools/dropins/p2-set036-telemetry-provider-contracts'
+git rm -r -- 'tools/dropins/p2-set037-telemetry-event-writer'
+git rm -r -- 'tools/dropins/p2-set038-queue-telemetry-events'
+git rm -r -- 'tools/dropins/p2-set039-cloud-operation-telemetry'
+git rm -r -- 'tools/dropins/p2-set040-telemetry-checkpoint'
+git rm -r -- 'tools/dropins/p2-set041-operational-readiness-rollups'
+git rm -r -- 'tools/dropins/p2-set042-operational-diagnostics-checkpoint'
+git rm -r -- 'tools/dropins/p2-set043-auth-policy-readiness'
+git rm -r -- 'tools/dropins/p2-set044-endpoint-policy-inventory'
+git rm -r -- 'tools/dropins/p2-set045-credential-access-policy-readiness'
+git rm -r -- 'tools/dropins/p2-set046-auth-enforcement-diagnostics'
+git rm -r -- 'tools/dropins/p2-set047-production-safety-gates'
+git rm -r -- 'tools/dropins/p2-set048-operational-mode-state'
+git rm -r -- 'tools/dropins/p2-set049-queue-execution-governance'
+git rm -r -- 'tools/dropins/p2-set050-auth-operations-checkpoint'
+git rm -r -- 'tools/dropins/p2-set051-full-p2-validation'
+git rm -r -- 'tools/dropins/p2-set052-final-readiness-report'
+git rm -r -- 'tools/dropins/p2-set053-completion-checkpoint'
+```
