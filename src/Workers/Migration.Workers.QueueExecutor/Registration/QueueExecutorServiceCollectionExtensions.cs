@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Migration.Application.Abstractions.OperationalStore;
 using Migration.ControlPlane.Registration;
 using Migration.GenericRuntime.Registration;
 using Migration.Infrastructure.DependencyInjection;
@@ -20,6 +21,9 @@ public static class QueueExecutorServiceCollectionExtensions
         services.Configure<QueueExecutorOptions>(
             configuration.GetSection(QueueExecutorOptions.SectionName));
 
+        services.Configure<OperationalQueuePublisherOptions>(
+            configuration.GetSection(OperationalQueuePublisherOptions.SectionName));
+
         // Shared execution/runtime path used by API and worker hosts.
         services.AddMigrationRuntime(configuration);
 
@@ -30,6 +34,11 @@ public static class QueueExecutorServiceCollectionExtensions
         // SQL operational store foundation and P3B execution-preparation services.
         // This only registers services; the worker execution path is not changed here.
         services.AddOperationalStore();
+
+        // Replace the behavior-neutral default publisher with the QueueExecutor host's
+        // Azure Queue implementation. Nothing publishes through this until callers
+        // explicitly use IOperationalWorkItemQueuePublisher.
+        services.AddScoped<IOperationalQueuePublisher, AzureOperationalQueuePublisher>();
 
         // Explicitly call the connector module registration extension to avoid
         // ambiguity with similarly named extension methods in runtime projects.
