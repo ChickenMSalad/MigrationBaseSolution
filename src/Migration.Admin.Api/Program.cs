@@ -1,13 +1,6 @@
-using Migration.ControlPlane.Auth;
-using Migration.ControlPlane.Operations;
-using Migration.ControlPlane.Telemetry;
-using Migration.ControlPlane.Audit;
-using Migration.ControlPlane.Queues;
-using Migration.ControlPlane.Credentials;
-using Migration.ControlPlane.Storage;
-using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
+using Migration.Admin.Api.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,43 +28,6 @@ app.MapOperationalHealthEndpoints();
 
 var api = app.MapGroup("/api");
 
-api.MapRunMonitoringEndpoints();
-api.MapCredentialEndpoints();
-api.MapProjectArtifactBindingEndpoints();
-api.MapProjectCredentialBindingEndpoints();
-api.MapPreflightEndpoints();
-api.MapProjectEndpoints();
-api.MapRunEndpoints();
-api.MapRunExecutionPolicyEndpoints();
-AdminApiCloudStartupExtensions.MapMigrationAdminApiCloudEndpoints(api);
-api.MapCloudConfigurationAuditEndpoints();
-api.MapDeploymentProfileEndpoints();
-api.MapCloudReadinessEndpoints();
-api.MapQueueProviderPlanEndpoints();
-api.MapQueueContractDiagnosticsEndpoints();
-api.MapQueueIdempotencyEndpoints();
-api.MapQueueDispatchDiagnosticsEndpoints();
-api.MapQueueReceiveDiagnosticsEndpoints();
-api.MapQueueWorkerLoopDiagnosticsEndpoints();
-api.MapQueuePoisonHandlingEndpoints();
-api.MapQueueFailureArtifactEndpoints();
-api.MapQueueFailureHandlerEndpoints();
-api.MapQueueExecutionPlannerEndpoints();
-api.MapQueueExecutorCoordinatorEndpoints();
-api.MapQueueExecutionObservabilityEndpoints();
-api.MapQueueExecutionReadinessEndpoints();
-api.MapArtifactStoragePlanEndpoints();
-api.MapCredentialProviderPlanEndpoints();
-api.MapWorkspaceContextEndpoints();
-api.MapWorkspaceStoragePlanEndpoints();
-api.MapConnectorCatalogEndpoints();
-api.MapConnectorCapabilityEndpoints();
-
-// These extensions include their /api route prefix internally. Keep them on app, not on the /api group.
-app.MapArtifactEndpoints();
-app.MapControlPlaneDeleteEndpoints();
-app.MapMappingBuilderEndpoints();
-app.MapManifestBuilderEndpoints();
-app.MapTaxonomyBuilderEndpoints();
-
+AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
+AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
 app.Run();
