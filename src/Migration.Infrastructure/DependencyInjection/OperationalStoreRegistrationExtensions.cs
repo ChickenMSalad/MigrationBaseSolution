@@ -11,7 +11,9 @@ public static class OperationalStoreRegistrationExtensions
         this IServiceCollection services)
     {
         services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
+
         services.AddScoped<IMigrationRunStore, SqlMigrationRunStore>();
+        services.AddScoped<IMigrationManifestStore, SqlMigrationManifestStore>();
 
         return services;
     }
