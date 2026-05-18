@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Migration.ControlPlane.Registration;
 using Migration.GenericRuntime.Registration;
+using Migration.Infrastructure.DependencyInjection;
 using Migration.Workers.QueueExecutor.Options;
 using Migration.Workers.QueueExecutor.Services;
 
@@ -25,6 +26,10 @@ public static class QueueExecutorServiceCollectionExtensions
         // Control-plane storage, queues, project/run stores, credentials,
         // artifact helpers, progress monitoring, and manifest builders.
         services.AddMigrationControlPlane(configuration);
+
+        // SQL operational store foundation and P3B execution-preparation services.
+        // This only registers services; the worker execution path is not changed here.
+        services.AddOperationalStore();
 
         // Explicitly call the connector module registration extension to avoid
         // ambiguity with similarly named extension methods in runtime projects.
