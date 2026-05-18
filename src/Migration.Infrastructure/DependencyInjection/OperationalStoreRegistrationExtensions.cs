@@ -1,4 +1,5 @@
 using Migration.Application.Abstractions.OperationalStore;
+using Migration.Application.OperationalStore;
 using Migration.Infrastructure.State.OperationalStore.Sql;
 using Migration.Infrastructure.State.OperationalStore.Sql.Health;
 using Migration.Infrastructure.State.OperationalStore.Sql.Stores;
@@ -22,6 +23,7 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IMigrationIdentifierMapStore, SqlMigrationIdentifierMapStore>();
 
         services.AddScoped<IOperationalStore, SqlOperationalStore>();
+        services.AddScoped<IOperationalRunLifecycleService, OperationalRunLifecycleService>();
 
         services.AddSingleton<IOperationalStoreSchemaValidator, OperationalStoreSchemaValidator>();
         services.AddSingleton<OperationalStoreHealthCheck>();

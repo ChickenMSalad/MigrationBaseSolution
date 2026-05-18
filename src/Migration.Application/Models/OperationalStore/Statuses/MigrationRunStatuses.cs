@@ -8,4 +8,5 @@ public static class MigrationRunStatuses
     public const string Completed = "Completed";
     public const string Failed = "Failed";
     public const string Cancelled = "Cancelled";
+    public const string Created = "Created";
 }
