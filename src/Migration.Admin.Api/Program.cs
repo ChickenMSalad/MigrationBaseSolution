@@ -17,7 +17,7 @@ Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.LogAdminApiCon
 Migration.Admin.Api.Registration.AdminApiOpenApiServiceCollectionExtensions.AddMigrationAdminApiOpenApi(builder.Services);
 builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
-AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
+AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
 var app = builder.Build();
 
 app.UseSwagger();
@@ -43,7 +43,7 @@ api.MapPreflightEndpoints();
 api.MapProjectEndpoints();
 api.MapRunEndpoints();
 api.MapRunExecutionPolicyEndpoints();
-MapMigrationAdminApiCloudEndpoints(api);
+AdminApiCloudStartupExtensions.MapMigrationAdminApiCloudEndpoints(api);
 api.MapCloudConfigurationAuditEndpoints();
 api.MapDeploymentProfileEndpoints();
 api.MapCloudReadinessEndpoints();
@@ -75,71 +75,3 @@ app.MapManifestBuilderEndpoints();
 app.MapTaxonomyBuilderEndpoints();
 
 app.Run();
-
-static void AddMigrationAdminApiCloudServices(
-    Microsoft.Extensions.DependencyInjection.IServiceCollection services,
-    Microsoft.Extensions.Configuration.IConfiguration configuration)
-{
-    services.AddCloudStoragePathResolution(configuration);
-    services.AddCloudBinaryStorage(configuration);
-    services.AddArtifactStorage();
-    services.AddArtifactManifestIndex();
-    services.AddCloudCredentialPlanning(configuration);
-    services.AddCloudCredentialValueProvider(configuration);
-    services.AddQueueDispatchProvider(configuration);
-    services.AddQueueReceiveProvider(configuration);
-    services.AddQueueFailureHandling();
-    services.AddQueueExecutionPlanning();
-    services.AddQueueExecutorCoordinator(configuration);
-    services.AddQueueExecutionObservability();
-    services.AddQueueExecutionReadiness();
-    services.AddAuditPersistence(configuration);
-    services.AddAuditEventWriter();
-    services.AddTelemetrySink(configuration);
-    services.AddTelemetryEventWriter();
-    services.AddOperationalReadiness();
-    services.AddAuthPolicyReadiness();
-    services.AddEndpointPolicyInventory();
-    services.AddCredentialAccessPolicyReadiness();
-    services.AddAuthEnforcementDiagnostics();
-    services.AddProductionSafetyGates();
-    services.AddOperationalMode();
-    services.AddQueueExecutionGovernance();
-    services.AddP2ReadinessReport();
-}
-
-static void MapMigrationAdminApiCloudEndpoints(
-    Microsoft.AspNetCore.Routing.RouteGroupBuilder api)
-{
-    api.MapCloudPlatformEndpoints();
-    api.MapCloudCredentialDiagnosticsEndpoints();
-    api.MapCloudCredentialValueProbeEndpoints();
-    api.MapCloudStoragePlanEndpoints();
-    api.MapCloudBinaryStorageProbeEndpoints();
-    api.MapAzureBlobStorageDiagnosticsEndpoints();
-    api.MapArtifactStorageProbeEndpoints();
-    api.MapArtifactManifestIndexEndpoints();
-    api.MapArtifactStorageBridgeEndpoints();
-    api.MapAuthorizationPolicyPlanEndpoints();
-    api.MapAuthenticationConfigurationEndpoints();
-    api.MapAuditEventContractEndpoints();
-    api.MapAuditPersistenceEndpoints();
-    api.MapAuditArtifactPersistenceEndpoints();
-    api.MapAuditEventWriterEndpoints();
-    api.MapQueueAuditEventEndpoints();
-    api.MapCloudOperationAuditEndpoints();
-    api.MapTelemetryCorrelationEndpoints();
-    api.MapTelemetrySinkEndpoints();
-    api.MapTelemetryEventWriterEndpoints();
-    api.MapQueueTelemetryEventEndpoints();
-    api.MapCloudOperationTelemetryEndpoints();
-    api.MapOperationalReadinessEndpoints();
-    api.MapAuthPolicyReadinessEndpoints();
-    api.MapEndpointPolicyInventoryEndpoints();
-    api.MapCredentialAccessPolicyReadinessEndpoints();
-    api.MapAuthEnforcementDiagnosticsEndpoints();
-    api.MapProductionSafetyGateEndpoints();
-    api.MapOperationalModeEndpoints();
-    api.MapQueueExecutionGovernanceEndpoints();
-    api.MapP2ReadinessReportEndpoints();
-}
