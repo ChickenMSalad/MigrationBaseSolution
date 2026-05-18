@@ -29,6 +29,7 @@ Migration.Admin.Api.Endpoints.AdminSystemEndpointExtensions.MapAdminSystemEndpoi
 
 app.MapOperationalHealthEndpoints();
 app.MapAdminEndpointDiagnostics();
+app.MapOperationalMirrorDiagnosticsEndpoints();
 
 var api = app.MapGroup("/api");
 
