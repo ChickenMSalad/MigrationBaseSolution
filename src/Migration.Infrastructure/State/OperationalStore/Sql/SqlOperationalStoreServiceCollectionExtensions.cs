@@ -17,6 +17,8 @@ public static class SqlOperationalStoreServiceCollectionExtensions
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IValidateOptions<SqlOperationalStoreOptions>, SqlOperationalStoreOptionsValidator>());
 
+        services.TryAddSingleton<ISqlOperationalStoreConnectionStringResolver, SqlOperationalStoreConnectionStringResolver>();
+
         services
             .AddOptions<SqlOperationalStoreOptions>()
             .Bind(configuration.GetSection(SqlOperationalStoreOptions.SectionName))
