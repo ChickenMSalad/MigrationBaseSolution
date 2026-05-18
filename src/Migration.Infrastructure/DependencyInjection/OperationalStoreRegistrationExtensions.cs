@@ -28,6 +28,7 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IOperationalManifestLifecycleService, OperationalManifestLifecycleService>();
         services.AddScoped<IOperationalWorkItemLifecycleService, OperationalWorkItemLifecycleService>();
         services.AddScoped<IOperationalWorkItemDispatchService, OperationalWorkItemDispatchService>();
+        services.AddScoped<IOperationalManifestDispatchService, OperationalManifestDispatchService>();
 
         services.AddScoped<IOperationalExecutionContextFactory, OperationalExecutionContextFactory>();
         services.AddScoped<IOperationalQueueMessageFactory, OperationalQueueMessageFactory>();
