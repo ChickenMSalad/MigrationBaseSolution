@@ -25,6 +25,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalMirrorWriteVerificationService, OperationalMirrorWriteVerificationService>();
         services.AddScoped<IOperationalMirrorReadService, OperationalMirrorReadService>();
         services.AddScoped<IOperationalRunStatusProjectionService, OperationalRunStatusProjectionService>();
+        services.AddScoped<IOperationalWorkItemLeaseService, OperationalWorkItemLeaseService>();
 
         return services;
     }
