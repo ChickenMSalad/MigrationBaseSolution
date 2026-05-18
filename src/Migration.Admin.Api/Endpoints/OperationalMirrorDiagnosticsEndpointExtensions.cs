@@ -80,6 +80,18 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .Produces<OperationalMirrorWriteVerificationResult>(StatusCodes.Status200OK)
             .WithOpenApi();
 
+        app.MapGet(
+                "/api/operational/mirror/last-invocation",
+                (OperationalMirrorInvocationState invocationState) =>
+                {
+                    return Results.Ok(invocationState.GetSnapshot());
+                })
+            .WithName("GetOperationalMirrorLastInvocation")
+            .WithTags("Operational Store")
+            .WithSummary("Returns the last observed operational mirror invocation since Admin API startup.")
+            .Produces<OperationalMirrorInvocationSnapshot>(StatusCodes.Status200OK)
+            .WithOpenApi();
+
         return app;
     }
 }

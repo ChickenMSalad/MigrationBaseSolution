@@ -9,15 +9,18 @@ public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirro
 {
     private readonly IOperationalStore _operationalStore;
     private readonly IOperationalMirrorEnablementGuard _enablementGuard;
+    private readonly OperationalMirrorInvocationState _invocationState;
     private readonly ILogger<AdminOperationalRunMirrorService> _logger;
 
     public AdminOperationalRunMirrorService(
         IOperationalStore operationalStore,
         IOperationalMirrorEnablementGuard enablementGuard,
+        OperationalMirrorInvocationState invocationState,
         ILogger<AdminOperationalRunMirrorService> logger)
     {
         _operationalStore = operationalStore;
         _enablementGuard = enablementGuard;
+        _invocationState = invocationState;
         _logger = logger;
     }
 
@@ -29,28 +32,51 @@ public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirro
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(run);
 
+        _logger.LogInformation(
+            "Operational mirror hook invoked for legacy run {RunId}.",
+            run.RunId);
+
         var guard = await _enablementGuard.EvaluateAsync(
             cancellationToken);
 
         if (!guard.CanMirror)
         {
-            _logger.LogDebug(
+            var reason = string.Join("; ", guard.Messages);
+
+            _invocationState.RecordSkipped(
+                run.RunId,
+                reason);
+
+            _logger.LogWarning(
                 "Operational run mirror skipped for run {RunId}. Reasons: {Reasons}",
                 run.RunId,
-                string.Join("; ", guard.Messages));
+                reason);
 
             return;
         }
 
         try
         {
-            await MirrorRunCoreAsync(
+            var operationalRunId = await MirrorRunCoreAsync(
                 project,
                 run,
                 cancellationToken);
+
+            _invocationState.RecordMirrored(
+                run.RunId,
+                operationalRunId);
+
+            _logger.LogInformation(
+                "Mirrored legacy run {RunId} into operational store as {OperationalRunId}.",
+                run.RunId,
+                operationalRunId);
         }
         catch (Exception ex)
         {
+            _invocationState.RecordFailed(
+                run.RunId,
+                ex);
+
             _logger.LogError(
                 ex,
                 "Operational run mirror failed for run {RunId}. Legacy run flow will continue.",
@@ -58,7 +84,7 @@ public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirro
         }
     }
 
-    private async Task MirrorRunCoreAsync(
+    private async Task<Guid> MirrorRunCoreAsync(
         MigrationProjectRecord project,
         MigrationRunControlRecord run,
         CancellationToken cancellationToken)
@@ -172,9 +198,6 @@ public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirro
             },
             cancellationToken);
 
-        _logger.LogInformation(
-            "Mirrored legacy run {RunId} into operational store as {OperationalRunId}.",
-            run.RunId,
-            operationalRunId);
+        return operationalRunId;
     }
 }
