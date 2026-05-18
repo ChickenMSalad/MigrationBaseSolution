@@ -32,6 +32,8 @@ public static class OperationalStoreRegistrationExtensions
         services.AddScoped<IOperationalQueueMessageFactory, OperationalQueueMessageFactory>();
         services.AddScoped<IOperationalWorkItemExecutionSynchronizer, OperationalWorkItemExecutionSynchronizer>();
 
+        services.AddSingleton<IOperationalQueueMessageSerializer, OperationalQueueMessageSerializer>();
+
         services.AddSingleton<IOperationalStoreSchemaValidator, OperationalStoreSchemaValidator>();
         services.AddSingleton<OperationalStoreHealthCheck>();
 
