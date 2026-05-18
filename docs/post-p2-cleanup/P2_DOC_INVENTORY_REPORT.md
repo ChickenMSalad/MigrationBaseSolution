@@ -1,15 +1,15 @@
 ﻿# P2 Documentation Inventory Report
 
-Generated: 2026-05-18T09:17:08.9239620-04:00
+Generated: 2026-05-18T09:23:54.9750419-04:00
 
 ## Summary
 
 | Category | Count |
 |---|---:|
 | Final reference docs | 7 |
-| Checkpoint docs | 7 |
+| Checkpoint docs | 8 |
 | Set-history docs | 47 |
-| Post-P2 cleanup docs | 15 |
+| Post-P2 cleanup docs | 16 |
 | Review candidates | 27 |
 
 ## Final reference docs
@@ -28,6 +28,7 @@ Generated: 2026-05-18T09:17:08.9239620-04:00
 - docs\cloud-roadmap-cleanup\P2_SET_042_OPERATIONAL_DIAGNOSTICS_CHECKPOINT.md
 - docs\cloud-roadmap-cleanup\P2_SET_050_AUTH_OPERATIONS_CHECKPOINT.md
 - docs\cloud-roadmap-cleanup\P2_SET_053_COMPLETION_CHECKPOINT.md
+- docs\post-p2-cleanup\POST_P2_CLEANUP_CHECKPOINT_REPORT.md
 - docs\post-p2-cleanup\POST_P2_CLEANUP_SET_009_CLEANUP_CHECKPOINT.md
 
 ## Set-history docs
@@ -95,6 +96,7 @@ Generated: 2026-05-18T09:17:08.9239620-04:00
 - docs\post-p2-cleanup\POST_P2_CLEANUP_SET_007_P3_SQL_BASELINE.md
 - docs\post-p2-cleanup\POST_P2_CLEANUP_SET_008_PROGRAM_LOCAL_HELPERS.md
 - docs\post-p2-cleanup\POST_P2_CLEANUP_SET_009_FIX.md
+- docs\post-p2-cleanup\POST_P2_CLEANUP_SET_010_READY_FOR_P3.md
 
 ## Review candidates
 - docs\cloud-roadmap-cleanup\P1_PHASE_SUMMARY.md
