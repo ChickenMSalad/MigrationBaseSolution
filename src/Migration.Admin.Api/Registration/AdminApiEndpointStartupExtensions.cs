@@ -8,6 +8,7 @@ public static class AdminApiEndpointStartupExtensions
         RouteGroupBuilder api)
     {
         api.MapOperationalDispatchEndpoints();
+        api.MapOperationalMirrorReadEndpoints();
         ArgumentNullException.ThrowIfNull(api);
 
         api.MapRunMonitoringEndpoints();
