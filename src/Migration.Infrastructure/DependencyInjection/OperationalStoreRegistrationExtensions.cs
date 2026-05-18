@@ -34,6 +34,9 @@ public static class OperationalStoreRegistrationExtensions
 
         services.AddSingleton<IOperationalQueueMessageSerializer, OperationalQueueMessageSerializer>();
 
+        services.AddScoped<IOperationalQueuePublisher, NullOperationalQueuePublisher>();
+        services.AddScoped<IOperationalWorkItemQueuePublisher, OperationalWorkItemQueuePublisher>();
+
         services.AddSingleton<IOperationalStoreSchemaValidator, OperationalStoreSchemaValidator>();
         services.AddSingleton<OperationalStoreHealthCheck>();
 
