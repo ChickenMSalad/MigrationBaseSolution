@@ -6,6 +6,8 @@ public sealed class OperationalSqlSchemaSmokeTestResult
 
     public bool ConnectionSucceeded { get; init; }
 
+    public string SchemaName { get; init; } = string.Empty;
+
     public bool RunsTableExists { get; init; }
 
     public bool ManifestTableExists { get; init; }

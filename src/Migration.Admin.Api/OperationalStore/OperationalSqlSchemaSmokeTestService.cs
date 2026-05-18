@@ -1,5 +1,6 @@
 using Migration.Infrastructure.State.OperationalStore.Sql;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
 
 namespace Migration.Admin.Api.OperationalStore;
 
@@ -7,58 +8,64 @@ public sealed class OperationalSqlSchemaSmokeTestService
     : IOperationalSqlSchemaSmokeTestService
 {
     private readonly ISqlConnectionFactory _connectionFactory;
+    private readonly IOptions<SqlOperationalStoreOptions> _options;
 
     public OperationalSqlSchemaSmokeTestService(
-        ISqlConnectionFactory connectionFactory)
+        ISqlConnectionFactory connectionFactory,
+        IOptions<SqlOperationalStoreOptions> options)
     {
         _connectionFactory = connectionFactory;
+        _options = options;
     }
 
     public async Task<OperationalSqlSchemaSmokeTestResult> ExecuteAsync(
         CancellationToken cancellationToken = default)
     {
         var messages = new List<string>();
+        var schemaName = string.IsNullOrWhiteSpace(_options.Value.SchemaName)
+            ? "migration"
+            : _options.Value.SchemaName;
 
         try
         {
             await using var connection =
                 await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
-            var runsExists = await TableExistsAsync(connection, "MigrationRuns", cancellationToken);
-            var manifestExists = await TableExistsAsync(connection, "MigrationManifestRecords", cancellationToken);
-            var workItemsExists = await TableExistsAsync(connection, "MigrationWorkItems", cancellationToken);
-            var failuresExists = await TableExistsAsync(connection, "MigrationFailures", cancellationToken);
-            var checkpointsExists = await TableExistsAsync(connection, "MigrationCheckpoints", cancellationToken);
-            var identifierMapsExists = await TableExistsAsync(connection, "MigrationIdentifierMaps", cancellationToken);
+            var runsExists = await TableExistsAsync(connection, schemaName, "MigrationRuns", cancellationToken);
+            var manifestExists = await TableExistsAsync(connection, schemaName, "MigrationManifestRecords", cancellationToken);
+            var workItemsExists = await TableExistsAsync(connection, schemaName, "MigrationWorkItems", cancellationToken);
+            var failuresExists = await TableExistsAsync(connection, schemaName, "MigrationFailures", cancellationToken);
+            var checkpointsExists = await TableExistsAsync(connection, schemaName, "MigrationCheckpoints", cancellationToken);
+            var identifierMapsExists = await TableExistsAsync(connection, schemaName, "MigrationIdentifierMaps", cancellationToken);
 
             if (!runsExists)
             {
-                messages.Add("MigrationRuns table missing.");
+                messages.Add($"{schemaName}.MigrationRuns table missing.");
             }
 
             if (!manifestExists)
             {
-                messages.Add("MigrationManifestRecords table missing.");
+                messages.Add($"{schemaName}.MigrationManifestRecords table missing.");
             }
 
             if (!workItemsExists)
             {
-                messages.Add("MigrationWorkItems table missing.");
+                messages.Add($"{schemaName}.MigrationWorkItems table missing.");
             }
 
             if (!failuresExists)
             {
-                messages.Add("MigrationFailures table missing.");
+                messages.Add($"{schemaName}.MigrationFailures table missing.");
             }
 
             if (!checkpointsExists)
             {
-                messages.Add("MigrationCheckpoints table missing.");
+                messages.Add($"{schemaName}.MigrationCheckpoints table missing.");
             }
 
             if (!identifierMapsExists)
             {
-                messages.Add("MigrationIdentifierMaps table missing.");
+                messages.Add($"{schemaName}.MigrationIdentifierMaps table missing.");
             }
 
             var success =
@@ -71,13 +78,14 @@ public sealed class OperationalSqlSchemaSmokeTestService
 
             if (success)
             {
-                messages.Add("Operational SQL schema smoke test passed.");
+                messages.Add($"Operational SQL schema smoke test passed for schema '{schemaName}'.");
             }
 
             return new OperationalSqlSchemaSmokeTestResult
             {
                 Success = success,
                 ConnectionSucceeded = true,
+                SchemaName = schemaName,
                 RunsTableExists = runsExists,
                 ManifestTableExists = manifestExists,
                 WorkItemsTableExists = workItemsExists,
@@ -95,6 +103,7 @@ public sealed class OperationalSqlSchemaSmokeTestService
             {
                 Success = false,
                 ConnectionSucceeded = false,
+                SchemaName = schemaName,
                 Messages = messages
             };
         }
@@ -102,6 +111,7 @@ public sealed class OperationalSqlSchemaSmokeTestService
 
     private static async Task<bool> TableExistsAsync(
         SqlConnection connection,
+        string schemaName,
         string tableName,
         CancellationToken cancellationToken)
     {
@@ -110,7 +120,7 @@ public sealed class OperationalSqlSchemaSmokeTestService
                 WHEN EXISTS (
                     SELECT 1
                     FROM INFORMATION_SCHEMA.TABLES
-                    WHERE TABLE_SCHEMA = 'dbo'
+                    WHERE TABLE_SCHEMA = @SchemaName
                       AND TABLE_NAME = @TableName
                 )
                 THEN CAST(1 AS BIT)
@@ -121,6 +131,10 @@ public sealed class OperationalSqlSchemaSmokeTestService
         await using var command = new SqlCommand(
             sql,
             connection);
+
+        command.Parameters.AddWithValue(
+            "@SchemaName",
+            schemaName);
 
         command.Parameters.AddWithValue(
             "@TableName",
