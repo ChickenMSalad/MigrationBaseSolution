@@ -15,6 +15,9 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.Configure<OperationalRunMirrorOptions>(
             configuration.GetSection(OperationalRunMirrorOptions.SectionName));
 
+        services.Configure<OperationalLeaseExpirationOptions>(
+            configuration.GetSection(OperationalLeaseExpirationOptions.SectionName));
+
         services.AddSingleton<IValidateOptions<OperationalRunMirrorOptions>, OperationalRunMirrorOptionsValidator>();
         services.AddSingleton<OperationalMirrorInvocationState>();
 
@@ -27,6 +30,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalRunStatusProjectionService, OperationalRunStatusProjectionService>();
         services.AddScoped<IOperationalWorkItemLeaseService, OperationalWorkItemLeaseService>();
         services.AddScoped<IOperationalWorkItemRecoveryService, OperationalWorkItemRecoveryService>();
+        services.AddScoped<IOperationalLeaseExpirationService, OperationalLeaseExpirationService>();
 
         return services;
     }
