@@ -1,6 +1,7 @@
 using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
 using Migration.Admin.Api.Endpoints;
+using Migration.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +9,8 @@ Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.ConfigureAdmin
 Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.LogAdminApiConfiguration(builder);
 
 Migration.Admin.Api.Registration.AdminApiOpenApiServiceCollectionExtensions.AddMigrationAdminApiOpenApi(builder.Services);
-builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);
+builder.Services.AddMigrationAdminApiRuntime(builder.Configuration); 
+builder.Services.AddOperationalStore();
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
 var app = builder.Build();
