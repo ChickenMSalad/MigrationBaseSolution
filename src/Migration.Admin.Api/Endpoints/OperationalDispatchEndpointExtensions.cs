@@ -10,6 +10,24 @@ public static class OperationalDispatchEndpointExtensions
     {
         ArgumentNullException.ThrowIfNull(api);
 
+        api.MapGet(
+                "/operational/runs/dispatch/sample",
+                (
+                    IOperationalRunDispatchSampleRequestFactory sampleRequestFactory,
+                    int? count) =>
+                {
+                    var request = sampleRequestFactory.CreateSample(
+                        count.GetValueOrDefault(3));
+
+                    return Results.Ok(request);
+                })
+            .WithName("GetOperationalRunDispatchSample")
+            .WithTags("Operational Store")
+            .WithSummary("Returns a sample operational run dispatch request payload.")
+            .Produces<OperationalRunDispatchRequest>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .WithOpenApi();
+
         api.MapPost(
                 "/operational/runs/dispatch",
                 async (
