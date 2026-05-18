@@ -1,0 +1,373 @@
+﻿# P2 Source Structure Inventory Report
+
+Generated: 2026-05-17T21:27:13.4148443-04:00
+
+## Area summary
+
+| Area | Path | Files |
+|---|---|---:|
+| ControlPlane Auth | $(@{Name=ControlPlane Auth; Path=src\Migration.ControlPlane\Auth; Count=16}.Path) | 16 |
+| ControlPlane Audit | $(@{Name=ControlPlane Audit; Path=src\Migration.ControlPlane\Audit; Count=14}.Path) | 14 |
+| ControlPlane Operations | $(@{Name=ControlPlane Operations; Path=src\Migration.ControlPlane\Operations; Count=20}.Path) | 20 |
+| ControlPlane Queues | $(@{Name=ControlPlane Queues; Path=src\Migration.ControlPlane\Queues; Count=44}.Path) | 44 |
+| ControlPlane Telemetry | $(@{Name=ControlPlane Telemetry; Path=src\Migration.ControlPlane\Telemetry; Count=12}.Path) | 12 |
+| Admin API Endpoints | $(@{Name=Admin API Endpoints; Path=src\Migration.Admin.Api\Endpoints; Count=69}.Path) | 69 |
+| Admin Web API Clients | $(@{Name=Admin Web API Clients; Path=src\Admin\Migration.Admin.Web\src\api; Count=62}.Path) | 62 |
+
+## Contracts and interfaces
+- src\Migration.ControlPlane\Auth\AuthEnforcementDiagnosticsContracts.cs
+- src\Migration.ControlPlane\Auth\AuthPolicyReadinessContracts.cs
+- src\Migration.ControlPlane\Auth\CredentialAccessPolicyContracts.cs
+- src\Migration.ControlPlane\Auth\EndpointPolicyInventoryContracts.cs
+- src\Migration.ControlPlane\Auth\IAuthEnforcementDiagnosticsService.cs
+- src\Migration.ControlPlane\Auth\IAuthPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\ICredentialAccessPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\IEndpointPolicyInventoryService.cs
+- src\Migration.ControlPlane\Audit\AuditPersistenceContracts.cs
+- src\Migration.ControlPlane\Audit\IAuditEventWriter.cs
+- src\Migration.ControlPlane\Audit\IAuditPersistenceProvider.cs
+- src\Migration.ControlPlane\Audit\InMemoryAuditPersistenceProvider.cs
+- src\Migration.ControlPlane\Operations\IOperationalModeService.cs
+- src\Migration.ControlPlane\Operations\IOperationalReadinessService.cs
+- src\Migration.ControlPlane\Operations\IP2ReadinessReportService.cs
+- src\Migration.ControlPlane\Operations\IProductionSafetyGateService.cs
+- src\Migration.ControlPlane\Operations\IQueueExecutionGovernanceService.cs
+- src\Migration.ControlPlane\Operations\OperationalModeContracts.cs
+- src\Migration.ControlPlane\Operations\OperationalReadinessContracts.cs
+- src\Migration.ControlPlane\Operations\P2ReadinessReportContracts.cs
+- src\Migration.ControlPlane\Operations\ProductionSafetyGateContracts.cs
+- src\Migration.ControlPlane\Operations\QueueExecutionGovernanceContracts.cs
+- src\Migration.ControlPlane\Queues\IMigrationRunQueue.cs
+- src\Migration.ControlPlane\Queues\InMemoryQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\InMemoryQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\IQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutionObservabilityService.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutionPlanner.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutionReadinessService.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutorCoordinator.cs
+- src\Migration.ControlPlane\Queues\IQueueFailureHandler.cs
+- src\Migration.ControlPlane\Queues\IQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionObservabilityContracts.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionPlanningContracts.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionReadinessContracts.cs
+- src\Migration.ControlPlane\Queues\QueueExecutorCoordinatorContracts.cs
+- src\Migration.ControlPlane\Queues\QueueFailureArtifactContracts.cs
+- src\Migration.ControlPlane\Queues\QueueMessageContracts.cs
+- src\Migration.ControlPlane\Queues\QueuePoisonMessageContracts.cs
+- src\Migration.ControlPlane\Telemetry\InMemoryTelemetrySink.cs
+- src\Migration.ControlPlane\Telemetry\ITelemetryEventWriter.cs
+- src\Migration.ControlPlane\Telemetry\ITelemetrySink.cs
+- src\Migration.ControlPlane\Telemetry\TelemetryContracts.cs
+
+## Services / providers / writers
+- src\Migration.ControlPlane\Auth\AuthEnforcementDiagnosticsService.cs
+- src\Migration.ControlPlane\Auth\AuthPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\CredentialAccessPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\EndpointPolicyInventoryService.cs
+- src\Migration.ControlPlane\Auth\IAuthEnforcementDiagnosticsService.cs
+- src\Migration.ControlPlane\Auth\IAuthPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\ICredentialAccessPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\IEndpointPolicyInventoryService.cs
+- src\Migration.ControlPlane\Audit\ArtifactAuditPersistenceProvider.cs
+- src\Migration.ControlPlane\Audit\AuditEventWriter.cs
+- src\Migration.ControlPlane\Audit\IAuditEventWriter.cs
+- src\Migration.ControlPlane\Audit\IAuditPersistenceProvider.cs
+- src\Migration.ControlPlane\Audit\InMemoryAuditPersistenceProvider.cs
+- src\Migration.ControlPlane\Operations\IOperationalModeService.cs
+- src\Migration.ControlPlane\Operations\IOperationalReadinessService.cs
+- src\Migration.ControlPlane\Operations\IP2ReadinessReportService.cs
+- src\Migration.ControlPlane\Operations\IProductionSafetyGateService.cs
+- src\Migration.ControlPlane\Operations\IQueueExecutionGovernanceService.cs
+- src\Migration.ControlPlane\Operations\OperationalModeService.cs
+- src\Migration.ControlPlane\Operations\OperationalReadinessService.cs
+- src\Migration.ControlPlane\Operations\P2ReadinessReportService.cs
+- src\Migration.ControlPlane\Operations\ProductionSafetyGateService.cs
+- src\Migration.ControlPlane\Operations\QueueExecutionGovernanceService.cs
+- src\Migration.ControlPlane\Queues\AzureQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\AzureQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\InMemoryQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\InMemoryQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\IQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutionObservabilityService.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutionReadinessService.cs
+- src\Migration.ControlPlane\Queues\IQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\NullQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\NullQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionObservabilityService.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionReadinessService.cs
+- src\Migration.ControlPlane\Telemetry\ITelemetryEventWriter.cs
+- src\Migration.ControlPlane\Telemetry\TelemetryEventWriter.cs
+
+## Registration extension files
+- src\Migration.ControlPlane\Auth\AuthEnforcementDiagnosticsRegistrationExtensions.cs
+- src\Migration.ControlPlane\Auth\AuthPolicyReadinessRegistrationExtensions.cs
+- src\Migration.ControlPlane\Auth\CredentialAccessPolicyReadinessRegistrationExtensions.cs
+- src\Migration.ControlPlane\Auth\EndpointPolicyInventoryRegistrationExtensions.cs
+- src\Migration.ControlPlane\Audit\AuditEventWriterRegistrationExtensions.cs
+- src\Migration.ControlPlane\Audit\AuditPersistenceRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\OperationalModeRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\OperationalReadinessRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\P2ReadinessReportRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\ProductionSafetyGateRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\QueueExecutionGovernanceRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueDispatchRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionObservabilityRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionPlannerRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionReadinessRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueExecutorCoordinatorRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueFailureHandlerRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueReceiveRegistrationExtensions.cs
+- src\Migration.ControlPlane\Telemetry\TelemetryEventWriterRegistrationExtensions.cs
+- src\Migration.ControlPlane\Telemetry\TelemetryRegistrationExtensions.cs
+
+## Endpoint extension files
+- src\Migration.Admin.Api\Endpoints\AdminSystemEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ArtifactManifestIndexEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ArtifactStorageBridgeEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ArtifactStoragePlanEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ArtifactStorageProbeEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuditArtifactPersistenceEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuditEventContractEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuditEventWriterEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuditPersistenceEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuthEnforcementDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuthenticationConfigurationEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuthorizationPolicyPlanEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuthPolicyReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AzureBlobStorageDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudBinaryStorageProbeEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudConfigurationAuditEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudCredentialDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudCredentialValueProbeEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudOperationAuditEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudOperationTelemetryEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudPlatformEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudStoragePlanEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ConnectorCapabilityEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ConnectorCatalogEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CredentialAccessPolicyReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CredentialEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CredentialProviderPlanEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\DeleteEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\DeploymentProfileEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\EndpointPolicyInventoryEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\OperationalHealthEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\OperationalModeEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\OperationalReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\P2ReadinessReportEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\PreflightEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ProductionSafetyGateEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ProjectEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueAuditEventEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueContractDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueDispatchDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueExecutionGovernanceEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueExecutionObservabilityEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueExecutionPlannerEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueExecutionReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueExecutorCoordinatorEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueFailureArtifactEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueFailureHandlerEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueIdempotencyEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueuePoisonHandlingEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueProviderPlanEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueReceiveDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueTelemetryEventEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueWorkerLoopDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\RunEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\RunExecutionPolicyEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\RunMonitoringEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\SystemEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\TelemetryCorrelationEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\TelemetryEventWriterEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\TelemetrySinkEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\WorkspaceContextEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\WorkspaceStoragePlanEndpointExtensions.cs
+
+## Frontend API client files
+- src\Admin\Migration.Admin.Web\src\api\artifactManifestIndex.ts
+- src\Admin\Migration.Admin.Web\src\api\artifactStorage.ts
+- src\Admin\Migration.Admin.Web\src\api\artifactStorageBridge.ts
+- src\Admin\Migration.Admin.Web\src\api\artifactStoragePlan.ts
+- src\Admin\Migration.Admin.Web\src\api\auditArtifactPersistence.ts
+- src\Admin\Migration.Admin.Web\src\api\auditEventContract.ts
+- src\Admin\Migration.Admin.Web\src\api\auditEventWriter.ts
+- src\Admin\Migration.Admin.Web\src\api\auditPersistence.ts
+- src\Admin\Migration.Admin.Web\src\api\authEnforcementDiagnostics.ts
+- src\Admin\Migration.Admin.Web\src\api\authenticationConfiguration.ts
+- src\Admin\Migration.Admin.Web\src\api\authorizationPolicyPlan.ts
+- src\Admin\Migration.Admin.Web\src\api\authPolicyReadiness.ts
+- src\Admin\Migration.Admin.Web\src\api\authReadiness.ts
+- src\Admin\Migration.Admin.Web\src\api\azureBlobStorageDiagnostics.ts
+- src\Admin\Migration.Admin.Web\src\api\client.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudBinaryStorage.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudConfigurationAudit.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudCredentials.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudCredentialValues.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudEnvironment.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudOperationAudit.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudOperationTelemetry.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudReadiness.ts
+- src\Admin\Migration.Admin.Web\src\api\cloudStorageLocations.ts
+- src\Admin\Migration.Admin.Web\src\api\connectorCapabilities.ts
+- src\Admin\Migration.Admin.Web\src\api\connectorCatalog.ts
+- src\Admin\Migration.Admin.Web\src\api\core\adminApiClient.ts
+- src\Admin\Migration.Admin.Web\src\api\core\adminApiError.ts
+- src\Admin\Migration.Admin.Web\src\api\credentialAccessPolicyReadiness.ts
+- src\Admin\Migration.Admin.Web\src\api\credentialProviderPlan.ts
+- src\Admin\Migration.Admin.Web\src\api\deleteApi.ts
+- src\Admin\Migration.Admin.Web\src\api\deploymentProfile.ts
+- src\Admin\Migration.Admin.Web\src\api\endpointPolicyInventory.ts
+- src\Admin\Migration.Admin.Web\src\api\operationalHealth.ts
+- src\Admin\Migration.Admin.Web\src\api\operationalMode.ts
+- src\Admin\Migration.Admin.Web\src\api\operationalReadiness.ts
+- src\Admin\Migration.Admin.Web\src\api\p2ReadinessReport.ts
+- src\Admin\Migration.Admin.Web\src\api\preflight.ts
+- src\Admin\Migration.Admin.Web\src\api\productionSafetyGates.ts
+- src\Admin\Migration.Admin.Web\src\api\queueAuditEvents.ts
+- src\Admin\Migration.Admin.Web\src\api\queueContracts.ts
+- src\Admin\Migration.Admin.Web\src\api\queueDispatch.ts
+- src\Admin\Migration.Admin.Web\src\api\queueExecutionGovernance.ts
+- src\Admin\Migration.Admin.Web\src\api\queueExecutionObservability.ts
+- src\Admin\Migration.Admin.Web\src\api\queueExecutionPlanner.ts
+- src\Admin\Migration.Admin.Web\src\api\queueExecutionReadiness.ts
+- src\Admin\Migration.Admin.Web\src\api\queueExecutorCoordinator.ts
+- src\Admin\Migration.Admin.Web\src\api\queueFailureArtifacts.ts
+- src\Admin\Migration.Admin.Web\src\api\queueFailureHandler.ts
+- src\Admin\Migration.Admin.Web\src\api\queueIdempotency.ts
+- src\Admin\Migration.Admin.Web\src\api\queuePoisonHandling.ts
+- src\Admin\Migration.Admin.Web\src\api\queueProviderPlan.ts
+- src\Admin\Migration.Admin.Web\src\api\queueReceive.ts
+- src\Admin\Migration.Admin.Web\src\api\queueTelemetryEvents.ts
+- src\Admin\Migration.Admin.Web\src\api\queueWorkerLoop.ts
+- src\Admin\Migration.Admin.Web\src\api\runExecutionPolicy.ts
+- src\Admin\Migration.Admin.Web\src\api\taxonomyApi.ts
+- src\Admin\Migration.Admin.Web\src\api\telemetryCorrelation.ts
+- src\Admin\Migration.Admin.Web\src\api\telemetryEventWriter.ts
+- src\Admin\Migration.Admin.Web\src\api\telemetrySink.ts
+- src\Admin\Migration.Admin.Web\src\api\workspaceContext.ts
+- src\Admin\Migration.Admin.Web\src\api\workspaceStoragePlan.ts
+
+## Large files over 180 lines
+- src\Migration.Admin.Api\Endpoints\ArtifactEndpoints.cs (244 lines)
+- src\Migration.Admin.Api\Endpoints\ArtifactStorageBridgeEndpointExtensions.cs (196 lines)
+- src\Migration.Admin.Api\Endpoints\ArtifactStoragePlanEndpointExtensions.cs (269 lines)
+- src\Migration.Admin.Api\Endpoints\AuditEventContractEndpointExtensions.cs (228 lines)
+- src\Migration.Admin.Api\Endpoints\AuthorizationPolicyPlanEndpointExtensions.cs (243 lines)
+- src\Migration.Admin.Api\Endpoints\CloudConfigurationAuditEndpointExtensions.cs (206 lines)
+- src\Migration.Admin.Api\Endpoints\CloudReadinessEndpointExtensions.cs (287 lines)
+- src\Migration.Admin.Api\Endpoints\CredentialProviderPlanEndpointExtensions.cs (247 lines)
+- src\Migration.Admin.Api\Endpoints\DeploymentProfileEndpointExtensions.cs (247 lines)
+- src\Migration.Admin.Api\Endpoints\MappingBuilderEndpoints.cs (516 lines)
+- src\Migration.Admin.Api\Endpoints\OperationalHealthEndpointExtensions.cs (286 lines)
+- src\Migration.Admin.Api\Endpoints\QueueProviderPlanEndpointExtensions.cs (245 lines)
+- src\Migration.Admin.Api\Endpoints\RunEndpointExtensions.cs (219 lines)
+- src\Migration.Admin.Api\Endpoints\TaxonomyBuilderEndpoints.cs (552 lines)
+- src\Admin\Migration.Admin.Web\src\api\client.ts (364 lines)
+
+## Comment-review candidates
+- src\Migration.ControlPlane\Auth\AuthEnforcementDiagnosticsContracts.cs
+- src\Migration.ControlPlane\Auth\AuthEnforcementDiagnosticsRegistrationExtensions.cs
+- src\Migration.ControlPlane\Auth\AuthEnforcementDiagnosticsService.cs
+- src\Migration.ControlPlane\Auth\AuthPolicyReadinessContracts.cs
+- src\Migration.ControlPlane\Auth\AuthPolicyReadinessRegistrationExtensions.cs
+- src\Migration.ControlPlane\Auth\AuthPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\CredentialAccessPolicyContracts.cs
+- src\Migration.ControlPlane\Auth\CredentialAccessPolicyReadinessRegistrationExtensions.cs
+- src\Migration.ControlPlane\Auth\CredentialAccessPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\EndpointPolicyInventoryContracts.cs
+- src\Migration.ControlPlane\Auth\EndpointPolicyInventoryRegistrationExtensions.cs
+- src\Migration.ControlPlane\Auth\EndpointPolicyInventoryService.cs
+- src\Migration.ControlPlane\Auth\IAuthEnforcementDiagnosticsService.cs
+- src\Migration.ControlPlane\Auth\IAuthPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\ICredentialAccessPolicyReadinessService.cs
+- src\Migration.ControlPlane\Auth\IEndpointPolicyInventoryService.cs
+- src\Migration.ControlPlane\Operations\IOperationalModeService.cs
+- src\Migration.ControlPlane\Operations\IOperationalReadinessService.cs
+- src\Migration.ControlPlane\Operations\IP2ReadinessReportService.cs
+- src\Migration.ControlPlane\Operations\IProductionSafetyGateService.cs
+- src\Migration.ControlPlane\Operations\IQueueExecutionGovernanceService.cs
+- src\Migration.ControlPlane\Operations\OperationalModeContracts.cs
+- src\Migration.ControlPlane\Operations\OperationalModeRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\OperationalModeService.cs
+- src\Migration.ControlPlane\Operations\OperationalReadinessContracts.cs
+- src\Migration.ControlPlane\Operations\OperationalReadinessRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\OperationalReadinessService.cs
+- src\Migration.ControlPlane\Operations\P2ReadinessReportContracts.cs
+- src\Migration.ControlPlane\Operations\P2ReadinessReportRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\P2ReadinessReportService.cs
+- src\Migration.ControlPlane\Operations\ProductionSafetyGateContracts.cs
+- src\Migration.ControlPlane\Operations\ProductionSafetyGateRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\ProductionSafetyGateService.cs
+- src\Migration.ControlPlane\Operations\QueueExecutionGovernanceContracts.cs
+- src\Migration.ControlPlane\Operations\QueueExecutionGovernanceRegistrationExtensions.cs
+- src\Migration.ControlPlane\Operations\QueueExecutionGovernanceService.cs
+- src\Migration.ControlPlane\Queues\AzureQueueDispatchOptions.cs
+- src\Migration.ControlPlane\Queues\AzureQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\AzureQueueMigrationRunQueue.cs
+- src\Migration.ControlPlane\Queues\AzureQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\IMigrationRunQueue.cs
+- src\Migration.ControlPlane\Queues\InMemoryQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\InMemoryQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\IQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutionObservabilityService.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutionPlanner.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutionReadinessService.cs
+- src\Migration.ControlPlane\Queues\IQueueExecutorCoordinator.cs
+- src\Migration.ControlPlane\Queues\IQueueFailureHandler.cs
+- src\Migration.ControlPlane\Queues\IQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\NullMigrationRunQueue.cs
+- src\Migration.ControlPlane\Queues\NullQueueDispatchProvider.cs
+- src\Migration.ControlPlane\Queues\NullQueueReceiveProvider.cs
+- src\Migration.ControlPlane\Queues\QueueDispatchRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionObservabilityContracts.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionObservabilityRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionObservabilityService.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionPlanner.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionPlannerRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionPlanningContracts.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionReadinessContracts.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionReadinessRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueExecutionReadinessService.cs
+- src\Migration.ControlPlane\Queues\QueueExecutorCoordinator.cs
+- src\Migration.ControlPlane\Queues\QueueExecutorCoordinatorContracts.cs
+- src\Migration.ControlPlane\Queues\QueueExecutorCoordinatorRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueFailureArtifactContracts.cs
+- src\Migration.ControlPlane\Queues\QueueFailureArtifactPlanner.cs
+- src\Migration.ControlPlane\Queues\QueueFailureHandler.cs
+- src\Migration.ControlPlane\Queues\QueueFailureHandlerRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueIdempotencyKeyBuilder.cs
+- src\Migration.ControlPlane\Queues\QueueMessageContracts.cs
+- src\Migration.ControlPlane\Queues\QueueMessageEnvelopeFactory.cs
+- src\Migration.ControlPlane\Queues\QueueMessageSerialization.cs
+- src\Migration.ControlPlane\Queues\QueuePoisonHandlingPlanner.cs
+- src\Migration.ControlPlane\Queues\QueuePoisonMessageContracts.cs
+- src\Migration.ControlPlane\Queues\QueueReceiveRegistrationExtensions.cs
+- src\Migration.ControlPlane\Queues\QueueWorkerLoopDescriptor.cs
+- src\Migration.ControlPlane\Queues\QueueWorkerLoopOptions.cs
+- src\Migration.ControlPlane\Queues\QueueWorkerLoopPlanner.cs
+- src\Migration.Admin.Api\Endpoints\AuthEnforcementDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuthenticationConfigurationEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuthorizationPolicyPlanEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\AuthPolicyReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudCredentialDiagnosticsEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudCredentialValueProbeEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CloudReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CredentialAccessPolicyReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CredentialEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\CredentialProviderPlanEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\OperationalReadinessEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\P2ReadinessReportEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ProductionSafetyGateEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\ProjectCredentialBindingEndpoints.cs
+- src\Migration.Admin.Api\Endpoints\QueueExecutionGovernanceEndpointExtensions.cs
+- src\Migration.Admin.Api\Endpoints\QueueExecutionReadinessEndpointExtensions.cs
+
+## Recommendation
+
+- Add comments only where they explain safety, governance, lifecycle, or architectural intent.
+- Do not add obvious comments that repeat method names.
+- Registration extension files may be consolidated later to reduce Program.cs noise.
+- Endpoint files should remain split by feature area unless they are truly tiny and redundant.
+- Do not reorganize source folders before a clean validation run.
