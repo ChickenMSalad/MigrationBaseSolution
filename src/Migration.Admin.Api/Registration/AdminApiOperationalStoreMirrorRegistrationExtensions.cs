@@ -21,6 +21,9 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.Configure<OperationalRunAutoFinalizationOptions>(
             configuration.GetSection(OperationalRunAutoFinalizationOptions.SectionName));
 
+        services.Configure<OperationalDispatcherOptions>(
+            configuration.GetSection(OperationalDispatcherOptions.SectionName));
+
         services.Configure<OperationalRetentionOptions>(
             configuration.GetSection(OperationalRetentionOptions.SectionName));
 
@@ -43,9 +46,11 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalRunCompletionFinalizationService, OperationalRunCompletionFinalizationService>();
         services.AddScoped<IOperationalRunFailureFinalizationService, OperationalRunFailureFinalizationService>();
         services.AddScoped<IOperationalRunAutoFinalizationService, OperationalRunAutoFinalizationService>();
+        services.AddScoped<IOperationalDispatcherService, OperationalDispatcherService>();
         services.AddScoped<IOperationalRetentionService, OperationalRetentionService>();
 
         services.AddHostedService<OperationalRunAutoFinalizationHostedService>();
+        services.AddHostedService<OperationalDispatcherHostedService>();
 
         return services;
     }

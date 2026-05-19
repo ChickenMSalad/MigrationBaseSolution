@@ -8,6 +8,7 @@ public static class AdminApiEndpointStartupExtensions
         RouteGroupBuilder api)
     {
         api.MapOperationalDispatchEndpoints();
+        api.MapOperationalDispatcherEndpoints();
         api.MapOperationalMirrorDiagnosticsEndpoints();
         api.MapOperationalSqlSchemaDiagnosticsEndpoints();
         api.MapOperationalMirrorReadEndpoints();
