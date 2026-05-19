@@ -21,6 +21,9 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.Configure<OperationalRunAutoFinalizationOptions>(
             configuration.GetSection(OperationalRunAutoFinalizationOptions.SectionName));
 
+        services.Configure<OperationalRetentionOptions>(
+            configuration.GetSection(OperationalRetentionOptions.SectionName));
+
         services.AddSingleton<IValidateOptions<OperationalRunMirrorOptions>, OperationalRunMirrorOptionsValidator>();
         services.AddSingleton<OperationalMirrorInvocationState>();
 
@@ -40,6 +43,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalRunCompletionFinalizationService, OperationalRunCompletionFinalizationService>();
         services.AddScoped<IOperationalRunFailureFinalizationService, OperationalRunFailureFinalizationService>();
         services.AddScoped<IOperationalRunAutoFinalizationService, OperationalRunAutoFinalizationService>();
+        services.AddScoped<IOperationalRetentionService, OperationalRetentionService>();
 
         services.AddHostedService<OperationalRunAutoFinalizationHostedService>();
 
