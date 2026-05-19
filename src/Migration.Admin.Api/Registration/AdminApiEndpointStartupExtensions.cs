@@ -14,6 +14,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalDispatcherExecutionHistoryReadinessEndpoints();
         api.MapOperationalDispatcherExecutionMetricsEndpoints();
         api.MapOperationalDispatcherExecutionHistoryQueryEndpoints();
+        api.MapOperationalDispatcherExecutionHistoryRetentionEndpoints();
         api.MapOperationalMirrorDiagnosticsEndpoints();
         api.MapOperationalSqlSchemaDiagnosticsEndpoints();
         api.MapOperationalMirrorReadEndpoints();

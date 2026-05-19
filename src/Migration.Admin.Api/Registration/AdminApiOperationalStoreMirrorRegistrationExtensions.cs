@@ -24,6 +24,9 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.Configure<OperationalDispatcherOptions>(
             configuration.GetSection(OperationalDispatcherOptions.SectionName));
 
+        services.Configure<DispatcherExecutionHistoryRetentionOptions>(
+            configuration.GetSection(DispatcherExecutionHistoryRetentionOptions.SectionName));
+
         services.Configure<OperationalRetentionOptions>(
             configuration.GetSection(OperationalRetentionOptions.SectionName));
 
@@ -52,6 +55,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IDispatcherExecutionHistoryReadinessService, DispatcherExecutionHistoryReadinessService>();
         services.AddScoped<IDispatcherExecutionHistoryMetricsService, DispatcherExecutionHistoryMetricsService>();
         services.AddScoped<IDispatcherExecutionHistoryQueryService, DispatcherExecutionHistoryQueryService>();
+        services.AddScoped<IDispatcherExecutionHistoryRetentionService, DispatcherExecutionHistoryRetentionService>();
         services.AddScoped<IOperationalRetentionService, OperationalRetentionService>();
 
         services.AddHostedService<OperationalRunAutoFinalizationHostedService>();
