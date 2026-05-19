@@ -15,4 +15,9 @@ public interface IOperationalRunControlService
         Guid runId,
         OperationalRunControlActionRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<OperationalRunControlStateResponse> ResumeAsync(
+        Guid runId,
+        OperationalRunControlActionRequest request,
+        CancellationToken cancellationToken = default);
 }
