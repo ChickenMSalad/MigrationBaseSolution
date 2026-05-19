@@ -47,6 +47,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalRunFailureFinalizationService, OperationalRunFailureFinalizationService>();
         services.AddScoped<IOperationalRunAutoFinalizationService, OperationalRunAutoFinalizationService>();
         services.AddScoped<IOperationalDispatcherService, OperationalDispatcherService>();
+        services.AddScoped<IOperationalDispatcherDiagnosticsService, OperationalDispatcherDiagnosticsService>();
         services.AddScoped<IOperationalRetentionService, OperationalRetentionService>();
 
         services.AddHostedService<OperationalRunAutoFinalizationHostedService>();

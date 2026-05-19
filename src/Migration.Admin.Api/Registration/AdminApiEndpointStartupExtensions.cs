@@ -9,6 +9,7 @@ public static class AdminApiEndpointStartupExtensions
     {
         api.MapOperationalDispatchEndpoints();
         api.MapOperationalDispatcherEndpoints();
+        api.MapOperationalDispatcherDiagnosticsEndpoints();
         api.MapOperationalMirrorDiagnosticsEndpoints();
         api.MapOperationalSqlSchemaDiagnosticsEndpoints();
         api.MapOperationalMirrorReadEndpoints();
