@@ -33,6 +33,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalRunTimelineMetricsEndpoints();
         api.MapOperationalRunTimelineDashboardEndpoints();
         api.MapOperationalRunTimelineSearchEndpoints();
+        api.MapOperationalRunTimelineCatalogEndpoints();
         api.MapOperationalRunFailureFinalizationEndpoints();
         api.MapOperationalRunAutoFinalizationEndpoints();
         ArgumentNullException.ThrowIfNull(api);
