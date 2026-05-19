@@ -8,22 +8,28 @@ public sealed class OperationalDispatcherService : IOperationalDispatcherService
     private readonly IOperationalRunAutoFinalizationService _autoFinalizationService;
     private readonly IOptions<OperationalDispatcherOptions> _options;
     private readonly ILogger<OperationalDispatcherService> _logger;
+    private readonly IDispatcherExecutionHistoryService _historyService;
 
     public OperationalDispatcherService(
         IOperationalWorkItemLeaseService leaseService,
         IOperationalRunAutoFinalizationService autoFinalizationService,
         IOptions<OperationalDispatcherOptions> options,
-        ILogger<OperationalDispatcherService> logger)
+        ILogger<OperationalDispatcherService> logger,
+        IDispatcherExecutionHistoryService historyService)
     {
         _leaseService = leaseService;
         _autoFinalizationService = autoFinalizationService;
         _options = options;
         _logger = logger;
+        _historyService = historyService;
     }
 
     public async Task<OperationalDispatcherRunOnceResponse> RunOnceAsync(
         CancellationToken cancellationToken = default)
     {
+        var executionStartedAt = DateTimeOffset.UtcNow;
+        var executionId = Guid.NewGuid();
+
         var options = NormalizeOptions();
 
         var lease = await _leaseService.LeaseAsync(
@@ -101,6 +107,30 @@ public sealed class OperationalDispatcherService : IOperationalDispatcherService
         {
             await _autoFinalizationService.FinalizeEligibleRunsAsync(cancellationToken);
         }
+
+        var executionCompletedAt = DateTimeOffset.UtcNow;
+
+        await _historyService.RecordAsync(
+            new DispatcherExecutionRecord
+            {
+                ExecutionId = executionId,
+                WorkerId = options.WorkerId,
+                StartedAt = executionStartedAt,
+                CompletedAt = executionCompletedAt,
+                DurationMilliseconds =
+                    (long)(executionCompletedAt - executionStartedAt).TotalMilliseconds,
+                RequestedLeaseCount = options.LeaseCount,
+                LeasedCount = lease.LeasedCount,
+                CompletedCount = completed,
+                FailedCount = failed,
+                Outcome = failed > 0
+                    ? "CompletedWithFailures"
+                    : "Completed",
+                Message = lease.LeasedCount == 0
+                    ? "No eligible work items were leased."
+                    : $"Dispatcher processed {completed} completed and {failed} failed work item(s)."
+            },
+            cancellationToken);
 
         return new OperationalDispatcherRunOnceResponse
         {
