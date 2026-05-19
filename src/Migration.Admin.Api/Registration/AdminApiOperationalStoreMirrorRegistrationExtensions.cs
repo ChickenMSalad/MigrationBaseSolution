@@ -35,6 +35,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalRunControlService, OperationalRunControlService>();
         services.AddScoped<IOperationalRunStatusReconciliationService, OperationalRunStatusReconciliationService>();
         services.AddScoped<IOperationalRunCompletionFinalizationService, OperationalRunCompletionFinalizationService>();
+        services.AddScoped<IOperationalRunFailureFinalizationService, OperationalRunFailureFinalizationService>();
 
         return services;
     }
