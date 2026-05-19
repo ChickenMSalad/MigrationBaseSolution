@@ -33,6 +33,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalLeaseExpirationService, OperationalLeaseExpirationService>();
         services.AddScoped<IOperationalMetricsService, OperationalMetricsService>();
         services.AddScoped<IOperationalRunControlService, OperationalRunControlService>();
+        services.AddScoped<IOperationalRunStatusReconciliationService, OperationalRunStatusReconciliationService>();
 
         return services;
     }

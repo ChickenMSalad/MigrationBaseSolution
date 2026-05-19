@@ -14,6 +14,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalWorkItemLeaseExpirationEndpoints();
         api.MapOperationalMetricsEndpoints();
         api.MapOperationalRunControlEndpoints();
+        api.MapOperationalRunStatusReconciliationEndpoints();
         ArgumentNullException.ThrowIfNull(api);
 
         api.MapRunMonitoringEndpoints();
