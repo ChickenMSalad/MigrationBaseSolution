@@ -8,6 +8,10 @@ public sealed class OperationalWorkItemLeaseResponse
 
     public int LeasedCount { get; init; }
 
+    public bool LeaseBlocked { get; init; }
+
+    public string Message { get; init; } = string.Empty;
+
     public IReadOnlyCollection<OperationalWorkItemLeaseItem> WorkItems { get; init; } =
         Array.Empty<OperationalWorkItemLeaseItem>();
 }

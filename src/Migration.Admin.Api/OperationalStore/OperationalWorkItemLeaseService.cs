@@ -30,6 +30,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
 
         var requestedCount = Math.Clamp(request.Count, 1, 100);
         var schema = GetSchemaName();
+        var workerId = request.WorkerId.Trim();
 
         var sql = $"""
             DECLARE @Leased TABLE
@@ -46,12 +47,15 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
             ;WITH CandidateWorkItems AS
             (
                 SELECT TOP (@Count)
-                    WorkItemId
-                FROM [{schema}].[MigrationWorkItems] WITH (UPDLOCK, READPAST, ROWLOCK)
-                WHERE Status = N'Created'
-                  AND LockedBy IS NULL
-                  AND LockedAt IS NULL
-                ORDER BY CreatedAt, WorkItemId
+                    wi.WorkItemId
+                FROM [{schema}].[MigrationWorkItems] wi WITH (UPDLOCK, READPAST, ROWLOCK)
+                INNER JOIN [{schema}].[MigrationRuns] r
+                    ON r.RunId = wi.RunId
+                WHERE wi.Status = N'Created'
+                  AND wi.LockedBy IS NULL
+                  AND wi.LockedAt IS NULL
+                  AND r.Status NOT IN (N'CancelRequested', N'Aborted')
+                ORDER BY wi.CreatedAt, wi.WorkItemId
             )
             UPDATE wi
                 SET
@@ -94,7 +98,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@Count", requestedCount);
-        command.Parameters.AddWithValue("@WorkerId", request.WorkerId.Trim());
+        command.Parameters.AddWithValue("@WorkerId", workerId);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -105,11 +109,17 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
             items.Add(ReadLeaseItem(reader));
         }
 
+        var message = items.Count == 0
+            ? "No eligible operational work items were available to lease. Runs in CancelRequested or Aborted state are blocked from new leases."
+            : "Operational work items leased.";
+
         return new OperationalWorkItemLeaseResponse
         {
-            WorkerId = request.WorkerId.Trim(),
+            WorkerId = workerId,
             RequestedCount = requestedCount,
             LeasedCount = items.Count,
+            LeaseBlocked = items.Count == 0,
+            Message = message,
             WorkItems = items
         };
     }
