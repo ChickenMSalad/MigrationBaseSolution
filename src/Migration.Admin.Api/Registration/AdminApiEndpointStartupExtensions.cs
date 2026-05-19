@@ -28,6 +28,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalRunStatusReconciliationEndpoints();
         api.MapOperationalRunCompletionFinalizationEndpoints();
         api.MapOperationalRunDashboardEndpoints();
+        api.MapOperationalRunTimelineEndpoints();
         api.MapOperationalRunFailureFinalizationEndpoints();
         api.MapOperationalRunAutoFinalizationEndpoints();
         ArgumentNullException.ThrowIfNull(api);
