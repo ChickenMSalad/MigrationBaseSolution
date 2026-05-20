@@ -10,7 +10,7 @@ public static class OperationalSqlSchemaDiagnosticsEndpointExtensions
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(
-                "/api/operational/sql/schema/smoke-test",
+                "/operational/sql/schema/smoke-test",
                 async (
                     IOperationalSqlSchemaSmokeTestService smokeTestService,
                     CancellationToken cancellationToken) =>

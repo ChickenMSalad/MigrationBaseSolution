@@ -11,7 +11,7 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(
-                "/api/operational/mirror/status",
+                "/operational/mirror/status",
                 (
                     IOptions<OperationalRunMirrorOptions> options,
                     IAdminOperationalRunMirrorService mirrorService,
@@ -33,7 +33,7 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .WithOpenApi();
 
         app.MapGet(
-                "/api/operational/mirror/readiness",
+                "/operational/mirror/readiness",
                 (IOperationalMirrorReadinessEvaluator evaluator) =>
                 {
                     var response = evaluator.Evaluate();
@@ -47,7 +47,7 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .WithOpenApi();
 
         app.MapGet(
-                "/api/operational/mirror/enablement-guard",
+                "/operational/mirror/enablement-guard",
                 async (
                     IOperationalMirrorEnablementGuard guard,
                     CancellationToken cancellationToken) =>
@@ -64,7 +64,7 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .WithOpenApi();
 
         app.MapGet(
-                "/api/operational/mirror/write-verification",
+                "/operational/mirror/write-verification",
                 async (
                     IOperationalMirrorWriteVerificationService verificationService,
                     CancellationToken cancellationToken) =>
@@ -81,7 +81,7 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
             .WithOpenApi();
 
         app.MapGet(
-                "/api/operational/mirror/last-invocation",
+                "/operational/mirror/last-invocation",
                 (OperationalMirrorInvocationState invocationState) =>
                 {
                     return Results.Ok(invocationState.GetSnapshot());
