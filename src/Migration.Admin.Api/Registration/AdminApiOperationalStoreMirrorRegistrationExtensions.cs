@@ -63,6 +63,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalGlobalFailureService, OperationalGlobalFailureService>();
         services.AddScoped<IOperationalGlobalFailureMetricsService, OperationalGlobalFailureMetricsService>();
         services.AddScoped<IOperationalGlobalFailureDashboardService, OperationalGlobalFailureDashboardService>();
+        services.AddScoped<IOperationalGlobalFailureQueryService, OperationalGlobalFailureQueryService>();
         services.AddScoped<IOperationalRunAutoFinalizationService, OperationalRunAutoFinalizationService>();
         services.AddScoped<IOperationalDispatcherService, OperationalDispatcherService>();
         services.AddScoped<IOperationalDispatcherDiagnosticsService, OperationalDispatcherDiagnosticsService>();
