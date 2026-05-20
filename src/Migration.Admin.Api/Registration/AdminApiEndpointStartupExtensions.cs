@@ -39,6 +39,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalGlobalActivityQueryEndpoints();
         api.MapOperationalGlobalActivityMetricsEndpoints();
         api.MapOperationalGlobalActivityDashboardEndpoints();
+        api.MapOperationalGlobalFailureEndpoints();
         api.MapOperationalRunFailureFinalizationEndpoints();
         api.MapOperationalRunAutoFinalizationEndpoints();
         ArgumentNullException.ThrowIfNull(api);
