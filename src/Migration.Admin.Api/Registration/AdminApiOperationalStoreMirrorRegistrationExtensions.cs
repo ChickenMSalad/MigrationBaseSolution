@@ -76,6 +76,7 @@ public static class AdminApiOperationalStoreMirrorRegistrationExtensions
         services.AddScoped<IOperationalGlobalRunHealthSummaryService, OperationalGlobalRunHealthSummaryService>();
         services.AddScoped<IOperationalGlobalRunHealthDashboardService, OperationalGlobalRunHealthDashboardService>();
         services.AddScoped<IOperationalGlobalRunHealthSnapshotService, OperationalGlobalRunHealthSnapshotService>();
+        services.AddScoped<IOperationalGlobalRunHealthTrendSummaryService, OperationalGlobalRunHealthTrendSummaryService>();
         services.AddScoped<IOperationalRunAutoFinalizationService, OperationalRunAutoFinalizationService>();
         services.AddScoped<IOperationalDispatcherService, OperationalDispatcherService>();
         services.AddScoped<IOperationalDispatcherDiagnosticsService, OperationalDispatcherDiagnosticsService>();
