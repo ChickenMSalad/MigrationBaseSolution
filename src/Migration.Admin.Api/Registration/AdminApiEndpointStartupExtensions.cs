@@ -49,6 +49,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalGlobalFailureAnalyticsDashboardEndpoints();
         api.MapOperationalGlobalFailureFilteredAnalyticsEndpoints();
         api.MapOperationalGlobalFailureAnalyticsPresetEndpoints();
+        api.MapOperationalGlobalFailureAnalyticsPresetDashboardEndpoints();
         api.MapOperationalRunFailureFinalizationEndpoints();
         api.MapOperationalRunAutoFinalizationEndpoints();
         ArgumentNullException.ThrowIfNull(api);
