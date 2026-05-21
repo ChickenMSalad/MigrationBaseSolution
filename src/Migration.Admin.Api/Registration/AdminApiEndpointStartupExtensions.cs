@@ -74,6 +74,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalQueuePressureStabilityIndexApi();
         api.MapOperationalQueuePressureCapacityGuardrailsApi();
         api.MapOperationalQueuePressureCapacityForecastApi();
+        api.MapOperationalQueuePressureThrottlePolicyApi();
         api.MapOperationalDispatcherPressureAnalyticsEndpoints();
         api.MapOperationalRunFailureFinalizationEndpoints();
         api.MapOperationalRunAutoFinalizationEndpoints();
