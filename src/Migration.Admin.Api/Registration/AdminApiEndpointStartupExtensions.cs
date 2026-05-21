@@ -65,6 +65,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalQueuePressureTrendApi();
         api.MapOperationalQueuePressureActionPlanApi();
         api.MapOperationalQueuePressureRecommendationCatalogApi();
+        api.MapOperationalQueuePressureOperatorChecklistApi();
         api.MapOperationalDispatcherPressureAnalyticsEndpoints();
         api.MapOperationalRunFailureFinalizationEndpoints();
         api.MapOperationalRunAutoFinalizationEndpoints();
