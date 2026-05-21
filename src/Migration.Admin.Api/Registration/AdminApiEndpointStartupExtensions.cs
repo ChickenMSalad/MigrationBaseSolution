@@ -62,6 +62,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalGlobalRunHealthOperationsCenterEndpoints();
         api.MapOperationalGlobalQueueDepthAnalyticsEndpoints();
         api.MapOperationalQueuePressureDashboardApi();
+        api.MapOperationalQueuePressureTrendApi();
         api.MapOperationalDispatcherPressureAnalyticsEndpoints();
         api.MapOperationalRunFailureFinalizationEndpoints();
         api.MapOperationalRunAutoFinalizationEndpoints();
