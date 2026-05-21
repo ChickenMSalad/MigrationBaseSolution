@@ -58,6 +58,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapOperationalGlobalRunHealthTrendSummaryEndpoints();
         api.MapOperationalGlobalRunHealthDetailedRiskEndpoints();
         api.MapOperationalGlobalRunHealthRecommendationEndpoints();
+        api.MapOperationalGlobalRunHealthActionPlanEndpoints();
         api.MapOperationalRunFailureFinalizationEndpoints();
         api.MapOperationalRunAutoFinalizationEndpoints();
         ArgumentNullException.ThrowIfNull(api);
