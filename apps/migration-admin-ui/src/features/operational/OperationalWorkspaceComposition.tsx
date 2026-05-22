@@ -1,3 +1,4 @@
+﻿import { CommandCenterSummaryWorkspace } from '../commandCenter/CommandCenterSummaryWorkspace';
 import { OperationalRuntimeDashboard } from '../../components/OperationalRuntimeDashboard';
 import { ManifestImportPanel } from '../../components/ManifestImportPanel';
 import { RunLaunchPanel } from '../../components/RunLaunchPanel';
@@ -15,6 +16,7 @@ import { AuditTrailWorkspace } from '../audit/AuditTrailWorkspace';
 export function OperationalWorkspaceComposition() {
   return (
     <>
+      <CommandCenterSummaryWorkspace />
       <OperationalRuntimeDashboard />
       <ManifestImportPanel />
       <RunLaunchPanel />
@@ -31,3 +33,5 @@ export function OperationalWorkspaceComposition() {
     </>
   );
 }
+
+
