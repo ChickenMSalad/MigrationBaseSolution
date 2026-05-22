@@ -1,4 +1,5 @@
-﻿import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
+import { RunLaunchPanel } from './components/RunLaunchPanel';
 import { OperationalRuntimeDashboard } from './components/OperationalRuntimeDashboard';
 import { ManifestImportPanel } from './components/ManifestImportPanel';
 import { EndpointCard } from './components/EndpointCard';
@@ -97,9 +98,12 @@ export default function App() {
       </section>
             <OperationalRuntimeDashboard />
       <ManifestImportPanel />
+      <RunLaunchPanel />
 </main>
   );
 }
+
+
 
 
 
