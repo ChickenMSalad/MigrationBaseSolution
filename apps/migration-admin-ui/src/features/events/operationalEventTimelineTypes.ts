@@ -20,6 +20,22 @@ export type OperationalEventQuery = {
   severity?: string;
   category?: string;
   eventType?: string;
+  fromUtc?: string;
+  toUtc?: string;
   skip?: number;
   take?: number;
+};
+
+export type OperationalEventAggregateBucket = {
+  name: string;
+  count: number;
+};
+
+export type OperationalEventAggregateSummary = {
+  fromUtc: string | null;
+  toUtc: string | null;
+  totalEvents: number;
+  bySeverity: OperationalEventAggregateBucket[];
+  byCategory: OperationalEventAggregateBucket[];
+  byEventType: OperationalEventAggregateBucket[];
 };

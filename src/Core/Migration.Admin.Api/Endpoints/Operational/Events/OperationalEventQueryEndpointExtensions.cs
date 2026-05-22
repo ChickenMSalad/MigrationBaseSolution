@@ -18,6 +18,8 @@ public static class OperationalEventQueryEndpointExtensions
             string? severity,
             string? category,
             string? eventType,
+            DateTimeOffset? fromUtc,
+            DateTimeOffset? toUtc,
             int? skip,
             int? take,
             CancellationToken cancellationToken) =>
@@ -26,6 +28,8 @@ public static class OperationalEventQueryEndpointExtensions
                 Severity: Normalize(severity),
                 Category: Normalize(category),
                 EventType: Normalize(eventType),
+                FromUtc: fromUtc,
+                ToUtc: toUtc,
                 Skip: Math.Max(0, skip.GetValueOrDefault(0)),
                 Take: Math.Clamp(take.GetValueOrDefault(50), 1, 250));
 
@@ -38,6 +42,21 @@ public static class OperationalEventQueryEndpointExtensions
                 Events: events));
         })
         .WithName("QueryOperationalEvents");
+
+        group.MapGet("/summary", async (
+            IOperationalEventQueryService queryService,
+            DateTimeOffset? fromUtc,
+            DateTimeOffset? toUtc,
+            CancellationToken cancellationToken) =>
+        {
+            var summary = await queryService.ReadAggregateSummaryAsync(
+                fromUtc,
+                toUtc,
+                cancellationToken);
+
+            return Results.Ok(summary);
+        })
+        .WithName("GetOperationalEventQuerySummary");
 
         return endpoints;
     }

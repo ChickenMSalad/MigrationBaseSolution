@@ -16,6 +16,14 @@ export function buildOperationalEventCsvExportUrl(query: OperationalEventQuery):
     parameters.set('eventType', query.eventType);
   }
 
+  if (query.fromUtc) {
+    parameters.set('fromUtc', query.fromUtc);
+  }
+
+  if (query.toUtc) {
+    parameters.set('toUtc', query.toUtc);
+  }
+
   parameters.set('take', String(query.take ?? 250));
 
   return `${adminApiBaseUrl}/api/operational/events/export/csv?${parameters.toString()}`;

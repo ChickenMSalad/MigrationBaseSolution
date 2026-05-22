@@ -26,6 +26,8 @@ public static class OperationalEventExportEndpointExtensions
                 Severity: Normalize(severity),
                 Category: Normalize(category),
                 EventType: Normalize(eventType),
+                FromUtc: null,
+                ToUtc: null,
                 Skip: 0,
                 Take: Math.Clamp(take.GetValueOrDefault(250), 1, 1000));
 

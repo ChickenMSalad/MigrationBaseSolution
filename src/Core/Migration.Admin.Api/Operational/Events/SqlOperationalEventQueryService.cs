@@ -41,14 +41,18 @@ WHERE
     (@Severity IS NULL OR Severity = @Severity)
     AND (@Category IS NULL OR Category = @Category)
     AND (@EventType IS NULL OR EventType = @EventType)
+    AND (@FromUtc IS NULL OR CreatedUtc >= @FromUtc)
+    AND (@ToUtc IS NULL OR CreatedUtc <= @ToUtc)
 ORDER BY CreatedUtc DESC
 OFFSET @Skip ROWS
 FETCH NEXT @Take ROWS ONLY;
 ";
 
-        command.Parameters.AddWithValue("@Severity", (object?)request.Severity ?? DBNull.Value);
-        command.Parameters.AddWithValue("@Category", (object?)request.Category ?? DBNull.Value);
-        command.Parameters.AddWithValue("@EventType", (object?)request.EventType ?? DBNull.Value);
+        AddNullableString(command, "@Severity", request.Severity);
+        AddNullableString(command, "@Category", request.Category);
+        AddNullableString(command, "@EventType", request.EventType);
+        AddNullableDateTimeOffset(command, "@FromUtc", request.FromUtc);
+        AddNullableDateTimeOffset(command, "@ToUtc", request.ToUtc);
         command.Parameters.AddWithValue("@Skip", safeSkip);
         command.Parameters.AddWithValue("@Take", safeTake);
 
@@ -68,6 +72,103 @@ FETCH NEXT @Take ROWS ONLY;
         }
 
         return events;
+    }
+
+    public async Task<OperationalEventAggregateSummary> ReadAggregateSummaryAsync(
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        CancellationToken cancellationToken)
+    {
+        var connectionString = GetConnectionString();
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var totalEvents = await ReadTotalAsync(connection, fromUtc, toUtc, cancellationToken);
+        var bySeverity = await ReadBucketsAsync(connection, "Severity", fromUtc, toUtc, cancellationToken);
+        var byCategory = await ReadBucketsAsync(connection, "Category", fromUtc, toUtc, cancellationToken);
+        var byEventType = await ReadBucketsAsync(connection, "EventType", fromUtc, toUtc, cancellationToken);
+
+        return new OperationalEventAggregateSummary(
+            FromUtc: fromUtc,
+            ToUtc: toUtc,
+            TotalEvents: totalEvents,
+            BySeverity: bySeverity,
+            ByCategory: byCategory,
+            ByEventType: byEventType);
+    }
+
+    private static async Task<int> ReadTotalAsync(
+        SqlConnection connection,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+SELECT COUNT(1)
+FROM dbo.MigrationOperationalEvents
+WHERE
+    (@FromUtc IS NULL OR CreatedUtc >= @FromUtc)
+    AND (@ToUtc IS NULL OR CreatedUtc <= @ToUtc);
+";
+
+        AddNullableDateTimeOffset(command, "@FromUtc", fromUtc);
+        AddNullableDateTimeOffset(command, "@ToUtc", toUtc);
+
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result);
+    }
+
+    private static async Task<IReadOnlyList<OperationalEventAggregateBucket>> ReadBucketsAsync(
+        SqlConnection connection,
+        string columnName,
+        DateTimeOffset? fromUtc,
+        DateTimeOffset? toUtc,
+        CancellationToken cancellationToken)
+    {
+        if (columnName is not ("Severity" or "Category" or "EventType"))
+        {
+            throw new InvalidOperationException($"Unsupported aggregate column: {columnName}");
+        }
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = $@"
+SELECT TOP (25)
+    {columnName},
+    COUNT(1)
+FROM dbo.MigrationOperationalEvents
+WHERE
+    (@FromUtc IS NULL OR CreatedUtc >= @FromUtc)
+    AND (@ToUtc IS NULL OR CreatedUtc <= @ToUtc)
+GROUP BY {columnName}
+ORDER BY COUNT(1) DESC, {columnName} ASC;
+";
+
+        AddNullableDateTimeOffset(command, "@FromUtc", fromUtc);
+        AddNullableDateTimeOffset(command, "@ToUtc", toUtc);
+
+        var buckets = new List<OperationalEventAggregateBucket>();
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            buckets.Add(new OperationalEventAggregateBucket(
+                Name: reader.GetString(0),
+                Count: reader.GetInt32(1)));
+        }
+
+        return buckets;
+    }
+
+    private static void AddNullableString(SqlCommand command, string name, string? value)
+    {
+        command.Parameters.AddWithValue(name, string.IsNullOrWhiteSpace(value) ? DBNull.Value : value);
+    }
+
+    private static void AddNullableDateTimeOffset(SqlCommand command, string name, DateTimeOffset? value)
+    {
+        command.Parameters.AddWithValue(name, value.HasValue ? value.Value : DBNull.Value);
     }
 
     private string GetConnectionString()
