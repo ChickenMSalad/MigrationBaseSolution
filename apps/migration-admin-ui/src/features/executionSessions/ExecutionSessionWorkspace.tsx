@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
+import { queryOperationalEvents } from '../events/operationalEventTimelineApi';
+import type { OperationalEventRecord } from '../events/operationalEventTimelineTypes';
 import {
   createExecutionSession,
   fetchRecentExecutionSessions,
+  recordExecutionSessionSnapshot,
 } from './executionSessionApi';
 import type { ExecutionSessionRecord } from './executionSessionTypes';
 
 export function ExecutionSessionWorkspace() {
   const [sessions, setSessions] = useState<ExecutionSessionRecord[]>([]);
+  const [selectedSession, setSelectedSession] = useState<ExecutionSessionRecord | null>(null);
+  const [sessionEvents, setSessionEvents] = useState<OperationalEventRecord[]>([]);
   const [name, setName] = useState('');
   const [sourceConnector, setSourceConnector] = useState('');
   const [targetConnector, setTargetConnector] = useState('');
@@ -21,6 +26,21 @@ export function ExecutionSessionWorkspace() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load execution sessions.');
+    }
+  }
+
+  async function loadSessionEvents(session: ExecutionSessionRecord) {
+    try {
+      const response = await queryOperationalEvents({
+        executionSessionId: session.executionSessionId,
+        take: 25,
+      });
+
+      setSelectedSession(session);
+      setSessionEvents(response.events);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load execution session events.');
     }
   }
 
@@ -43,8 +63,19 @@ export function ExecutionSessionWorkspace() {
       setTargetConnector('');
       setNotes('');
       await loadSessions();
+      await loadSessionEvents(session);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create execution session.');
+    }
+  }
+
+  async function recordSnapshot(session: ExecutionSessionRecord) {
+    try {
+      await recordExecutionSessionSnapshot(session.executionSessionId, session.migrationRunId);
+      setStatusMessage(`Recorded snapshot for ${session.executionSessionId}`);
+      await loadSessionEvents(session);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to record correlated snapshot.');
     }
   }
 
@@ -91,12 +122,13 @@ export function ExecutionSessionWorkspace() {
               <th>Source</th>
               <th>Target</th>
               <th>Execution session ID</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {sessions.length === 0 ? (
               <tr>
-                <td colSpan={6}>No execution sessions have been created yet.</td>
+                <td colSpan={7}>No execution sessions have been created yet.</td>
               </tr>
             ) : (
               sessions.map((session) => (
@@ -107,12 +139,50 @@ export function ExecutionSessionWorkspace() {
                   <td>{session.sourceConnector ?? '—'}</td>
                   <td>{session.targetConnector ?? '—'}</td>
                   <td><code>{session.executionSessionId}</code></td>
+                  <td>
+                    <button type="button" onClick={() => loadSessionEvents(session)}>View events</button>
+                    <button type="button" onClick={() => recordSnapshot(session)}>Snapshot</button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {selectedSession ? (
+        <div className="table-shell">
+          <h3>Events for {selectedSession.name}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Created</th>
+                <th>Severity</th>
+                <th>Category</th>
+                <th>Event type</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessionEvents.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>No events are correlated to this execution session yet.</td>
+                </tr>
+              ) : (
+                sessionEvents.map((event) => (
+                  <tr key={event.operationalEventId}>
+                    <td>{new Date(event.createdUtc).toLocaleString()}</td>
+                    <td>{event.severity}</td>
+                    <td>{event.category}</td>
+                    <td>{event.eventType}</td>
+                    <td>{event.message}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </section>
   );
 }

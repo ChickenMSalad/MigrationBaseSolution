@@ -32,3 +32,23 @@ export async function fetchRecentExecutionSessions(take = 25): Promise<RecentExe
 
   return response.json() as Promise<RecentExecutionSessionsResponse>;
 }
+
+export async function recordExecutionSessionSnapshot(
+  executionSessionId: string,
+  migrationRunId?: string | null,
+): Promise<void> {
+  const response = await fetch(`${adminApiBaseUrl}/api/operational/events/snapshot`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      executionSessionId,
+      migrationRunId: migrationRunId ?? null,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+}

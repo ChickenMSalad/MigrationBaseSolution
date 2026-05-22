@@ -7,6 +7,8 @@ export type OperationalEventRecord = {
   message: string;
   payloadJson?: string | null;
   createdUtc: string;
+  executionSessionId?: string | null;
+  migrationRunId?: string | null;
 };
 
 export type OperationalEventQueryResponse = {
@@ -22,6 +24,8 @@ export type OperationalEventQuery = {
   eventType?: string;
   fromUtc?: string;
   toUtc?: string;
+  executionSessionId?: string;
+  migrationRunId?: string;
   skip?: number;
   take?: number;
 };

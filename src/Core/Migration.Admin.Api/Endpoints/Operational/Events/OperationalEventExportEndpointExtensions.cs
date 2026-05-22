@@ -19,6 +19,10 @@ public static class OperationalEventExportEndpointExtensions
             string? severity,
             string? category,
             string? eventType,
+            DateTimeOffset? fromUtc,
+            DateTimeOffset? toUtc,
+            Guid? executionSessionId,
+            Guid? migrationRunId,
             int? take,
             CancellationToken cancellationToken) =>
         {
@@ -26,8 +30,10 @@ public static class OperationalEventExportEndpointExtensions
                 Severity: Normalize(severity),
                 Category: Normalize(category),
                 EventType: Normalize(eventType),
-                FromUtc: null,
-                ToUtc: null,
+                FromUtc: fromUtc,
+                ToUtc: toUtc,
+                ExecutionSessionId: executionSessionId,
+                MigrationRunId: migrationRunId,
                 Skip: 0,
                 Take: Math.Clamp(take.GetValueOrDefault(250), 1, 1000));
 
@@ -56,7 +62,7 @@ public static class OperationalEventExportEndpointExtensions
     {
         var builder = new StringBuilder();
 
-        builder.AppendLine("OperationalEventId,CreatedUtc,Severity,Category,EventType,Source,Message");
+        builder.AppendLine("OperationalEventId,CreatedUtc,Severity,Category,EventType,Source,ExecutionSessionId,MigrationRunId,Message");
 
         foreach (var item in events)
         {
@@ -66,6 +72,8 @@ public static class OperationalEventExportEndpointExtensions
             builder.Append(Escape(item.Category)).Append(',');
             builder.Append(Escape(item.EventType)).Append(',');
             builder.Append(Escape(item.Source)).Append(',');
+            builder.Append(Escape(item.ExecutionSessionId?.ToString("D"))).Append(',');
+            builder.Append(Escape(item.MigrationRunId?.ToString("D"))).Append(',');
             builder.AppendLine(Escape(item.Message));
         }
 

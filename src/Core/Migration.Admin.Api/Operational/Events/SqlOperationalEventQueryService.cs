@@ -35,7 +35,9 @@ SELECT
     Source,
     Message,
     PayloadJson,
-    CreatedUtc
+    CreatedUtc,
+    ExecutionSessionId,
+    MigrationRunId
 FROM dbo.MigrationOperationalEvents
 WHERE
     (@Severity IS NULL OR Severity = @Severity)
@@ -43,6 +45,8 @@ WHERE
     AND (@EventType IS NULL OR EventType = @EventType)
     AND (@FromUtc IS NULL OR CreatedUtc >= @FromUtc)
     AND (@ToUtc IS NULL OR CreatedUtc <= @ToUtc)
+    AND (@ExecutionSessionId IS NULL OR ExecutionSessionId = @ExecutionSessionId)
+    AND (@MigrationRunId IS NULL OR MigrationRunId = @MigrationRunId)
 ORDER BY CreatedUtc DESC
 OFFSET @Skip ROWS
 FETCH NEXT @Take ROWS ONLY;
@@ -53,6 +57,8 @@ FETCH NEXT @Take ROWS ONLY;
         AddNullableString(command, "@EventType", request.EventType);
         AddNullableDateTimeOffset(command, "@FromUtc", request.FromUtc);
         AddNullableDateTimeOffset(command, "@ToUtc", request.ToUtc);
+        AddNullableGuid(command, "@ExecutionSessionId", request.ExecutionSessionId);
+        AddNullableGuid(command, "@MigrationRunId", request.MigrationRunId);
         command.Parameters.AddWithValue("@Skip", safeSkip);
         command.Parameters.AddWithValue("@Take", safeTake);
 
@@ -68,7 +74,9 @@ FETCH NEXT @Take ROWS ONLY;
                 Source: reader.GetString(4),
                 Message: reader.GetString(5),
                 PayloadJson: reader.IsDBNull(6) ? null : reader.GetString(6),
-                CreatedUtc: reader.GetFieldValue<DateTimeOffset>(7)));
+                CreatedUtc: reader.GetFieldValue<DateTimeOffset>(7),
+                ExecutionSessionId: reader.IsDBNull(8) ? null : reader.GetGuid(8),
+                MigrationRunId: reader.IsDBNull(9) ? null : reader.GetGuid(9)));
         }
 
         return events;
@@ -167,6 +175,11 @@ ORDER BY COUNT(1) DESC, {columnName} ASC;
     }
 
     private static void AddNullableDateTimeOffset(SqlCommand command, string name, DateTimeOffset? value)
+    {
+        command.Parameters.AddWithValue(name, value.HasValue ? value.Value : DBNull.Value);
+    }
+
+    private static void AddNullableGuid(SqlCommand command, string name, Guid? value)
     {
         command.Parameters.AddWithValue(name, value.HasValue ? value.Value : DBNull.Value);
     }

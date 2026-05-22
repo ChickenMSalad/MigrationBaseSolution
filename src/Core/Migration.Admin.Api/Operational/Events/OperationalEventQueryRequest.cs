@@ -6,5 +6,7 @@ public sealed record OperationalEventQueryRequest(
     string? EventType,
     DateTimeOffset? FromUtc,
     DateTimeOffset? ToUtc,
+    Guid? ExecutionSessionId,
+    Guid? MigrationRunId,
     int Skip,
     int Take);

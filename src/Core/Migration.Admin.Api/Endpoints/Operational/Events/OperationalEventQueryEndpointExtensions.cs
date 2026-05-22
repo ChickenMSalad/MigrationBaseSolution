@@ -20,6 +20,8 @@ public static class OperationalEventQueryEndpointExtensions
             string? eventType,
             DateTimeOffset? fromUtc,
             DateTimeOffset? toUtc,
+            Guid? executionSessionId,
+            Guid? migrationRunId,
             int? skip,
             int? take,
             CancellationToken cancellationToken) =>
@@ -30,6 +32,8 @@ public static class OperationalEventQueryEndpointExtensions
                 EventType: Normalize(eventType),
                 FromUtc: fromUtc,
                 ToUtc: toUtc,
+                ExecutionSessionId: executionSessionId,
+                MigrationRunId: migrationRunId,
                 Skip: Math.Max(0, skip.GetValueOrDefault(0)),
                 Take: Math.Clamp(take.GetValueOrDefault(50), 1, 250));
 

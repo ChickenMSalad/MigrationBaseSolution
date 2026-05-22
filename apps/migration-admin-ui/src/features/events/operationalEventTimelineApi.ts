@@ -25,6 +25,14 @@ function appendQueryParameters(parameters: URLSearchParams, query: OperationalEv
   if (query.toUtc) {
     parameters.set('toUtc', query.toUtc);
   }
+
+  if (query.executionSessionId) {
+    parameters.set('executionSessionId', query.executionSessionId);
+  }
+
+  if (query.migrationRunId) {
+    parameters.set('migrationRunId', query.migrationRunId);
+  }
 }
 
 export async function queryOperationalEvents(
