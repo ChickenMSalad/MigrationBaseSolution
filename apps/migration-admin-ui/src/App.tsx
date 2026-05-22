@@ -1,4 +1,5 @@
-﻿import { useCallback, useMemo, useState } from 'react';
+﻿import { WorkerTelemetryWorkspace } from './features/workers/WorkerTelemetryWorkspace';
+import { useCallback, useMemo, useState } from 'react';
 import { FailureRetryWorkspace } from './components/FailureRetryWorkspace';
 import { RunLaunchPanel } from './components/RunLaunchPanel';
 import { OperationalRuntimeDashboard } from './components/OperationalRuntimeDashboard';
@@ -101,9 +102,11 @@ export default function App() {
       <ManifestImportPanel />
       <RunLaunchPanel />
       <FailureRetryWorkspace />
+  <WorkerTelemetryWorkspace />
 </main>
   );
 }
+
 
 
 

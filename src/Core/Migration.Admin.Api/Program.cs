@@ -1,4 +1,5 @@
-﻿using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
+﻿using Migration.Admin.Api.Endpoints.Operational.Workers;
+using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
 using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
 using Migration.Admin.Api.Endpoints;
@@ -52,5 +53,9 @@ app.Run();
 
 
 
+
+
+
+app.MapOperationalWorkerTelemetryEndpoints();
 
 
