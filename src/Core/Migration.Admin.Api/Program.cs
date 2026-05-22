@@ -5,6 +5,7 @@ using Migration.Admin.Api.Endpoints;
 using Migration.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddAdminApiOperationalRunCoordinator(builder.Configuration);
 builder.Services.AddSqlOperationalWorkItemQueue();
 builder.Services.AddAdminApiSqlOperationalBackbone(builder.Configuration);
 
@@ -40,7 +41,9 @@ AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
 
 app.MapSqlOperationalBackboneEndpoints();
 app.MapSqlOperationalWorkItemQueueEndpoints();
+app.MapSqlOperationalRunCoordinatorEndpoints();
 app.Run();
+
 
 
 
