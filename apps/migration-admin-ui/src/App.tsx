@@ -1,5 +1,6 @@
 ﻿import { useCallback, useMemo, useState } from 'react';
 import { OperationalRuntimeDashboard } from './components/OperationalRuntimeDashboard';
+import { ManifestImportPanel } from './components/ManifestImportPanel';
 import { EndpointCard } from './components/EndpointCard';
 import { EndpointProbe, adminApiBaseUrl, getJson } from './lib/adminApi';
 import './styles.css';
@@ -95,8 +96,11 @@ export default function App() {
         ))}
       </section>
             <OperationalRuntimeDashboard />
+      <ManifestImportPanel />
 </main>
   );
 }
+
+
 
 
