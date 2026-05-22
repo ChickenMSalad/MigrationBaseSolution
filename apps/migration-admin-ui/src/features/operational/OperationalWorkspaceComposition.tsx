@@ -12,6 +12,7 @@ import { NotificationRoutingWorkspace } from '../notifications/NotificationRouti
 import { SlaSloPolicyWorkspace } from '../slaSlo/SlaSloPolicyWorkspace';
 import { CapacityForecastWorkspace } from '../capacity/CapacityForecastWorkspace';
 import { CostAnalyticsWorkspace } from '../cost/CostAnalyticsWorkspace';
+import { OperationalEventTimelineWorkspace } from '../events/OperationalEventTimelineWorkspace';
 import { AuditTrailWorkspace } from '../audit/AuditTrailWorkspace';
 
 export function OperationalWorkspaceComposition() {
@@ -31,10 +32,13 @@ export function OperationalWorkspaceComposition() {
       <SlaSloPolicyWorkspace />
       <CapacityForecastWorkspace />
       <CostAnalyticsWorkspace />
+      <OperationalEventTimelineWorkspace />
       <AuditTrailWorkspace />
     </>
   );
 }
+
+
 
 
 
