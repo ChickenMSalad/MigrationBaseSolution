@@ -1,4 +1,5 @@
-﻿import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
+﻿import { ExecutionProfileWorkspace } from './features/executionProfiles/ExecutionProfileWorkspace';
+import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
 import { WorkerTelemetryWorkspace } from './features/workers/WorkerTelemetryWorkspace';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -9,6 +10,7 @@ import { ManifestImportPanel } from './components/ManifestImportPanel';
 import { EndpointCard } from './components/EndpointCard';
 import { EndpointProbe, adminApiBaseUrl, getJson } from './lib/adminApi';
 import { ConnectorConfigurationWorkspace } from './features/connectors/ConnectorConfigurationWorkspace';
+
 
 import './styles.css';
 
@@ -109,9 +111,12 @@ export default function App() {
   <WorkerTelemetryWorkspace />
         <ConnectorConfigurationWorkspace />
   <CredentialVaultWorkspace />
+  <ExecutionProfileWorkspace />
 </main>
   );
 }
+
+
 
 
 

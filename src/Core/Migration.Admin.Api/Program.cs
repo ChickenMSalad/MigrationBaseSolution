@@ -51,6 +51,7 @@ app.MapSqlOperationalWorkItemQueueEndpoints();
 app.MapSqlOperationalRunCoordinatorEndpoints();
 app.MapSqlOperationalRuntimeReadinessEndpoints();
 app.MapOperationalConnectorCredentialVaultEndpoints();
+app.MapOperationalConnectorExecutionProfileEndpoints();
 app.Run();
 
 
@@ -62,6 +63,7 @@ app.Run();
 
 
 app.MapOperationalWorkerTelemetryEndpoints();
+
 
 
 
