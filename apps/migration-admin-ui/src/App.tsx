@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
+import { OperationalRuntimeDashboard } from './components/OperationalRuntimeDashboard';
 import { EndpointCard } from './components/EndpointCard';
 import { EndpointProbe, adminApiBaseUrl, getJson } from './lib/adminApi';
 import './styles.css';
@@ -63,7 +64,7 @@ export default function App() {
           </p>
         </div>
         <button type="button" onClick={runChecks} disabled={isChecking}>
-          {isChecking ? 'Checking…' : 'Run API checks'}
+          {isChecking ? 'Checkingâ€¦' : 'Run API checks'}
         </button>
       </section>
 
@@ -93,6 +94,9 @@ export default function App() {
           <EndpointCard key={probe.path} probe={probe} />
         ))}
       </section>
-    </main>
+            <OperationalRuntimeDashboard />
+</main>
   );
 }
+
+
