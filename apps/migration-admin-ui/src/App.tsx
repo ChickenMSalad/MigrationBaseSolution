@@ -15,6 +15,7 @@ import { ConnectorConfigurationWorkspace } from './features/connectors/Connector
 import './styles.css';
 import { AuditTrailWorkspace } from './features/audit/AuditTrailWorkspace';
 import { NotificationRoutingWorkspace } from './features/notifications/NotificationRoutingWorkspace';
+import { SlaSloPolicyWorkspace } from './features/slaSlo/SlaSloPolicyWorkspace';
 
 const endpointCatalog: Array<Pick<EndpointProbe, 'label' | 'path'>> = [
   { label: 'System endpoints', path: '/api/system/endpoints' },
@@ -116,9 +117,11 @@ export default function App() {
   <ExecutionProfileWorkspace />
       <AuditTrailWorkspace />
           <NotificationRoutingWorkspace />
+          <SlaSloPolicyWorkspace />
     </main>
   );
 }
+
 
 
 

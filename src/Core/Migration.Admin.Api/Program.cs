@@ -1,4 +1,5 @@
-﻿using Migration.Admin.Api.Endpoints.Operational.Notifications;
+﻿using Migration.Admin.Api.Endpoints.Operational.SlaSlo;
+using Migration.Admin.Api.Endpoints.Operational.Notifications;
 using Migration.Admin.Api.Endpoints.Operational.Audit;
 using Migration.Admin.Api.Endpoints.Operational.Credentials;
 using Migration.Admin.Api.Endpoints.Operational.Workers;
@@ -53,6 +54,7 @@ app.MapSqlOperationalWorkItemQueueEndpoints();
 app.MapSqlOperationalRunCoordinatorEndpoints();
 app.MapSqlOperationalRuntimeReadinessEndpoints();
 app.MapOperationalConnectorCredentialVaultEndpoints();
+app.MapOperationalSlaSloEndpoints();
 app.MapOperationalNotificationEndpoints();
 app.MapOperationalAuditTrailEndpoints();
 app.MapOperationalConnectorExecutionProfileEndpoints();
@@ -67,6 +69,7 @@ app.Run();
 
 
 app.MapOperationalWorkerTelemetryEndpoints();
+
 
 
 
