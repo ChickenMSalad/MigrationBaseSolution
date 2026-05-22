@@ -15,4 +15,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Migration.Infrastructure.Sql\Migration.Infrastructure.Sql.csproj" />
+  </ItemGroup>
 </Project>

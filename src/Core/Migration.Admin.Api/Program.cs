@@ -1,9 +1,11 @@
+﻿using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
 using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
 using Migration.Admin.Api.Endpoints;
 using Migration.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddAdminApiSqlOperationalBackbone(builder.Configuration);
 
 Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.ConfigureAdminApiConfiguration(builder);
 Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.LogAdminApiConfiguration(builder);
@@ -35,4 +37,8 @@ var api = app.MapGroup("/api");
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
 
+app.MapSqlOperationalBackboneEndpoints();
 app.Run();
+
+
+
