@@ -1,4 +1,5 @@
-﻿import { CommandCenterSummaryWorkspace } from '../commandCenter/CommandCenterSummaryWorkspace';
+﻿import { OperationalSqlHealthWorkspace } from '../sqlHealth/OperationalSqlHealthWorkspace';
+import { CommandCenterSummaryWorkspace } from '../commandCenter/CommandCenterSummaryWorkspace';
 import { OperationalRuntimeDashboard } from '../../components/OperationalRuntimeDashboard';
 import { ManifestImportPanel } from '../../components/ManifestImportPanel';
 import { RunLaunchPanel } from '../../components/RunLaunchPanel';
@@ -16,6 +17,7 @@ import { AuditTrailWorkspace } from '../audit/AuditTrailWorkspace';
 export function OperationalWorkspaceComposition() {
   return (
     <>
+      <OperationalSqlHealthWorkspace />
       <CommandCenterSummaryWorkspace />
       <OperationalRuntimeDashboard />
       <ManifestImportPanel />
@@ -33,5 +35,7 @@ export function OperationalWorkspaceComposition() {
     </>
   );
 }
+
+
 
 

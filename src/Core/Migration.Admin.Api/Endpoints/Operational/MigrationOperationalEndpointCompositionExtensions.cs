@@ -7,6 +7,7 @@ using Migration.Admin.Api.Endpoints.Operational.CommandCenter;
 using Migration.Admin.Api.Endpoints.Operational.Cost;
 using Migration.Admin.Api.Endpoints.Operational.Notifications;
 using Migration.Admin.Api.Endpoints.Operational.SlaSlo;
+using Migration.Admin.Api.Endpoints.Operational.SqlHealth;
 using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
 using Migration.Admin.Api.Endpoints.Operational.Workers;
 
@@ -18,6 +19,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
         this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapOperationalCommandCenterEndpoints();
+        endpoints.MapOperationalSqlHealthEndpoints();
         endpoints.MapSqlOperationalBackboneEndpoints();
         endpoints.MapOperationalWorkerTelemetryEndpoints();
         endpoints.MapOperationalConnectorConfigurationEndpoints();
@@ -30,5 +32,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
         return endpoints;
     }
 }
+
+
 
 
