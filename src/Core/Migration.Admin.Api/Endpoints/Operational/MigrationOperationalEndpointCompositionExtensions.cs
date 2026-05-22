@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Routing;
 using Migration.Admin.Api.Endpoints.Operational.Audit;
 using Migration.Admin.Api.Endpoints.Operational.Capacity;
 using Migration.Admin.Api.Endpoints.Operational.Connectors;
+using Migration.Admin.Api.Endpoints.Operational.Execution;
 using Migration.Admin.Api.Endpoints.Operational.Events;
 using Migration.Admin.Api.Endpoints.Operational.CommandCenter;
 using Migration.Admin.Api.Endpoints.Operational.Cost;
@@ -22,6 +23,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
         endpoints.MapOperationalEventExportEndpoints();
         endpoints.MapOperationalEventQueryEndpoints();
         endpoints.MapOperationalEventRetentionEndpoints();
+        endpoints.MapExecutionSessionEndpoints();
         endpoints.MapOperationalEventEndpoints();
         endpoints.MapOperationalCommandCenterEndpoints();
         endpoints.MapOperationalSqlHealthEndpoints();
@@ -37,6 +39,8 @@ public static class MigrationOperationalEndpointCompositionExtensions
         return endpoints;
     }
 }
+
+
 
 
 

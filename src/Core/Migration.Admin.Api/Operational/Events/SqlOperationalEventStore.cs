@@ -11,6 +11,27 @@ public sealed class SqlOperationalEventStore : IOperationalEventStore
         _configuration = configuration;
     }
 
+    public Task<Guid> WriteAsync(
+        string eventType,
+        string severity,
+        string category,
+        string source,
+        string message,
+        string? payloadJson,
+        CancellationToken cancellationToken)
+    {
+        return WriteAsync(
+            eventType,
+            severity,
+            category,
+            source,
+            message,
+            payloadJson,
+            executionSessionId: null,
+            migrationRunId: null,
+            cancellationToken);
+    }
+
     public async Task<Guid> WriteAsync(
         string eventType,
         string severity,
@@ -18,6 +39,8 @@ public sealed class SqlOperationalEventStore : IOperationalEventStore
         string source,
         string message,
         string? payloadJson,
+        Guid? executionSessionId,
+        Guid? migrationRunId,
         CancellationToken cancellationToken)
     {
         var connectionString = GetConnectionString();
@@ -37,7 +60,9 @@ INSERT INTO dbo.MigrationOperationalEvents
     Source,
     Message,
     PayloadJson,
-    CreatedUtc
+    CreatedUtc,
+    ExecutionSessionId,
+    MigrationRunId
 )
 VALUES
 (
@@ -48,7 +73,9 @@ VALUES
     @Source,
     @Message,
     @PayloadJson,
-    SYSUTCDATETIME()
+    SYSUTCDATETIME(),
+    @ExecutionSessionId,
+    @MigrationRunId
 );
 ";
 
@@ -59,6 +86,8 @@ VALUES
         command.Parameters.AddWithValue("@Source", source);
         command.Parameters.AddWithValue("@Message", message);
         command.Parameters.AddWithValue("@PayloadJson", (object?)payloadJson ?? DBNull.Value);
+        command.Parameters.AddWithValue("@ExecutionSessionId", (object?)executionSessionId ?? DBNull.Value);
+        command.Parameters.AddWithValue("@MigrationRunId", (object?)migrationRunId ?? DBNull.Value);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -86,7 +115,9 @@ SELECT TOP (@Take)
     Source,
     Message,
     PayloadJson,
-    CreatedUtc
+    CreatedUtc,
+    ExecutionSessionId,
+    MigrationRunId
 FROM dbo.MigrationOperationalEvents
 ORDER BY CreatedUtc DESC;
 ";
@@ -104,7 +135,9 @@ ORDER BY CreatedUtc DESC;
                 Source: reader.GetString(4),
                 Message: reader.GetString(5),
                 PayloadJson: reader.IsDBNull(6) ? null : reader.GetString(6),
-                CreatedUtc: reader.GetFieldValue<DateTimeOffset>(7)));
+                CreatedUtc: reader.GetFieldValue<DateTimeOffset>(7),
+                ExecutionSessionId: reader.IsDBNull(8) ? null : reader.GetGuid(8),
+                MigrationRunId: reader.IsDBNull(9) ? null : reader.GetGuid(9)));
         }
 
         return events;

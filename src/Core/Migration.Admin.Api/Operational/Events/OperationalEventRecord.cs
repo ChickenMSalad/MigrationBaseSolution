@@ -8,4 +8,6 @@ public sealed record OperationalEventRecord(
     string Source,
     string Message,
     string? PayloadJson,
-    DateTimeOffset CreatedUtc);
+    DateTimeOffset CreatedUtc,
+    Guid? ExecutionSessionId = null,
+    Guid? MigrationRunId = null);

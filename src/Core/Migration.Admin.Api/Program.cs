@@ -1,4 +1,5 @@
-﻿using Migration.Admin.Api.Operational.Events;
+﻿using Migration.Admin.Api.Operational.Execution;
+using Migration.Admin.Api.Operational.Events;
 using Migration.Admin.Api.Operational.SqlMetrics;
 using Migration.Admin.Api.Endpoints.Operational;
 using Migration.Admin.Api.Endpoints.Operational.Credentials;
@@ -29,6 +30,7 @@ builder.Services.Configure<OperationalEventRetentionOptions>(builder.Configurati
 builder.Services.Configure<OperationalEventSnapshotRecorderOptions>(builder.Configuration.GetSection(OperationalEventSnapshotRecorderOptions.SectionName));
 builder.Services.AddScoped<IOperationalEventQueryService, SqlOperationalEventQueryService>();
 builder.Services.AddScoped<IOperationalEventRetentionService, SqlOperationalEventRetentionService>();
+builder.Services.AddScoped<IExecutionSessionStore, SqlExecutionSessionStore>();
 builder.Services.AddScoped<IOperationalEventStore, SqlOperationalEventStore>();
 builder.Services.AddScoped<ISqlOperationalMetricsReader, SqlOperationalMetricsReader>();
 builder.Services.AddHostedService<OperationalEventRetentionWorker>();
@@ -64,6 +66,8 @@ app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
 app.Run();
+
+
 
 
 

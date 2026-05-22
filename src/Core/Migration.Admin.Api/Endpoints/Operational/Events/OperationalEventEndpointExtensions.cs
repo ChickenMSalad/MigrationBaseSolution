@@ -18,6 +18,7 @@ public static class OperationalEventEndpointExtensions
         group.MapPost("/snapshot", async (
             ISqlOperationalMetricsReader metricsReader,
             IOperationalEventStore eventStore,
+            OperationalEventSnapshotRequest? request,
             CancellationToken cancellationToken) =>
         {
             var snapshot = await metricsReader.ReadSnapshotAsync(cancellationToken);
@@ -35,12 +36,16 @@ public static class OperationalEventEndpointExtensions
                 source: "Migration.Admin.Api",
                 message: $"Operational metrics snapshot recorded with status '{snapshot.Status}'.",
                 payloadJson: JsonSerializer.Serialize(snapshot),
+                executionSessionId: request?.ExecutionSessionId,
+                migrationRunId: request?.MigrationRunId,
                 cancellationToken: cancellationToken);
 
             return Results.Ok(new OperationalEventSnapshotResponse(
                 OperationalEventId: eventId,
                 Status: snapshot.Status,
                 Severity: severity,
+                ExecutionSessionId: request?.ExecutionSessionId,
+                MigrationRunId: request?.MigrationRunId,
                 CreatedUtc: DateTimeOffset.UtcNow));
         })
         .WithName("RecordOperationalMetricsSnapshot");
@@ -63,10 +68,16 @@ public static class OperationalEventEndpointExtensions
     }
 }
 
+public sealed record OperationalEventSnapshotRequest(
+    Guid? ExecutionSessionId,
+    Guid? MigrationRunId);
+
 public sealed record OperationalEventSnapshotResponse(
     Guid OperationalEventId,
     string Status,
     string Severity,
+    Guid? ExecutionSessionId,
+    Guid? MigrationRunId,
     DateTimeOffset CreatedUtc);
 
 public sealed record OperationalRecentEventsResponse(
