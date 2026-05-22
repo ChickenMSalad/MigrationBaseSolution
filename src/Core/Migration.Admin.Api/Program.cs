@@ -1,11 +1,5 @@
 ﻿using Migration.Admin.Api.Endpoints.Operational;
-using Migration.Admin.Api.Endpoints.Operational.Cost;
-using Migration.Admin.Api.Endpoints.Operational.Capacity;
-using Migration.Admin.Api.Endpoints.Operational.SlaSlo;
-using Migration.Admin.Api.Endpoints.Operational.Notifications;
-using Migration.Admin.Api.Endpoints.Operational.Audit;
 using Migration.Admin.Api.Endpoints.Operational.Credentials;
-using Migration.Admin.Api.Endpoints.Operational.Workers;
 using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
 using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
@@ -51,16 +45,10 @@ var api = app.MapGroup("/api");
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
 
-
-
 app.MapSqlOperationalWorkItemQueueEndpoints();
 app.MapSqlOperationalRunCoordinatorEndpoints();
 app.MapSqlOperationalRuntimeReadinessEndpoints();
 app.MapOperationalConnectorCredentialVaultEndpoints();
-
-
-
-
 
 app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();

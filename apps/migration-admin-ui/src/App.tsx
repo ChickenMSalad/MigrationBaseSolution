@@ -1,23 +1,11 @@
-﻿import { ExecutionProfileWorkspace } from './features/executionProfiles/ExecutionProfileWorkspace';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
-import { WorkerTelemetryWorkspace } from './features/workers/WorkerTelemetryWorkspace';
-import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
 
-import { FailureRetryWorkspace } from './components/FailureRetryWorkspace';
-import { RunLaunchPanel } from './components/RunLaunchPanel';
-import { OperationalRuntimeDashboard } from './components/OperationalRuntimeDashboard';
-import { ManifestImportPanel } from './components/ManifestImportPanel';
 import { EndpointCard } from './components/EndpointCard';
 import { EndpointProbe, adminApiBaseUrl, getJson } from './lib/adminApi';
-import { ConnectorConfigurationWorkspace } from './features/connectors/ConnectorConfigurationWorkspace';
 
 
 import './styles.css';
-import { AuditTrailWorkspace } from './features/audit/AuditTrailWorkspace';
-import { NotificationRoutingWorkspace } from './features/notifications/NotificationRoutingWorkspace';
-import { CostAnalyticsWorkspace } from './features/cost/CostAnalyticsWorkspace';
-import { CapacityForecastWorkspace } from './features/capacity/CapacityForecastWorkspace';
-import { SlaSloPolicyWorkspace } from './features/slaSlo/SlaSloPolicyWorkspace';
+import { OperationalWorkspaceComposition } from './features/operational/OperationalWorkspaceComposition';
 
 const endpointCatalog: Array<Pick<EndpointProbe, 'label' | 'path'>> = [
   { label: 'System endpoints', path: '/api/system/endpoints' },
@@ -109,22 +97,11 @@ export default function App() {
           <EndpointCard key={probe.path} probe={probe} />
         ))}
       </section>
-            <OperationalRuntimeDashboard />
-      <ManifestImportPanel />
-      <RunLaunchPanel />
-      <FailureRetryWorkspace />
-  <WorkerTelemetryWorkspace />
-        <ConnectorConfigurationWorkspace />
-  <CredentialVaultWorkspace />
-  <ExecutionProfileWorkspace />
-      <AuditTrailWorkspace />
-          <NotificationRoutingWorkspace />
-          <CostAnalyticsWorkspace />
-      <CapacityForecastWorkspace />
-      <SlaSloPolicyWorkspace />
+          <OperationalWorkspaceComposition />
     </main>
   );
 }
+
 
 
 
