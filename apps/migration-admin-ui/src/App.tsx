@@ -1,4 +1,5 @@
-﻿import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
+import { FailureRetryWorkspace } from './components/FailureRetryWorkspace';
 import { RunLaunchPanel } from './components/RunLaunchPanel';
 import { OperationalRuntimeDashboard } from './components/OperationalRuntimeDashboard';
 import { ManifestImportPanel } from './components/ManifestImportPanel';
@@ -99,9 +100,12 @@ export default function App() {
             <OperationalRuntimeDashboard />
       <ManifestImportPanel />
       <RunLaunchPanel />
+      <FailureRetryWorkspace />
 </main>
   );
 }
+
+
 
 
 
