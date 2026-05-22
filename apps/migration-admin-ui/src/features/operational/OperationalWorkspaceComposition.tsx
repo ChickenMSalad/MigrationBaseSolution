@@ -1,4 +1,5 @@
 ﻿import { OperationalSqlHealthWorkspace } from '../sqlHealth/OperationalSqlHealthWorkspace';
+import { ExecutionSessionWorkspace } from '../executionSessions/ExecutionSessionWorkspace';
 import { CommandCenterSummaryWorkspace } from '../commandCenter/CommandCenterSummaryWorkspace';
 import { OperationalRuntimeDashboard } from '../../components/OperationalRuntimeDashboard';
 import { ManifestImportPanel } from '../../components/ManifestImportPanel';
@@ -19,6 +20,7 @@ export function OperationalWorkspaceComposition() {
   return (
     <>
       <OperationalSqlHealthWorkspace />
+      <ExecutionSessionWorkspace />
       <CommandCenterSummaryWorkspace />
       <OperationalRuntimeDashboard />
       <ManifestImportPanel />
@@ -37,6 +39,8 @@ export function OperationalWorkspaceComposition() {
     </>
   );
 }
+
+
 
 
 
