@@ -25,8 +25,10 @@ builder.Services.AddMigrationAdminApiOperationalRunMirror(builder.Configuration)
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
 builder.Services.AddAdminApiConnectorCredentialVault();
+builder.Services.Configure<OperationalEventSnapshotRecorderOptions>(builder.Configuration.GetSection(OperationalEventSnapshotRecorderOptions.SectionName));
 builder.Services.AddScoped<IOperationalEventStore, SqlOperationalEventStore>();
 builder.Services.AddScoped<ISqlOperationalMetricsReader, SqlOperationalMetricsReader>();
+builder.Services.AddHostedService<OperationalEventSnapshotRecorderService>();
 var app = builder.Build();
 
 app.UseSwagger();
@@ -58,6 +60,8 @@ app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
 app.Run();
+
+
 
 
 
