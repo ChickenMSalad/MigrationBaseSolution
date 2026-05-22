@@ -1,4 +1,5 @@
-﻿using Migration.Admin.Api.Endpoints.Operational.Audit;
+﻿using Migration.Admin.Api.Endpoints.Operational.Notifications;
+using Migration.Admin.Api.Endpoints.Operational.Audit;
 using Migration.Admin.Api.Endpoints.Operational.Credentials;
 using Migration.Admin.Api.Endpoints.Operational.Workers;
 using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
@@ -52,6 +53,7 @@ app.MapSqlOperationalWorkItemQueueEndpoints();
 app.MapSqlOperationalRunCoordinatorEndpoints();
 app.MapSqlOperationalRuntimeReadinessEndpoints();
 app.MapOperationalConnectorCredentialVaultEndpoints();
+app.MapOperationalNotificationEndpoints();
 app.MapOperationalAuditTrailEndpoints();
 app.MapOperationalConnectorExecutionProfileEndpoints();
 app.Run();
@@ -65,6 +67,7 @@ app.Run();
 
 
 app.MapOperationalWorkerTelemetryEndpoints();
+
 
 
 

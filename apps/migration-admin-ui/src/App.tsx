@@ -14,6 +14,7 @@ import { ConnectorConfigurationWorkspace } from './features/connectors/Connector
 
 import './styles.css';
 import { AuditTrailWorkspace } from './features/audit/AuditTrailWorkspace';
+import { NotificationRoutingWorkspace } from './features/notifications/NotificationRoutingWorkspace';
 
 const endpointCatalog: Array<Pick<EndpointProbe, 'label' | 'path'>> = [
   { label: 'System endpoints', path: '/api/system/endpoints' },
@@ -114,9 +115,11 @@ export default function App() {
   <CredentialVaultWorkspace />
   <ExecutionProfileWorkspace />
       <AuditTrailWorkspace />
+          <NotificationRoutingWorkspace />
     </main>
   );
 }
+
 
 
 
