@@ -1,0 +1,155 @@
+using System.Text.Json;
+using Azure.Messaging.ServiceBus;
+using Migration.Application.Operational.WorkItems;
+using Migration.Workers.ServiceBusExecutor.Options;
+using Migration.Workers.ServiceBusExecutor.Processing;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Migration.Workers.ServiceBusExecutor.Runtime;
+
+internal sealed class SqlServiceBusExecutorWorker : BackgroundService
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private readonly IOperationalWorkItemQueue _workItemQueue;
+    private readonly IServiceBusWorkItemExecutor _executor;
+    private readonly IOptions<SqlServiceBusExecutorOptions> _options;
+    private readonly ILogger<SqlServiceBusExecutorWorker> _logger;
+
+    private ServiceBusClient? _client;
+    private ServiceBusProcessor? _processor;
+
+    public SqlServiceBusExecutorWorker(
+        IOperationalWorkItemQueue workItemQueue,
+        IServiceBusWorkItemExecutor executor,
+        IOptions<SqlServiceBusExecutorOptions> options,
+        ILogger<SqlServiceBusExecutorWorker> logger)
+    {
+        _workItemQueue = workItemQueue ?? throw new ArgumentNullException(nameof(workItemQueue));
+        _executor = executor ?? throw new ArgumentNullException(nameof(executor));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var options = _options.Value;
+
+        if (string.IsNullOrWhiteSpace(options.ServiceBusConnectionString))
+        {
+            throw new InvalidOperationException("SqlServiceBusExecutor:ServiceBusConnectionString is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(options.QueueName))
+        {
+            throw new InvalidOperationException("SqlServiceBusExecutor:QueueName is required.");
+        }
+
+        _client = new ServiceBusClient(options.ServiceBusConnectionString);
+        _processor = _client.CreateProcessor(options.QueueName, new ServiceBusProcessorOptions
+        {
+            AutoCompleteMessages = false,
+            MaxConcurrentCalls = Math.Clamp(options.MaxConcurrentCalls, 1, 64)
+        });
+
+        _processor.ProcessMessageAsync += ProcessMessageAsync;
+        _processor.ProcessErrorAsync += ProcessErrorAsync;
+
+        _logger.LogInformation("Starting SQL Service Bus executor for queue {QueueName} as worker {WorkerId}.", options.QueueName, options.WorkerId);
+        await _processor.StartProcessingAsync(stoppingToken);
+
+        try
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // normal shutdown
+        }
+    }
+
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (_processor is not null)
+        {
+            await _processor.StopProcessingAsync(cancellationToken);
+            await _processor.DisposeAsync();
+        }
+
+        if (_client is not null)
+        {
+            await _client.DisposeAsync();
+        }
+
+        await base.StopAsync(cancellationToken);
+    }
+
+    private async Task ProcessMessageAsync(ProcessMessageEventArgs args)
+    {
+        ServiceBusWorkItemMessage? message = null;
+
+        try
+        {
+            message = JsonSerializer.Deserialize<ServiceBusWorkItemMessage>(args.Message.Body, JsonOptions);
+            if (message is null || message.WorkItemId == Guid.Empty)
+            {
+                await args.DeadLetterMessageAsync(args.Message, "INVALID_MESSAGE", "Message did not contain a valid WorkItemId.", args.CancellationToken);
+                return;
+            }
+
+            var workItem = await _workItemQueue.GetAsync(message.WorkItemId, args.CancellationToken);
+            if (workItem is null)
+            {
+                await args.DeadLetterMessageAsync(args.Message, "WORK_ITEM_NOT_FOUND", $"Work item '{message.WorkItemId}' was not found in SQL.", args.CancellationToken);
+                return;
+            }
+
+            var result = await _executor.ExecuteAsync(workItem, args.CancellationToken);
+            if (result.Succeeded)
+            {
+                await _workItemQueue.CompleteAsync(
+                    new CompleteOperationalWorkItemRequest(workItem.WorkItemId, _options.Value.WorkerId, result.ResultJson),
+                    args.CancellationToken);
+
+                await args.CompleteMessageAsync(args.Message, args.CancellationToken);
+                return;
+            }
+
+            var nextAttemptUtc = result.IsRetryable
+                ? DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(_options.Value.RetryDelaySeconds, 1, 3600))
+                : null;
+
+            await _workItemQueue.FailAsync(
+                new FailOperationalWorkItemRequest(
+                    workItem.WorkItemId,
+                    _options.Value.WorkerId,
+                    result.ErrorCode ?? "EXECUTION_FAILED",
+                    result.ErrorMessage ?? "Service Bus work item execution failed.",
+                    result.IsRetryable,
+                    nextAttemptUtc),
+                args.CancellationToken);
+
+            if (result.IsRetryable)
+            {
+                await args.CompleteMessageAsync(args.Message, args.CancellationToken);
+            }
+            else
+            {
+                await args.DeadLetterMessageAsync(args.Message, result.ErrorCode ?? "EXECUTION_FAILED", result.ErrorMessage, args.CancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled error while executing Service Bus work item {WorkItemId}.", message?.WorkItemId);
+            await args.AbandonMessageAsync(args.Message, cancellationToken: args.CancellationToken);
+        }
+    }
+
+    private Task ProcessErrorAsync(ProcessErrorEventArgs args)
+    {
+        _logger.LogError(args.Exception, "Service Bus processor error. Entity: {EntityPath}. Source: {ErrorSource}.", args.EntityPath, args.ErrorSource);
+        return Task.CompletedTask;
+    }
+}
