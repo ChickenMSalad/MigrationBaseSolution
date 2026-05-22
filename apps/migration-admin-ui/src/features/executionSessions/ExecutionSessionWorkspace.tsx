@@ -18,6 +18,16 @@ import {
   recordExecutionSessionSnapshot,
 } from './executionSessionApi';
 import type { ExecutionSessionRecord } from './executionSessionTypes';
+import {
+  expandExecutionPlanToWorkItems,
+  fetchExecutionWorkItemQueueSummary,
+  fetchRecentExecutionWorkItems,
+  leaseExecutionWorkItems,
+} from './executionWorkItemApi';
+import type {
+  ExecutionWorkItemQueueSummary,
+  ExecutionWorkItemRecord,
+} from './executionWorkItemTypes';
 
 export function ExecutionSessionWorkspace() {
   const [sessions, setSessions] = useState<ExecutionSessionRecord[]>([]);
@@ -25,9 +35,13 @@ export function ExecutionSessionWorkspace() {
   const [sessionEvents, setSessionEvents] = useState<OperationalEventRecord[]>([]);
   const [phaseHistory, setPhaseHistory] = useState<ExecutionPhaseHistoryRecord[]>([]);
   const [planSteps, setPlanSteps] = useState<ExecutionPlanStepRecord[]>([]);
+  const [workItems, setWorkItems] = useState<ExecutionWorkItemRecord[]>([]);
+  const [queueSummary, setQueueSummary] = useState<ExecutionWorkItemQueueSummary | null>(null);
   const [phases, setPhases] = useState<string[]>([]);
   const [selectedPhase, setSelectedPhase] = useState('validating');
   const [transitionReason, setTransitionReason] = useState('');
+  const [workerId, setWorkerId] = useState('local-ui-worker');
+  const [leaseTake, setLeaseTake] = useState(5);
   const [name, setName] = useState('');
   const [sourceConnector, setSourceConnector] = useState('');
   const [targetConnector, setTargetConnector] = useState('');
@@ -47,19 +61,23 @@ export function ExecutionSessionWorkspace() {
 
   async function loadSessionDetails(session: ExecutionSessionRecord) {
     try {
-      const [eventsResponse, historyResponse, planResponse] = await Promise.all([
+      const [eventsResponse, historyResponse, planResponse, queueResponse, queueSummaryResponse] = await Promise.all([
         queryOperationalEvents({
           executionSessionId: session.executionSessionId,
           take: 25,
         }),
         fetchExecutionPhaseHistory(session.executionSessionId, 25),
         fetchExecutionPlan(session.executionSessionId),
+        fetchRecentExecutionWorkItems(session.executionSessionId, 100),
+        fetchExecutionWorkItemQueueSummary(session.executionSessionId),
       ]);
 
       setSelectedSession(session);
       setSessionEvents(eventsResponse.events);
       setPhaseHistory(historyResponse.history);
       setPlanSteps(planResponse.steps);
+      setWorkItems(queueResponse.items);
+      setQueueSummary(queueSummaryResponse);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load execution session details.');
@@ -157,6 +175,44 @@ export function ExecutionSessionWorkspace() {
     }
   }
 
+  async function expandSelectedPlanToQueue() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const response = await expandExecutionPlanToWorkItems({
+        executionSessionId: selectedSession.executionSessionId,
+      });
+
+      setWorkItems(response.items);
+      setStatusMessage(`Expanded ${response.items.length} work item(s).`);
+      await loadSessionDetails(selectedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to expand execution plan to work items.');
+    }
+  }
+
+  async function leaseSelectedWorkItems() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const response = await leaseExecutionWorkItems({
+        executionSessionId: selectedSession.executionSessionId,
+        workerId,
+        take: leaseTake,
+        leaseSeconds: 300,
+      });
+
+      setStatusMessage(`Leased ${response.items.length} work item(s) to ${workerId}.`);
+      await loadSessionDetails(selectedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to lease execution work items.');
+    }
+  }
+
   return (
     <section className="workspace-card">
       <div className="workspace-card__header">
@@ -245,6 +301,82 @@ export function ExecutionSessionWorkspace() {
             </label>
             <button type="button" onClick={transitionSelectedSession}>Transition selected session</button>
             <button type="button" onClick={seedSelectedPlan}>Seed execution plan</button>
+            <button type="button" onClick={expandSelectedPlanToQueue}>Expand work queue</button>
+          </div>
+
+          <div className="metric-grid">
+            <article>
+              <span>Total work</span>
+              <strong>{queueSummary?.total ?? 0}</strong>
+            </article>
+            <article>
+              <span>Pending</span>
+              <strong>{queueSummary?.pending ?? 0}</strong>
+            </article>
+            <article>
+              <span>Leased</span>
+              <strong>{queueSummary?.leased ?? 0}</strong>
+            </article>
+            <article>
+              <span>Completed</span>
+              <strong>{queueSummary?.completed ?? 0}</strong>
+            </article>
+            <article>
+              <span>Failed</span>
+              <strong>{queueSummary?.failed ?? 0}</strong>
+            </article>
+            <article>
+              <span>Dead-lettered</span>
+              <strong>{queueSummary?.deadLettered ?? 0}</strong>
+            </article>
+          </div>
+
+          <div className="filter-row">
+            <label>
+              Worker ID
+              <input value={workerId} onChange={(event) => setWorkerId(event.target.value)} />
+            </label>
+            <label>
+              Lease count
+              <input type="number" min="1" max="100" value={leaseTake} onChange={(event) => setLeaseTake(Number(event.target.value))} />
+            </label>
+            <button type="button" onClick={leaseSelectedWorkItems}>Lease work</button>
+          </div>
+
+          <div className="table-shell">
+            <h3>Execution work items for {selectedSession.name}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Priority</th>
+                  <th>Type</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Worker</th>
+                  <th>Retry</th>
+                  <th>Lease expires</th>
+                </tr>
+              </thead>
+              <tbody>
+                {workItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={7}>No execution work items have been expanded yet.</td>
+                  </tr>
+                ) : (
+                  workItems.map((item) => (
+                    <tr key={item.executionWorkItemId}>
+                      <td>{item.priority}</td>
+                      <td>{item.workItemType}</td>
+                      <td>{item.workItemName}</td>
+                      <td>{item.status}</td>
+                      <td>{item.workerId ?? '—'}</td>
+                      <td>{item.retryCount}/{item.maxRetries}</td>
+                      <td>{item.leaseExpiresUtc ? new Date(item.leaseExpiresUtc).toLocaleString() : '—'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
 
           <div className="table-shell">
