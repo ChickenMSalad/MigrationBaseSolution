@@ -15,6 +15,7 @@ import { ConnectorConfigurationWorkspace } from './features/connectors/Connector
 import './styles.css';
 import { AuditTrailWorkspace } from './features/audit/AuditTrailWorkspace';
 import { NotificationRoutingWorkspace } from './features/notifications/NotificationRoutingWorkspace';
+import { CostAnalyticsWorkspace } from './features/cost/CostAnalyticsWorkspace';
 import { CapacityForecastWorkspace } from './features/capacity/CapacityForecastWorkspace';
 import { SlaSloPolicyWorkspace } from './features/slaSlo/SlaSloPolicyWorkspace';
 
@@ -118,11 +119,14 @@ export default function App() {
   <ExecutionProfileWorkspace />
       <AuditTrailWorkspace />
           <NotificationRoutingWorkspace />
-          <CapacityForecastWorkspace />
+          <CostAnalyticsWorkspace />
+      <CapacityForecastWorkspace />
       <SlaSloPolicyWorkspace />
     </main>
   );
 }
+
+
 
 
 
