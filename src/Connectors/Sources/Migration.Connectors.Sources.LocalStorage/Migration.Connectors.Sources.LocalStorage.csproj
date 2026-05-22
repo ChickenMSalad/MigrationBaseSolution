@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Application\Migration.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -6,10 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Manifest.Sql\Migration.Manifest.Sql.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Manifests\Migration.Manifest.Sql\Migration.Manifest.Sql.csproj" />
     <!--
       NOTE: The reference below (Sources.Aem) is a known cross-connector coupling
       introduced by Files/ExcelSplitter.cs (uses AemAsset). Track: move ExcelSplitter

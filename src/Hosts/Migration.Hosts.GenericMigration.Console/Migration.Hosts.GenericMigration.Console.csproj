@@ -9,7 +9,7 @@
     <UserSecretsId>Migration-Hosts-GenericMigration-Console</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Migration.GenericRuntime\Migration.GenericRuntime.csproj" />
+    <ProjectReference Include="..\..\Core\Migration.GenericRuntime\Migration.GenericRuntime.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />

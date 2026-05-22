@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Connectors\Targets\Migration.Connectors.Targets.Cloudinary\Migration.Connectors.Targets.Cloudinary.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Shared\Migration.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

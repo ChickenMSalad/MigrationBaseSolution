@@ -28,8 +28,8 @@
 	<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Application\Migration.Application.csproj" />
     <ProjectReference Include="..\..\..\Connectors\Sources\Migration.Connectors.Sources.Sitecore\Migration.Connectors.Sources.Sitecore.csproj" />
     <ProjectReference Include="..\..\..\Connectors\Targets\Migration.Connectors.Targets.Bynder\Migration.Connectors.Targets.Bynder.csproj" />
   </ItemGroup>

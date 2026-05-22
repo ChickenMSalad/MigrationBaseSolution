@@ -28,7 +28,7 @@
 	<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Shared\Migration.Shared.csproj" />
     <ProjectReference Include="..\..\..\Connectors\Sources\Migration.Connectors.Sources.WebDam\Migration.Connectors.Sources.WebDam.csproj" />
     <ProjectReference Include="..\..\..\Connectors\Sources\Migration.Connectors.Sources.S3\Migration.Connectors.Sources.S3.csproj" />
     <ProjectReference Include="..\..\..\Connectors\Targets\Migration.Connectors.Targets.Bynder\Migration.Connectors.Targets.Bynder.csproj" />

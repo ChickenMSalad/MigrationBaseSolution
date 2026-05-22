@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Shared\Migration.Shared.csproj" />
     <!--
       NOTE: The two references below (Sources.S3, Sources.WebDam) are known
       cross-connector couplings introduced by:

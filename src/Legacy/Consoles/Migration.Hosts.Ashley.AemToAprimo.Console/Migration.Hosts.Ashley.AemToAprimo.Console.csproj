@@ -10,11 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Migration.Shared\Migration.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Shared\Migration.Shared.csproj" />
     <ProjectReference Include="..\..\..\Connectors\Sources\Migration.Connectors.Sources.Aem\Migration.Connectors.Sources.Aem.csproj" />
     <ProjectReference Include="..\..\..\Connectors\Targets\Migration.Connectors.Targets.Aprimo\Migration.Connectors.Targets.Aprimo.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Manifest.Sql\Migration.Manifest.Sql.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Manifest.Sqlite\Migration.Manifest.Sqlite.csproj" />
+    <ProjectReference Include="..\..\..\Manifests\Migration.Manifest.Sql\Migration.Manifest.Sql.csproj" />
+    <ProjectReference Include="..\..\..\Manifests\Migration.Manifest.Sqlite\Migration.Manifest.Sqlite.csproj" />
   </ItemGroup>
 
   <ItemGroup>

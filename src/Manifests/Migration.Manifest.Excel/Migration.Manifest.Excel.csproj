@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Migration.Domain\Migration.Domain.csproj" />
-    <ProjectReference Include="..\Migration.Application\Migration.Application.csproj" />
-    <ProjectReference Include="..\Migration.Manifest.Csv\Migration.Manifest.Csv.csproj" />
+    <ProjectReference Include="..\..\Core\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\Core\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\Manifests\Migration.Manifest.Csv\Migration.Manifest.Csv.csproj" />
   </ItemGroup>
 
   <ItemGroup>

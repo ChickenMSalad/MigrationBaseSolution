@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Migration.Application\Migration.Application.csproj" />
-    <ProjectReference Include="..\..\..\Migration.ControlPlane\Migration.ControlPlane.csproj" />
-    <ProjectReference Include="..\..\..\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.ControlPlane\Migration.ControlPlane.csproj" />
+    <ProjectReference Include="..\..\..\Core\Migration.Domain\Migration.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

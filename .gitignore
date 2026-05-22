@@ -216,9 +216,9 @@ retry-output/
 # Explicit Project Allows
 # =========================================================
 
-!src/Migration.Manifest.Csv/
-!src/Migration.Manifest.Csv/**
+!src/Manifests/Migration.Manifest.Csv/
+!src/Manifests/Migration.Manifest.Csv/**
 
-src/Migration.Manifest.Csv/bin/
-src/Migration.Manifest.Csv/obj/
+src/Manifests/Migration.Manifest.Csv/bin/
+src/Manifests/Migration.Manifest.Csv/obj/
 ```
