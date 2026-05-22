@@ -1,4 +1,5 @@
-﻿using Migration.Admin.Api.Endpoints.Operational.Workers;
+﻿using Migration.Admin.Api.Endpoints.Operational.Credentials;
+using Migration.Admin.Api.Endpoints.Operational.Workers;
 using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
 using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
@@ -21,6 +22,7 @@ builder.Services.AddOperationalStore(builder.Configuration);
 builder.Services.AddMigrationAdminApiOperationalRunMirror(builder.Configuration);
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
+builder.Services.AddAdminApiConnectorCredentialVault();
 var app = builder.Build();
 
 app.UseSwagger();
@@ -48,6 +50,7 @@ app.MapOperationalConnectorConfigurationEndpoints();
 app.MapSqlOperationalWorkItemQueueEndpoints();
 app.MapSqlOperationalRunCoordinatorEndpoints();
 app.MapSqlOperationalRuntimeReadinessEndpoints();
+app.MapOperationalConnectorCredentialVaultEndpoints();
 app.Run();
 
 
@@ -59,6 +62,9 @@ app.Run();
 
 
 app.MapOperationalWorkerTelemetryEndpoints();
+
+
+
 
 
 
