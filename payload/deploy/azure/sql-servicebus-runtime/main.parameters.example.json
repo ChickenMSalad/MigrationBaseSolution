@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "dev"
+    },
+    "namePrefix": {
+      "value": "mbs"
+    },
+    "sqlAdministratorLogin": {
+      "value": "sqladminuser"
+    },
+    "sqlAdministratorPassword": {
+      "value": "REPLACE_WITH_SECURE_VALUE"
+    },
+    "sqlDatabaseSkuName": {
+      "value": "S0"
+    },
+    "serviceBusSkuName": {
+      "value": "Standard"
+    }
+  }
+}
