@@ -27,6 +27,7 @@ AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Service
 builder.Services.AddAdminApiConnectorCredentialVault();
 builder.Services.Configure<OperationalEventRetentionOptions>(builder.Configuration.GetSection(OperationalEventRetentionOptions.SectionName));
 builder.Services.Configure<OperationalEventSnapshotRecorderOptions>(builder.Configuration.GetSection(OperationalEventSnapshotRecorderOptions.SectionName));
+builder.Services.AddScoped<IOperationalEventQueryService, SqlOperationalEventQueryService>();
 builder.Services.AddScoped<IOperationalEventRetentionService, SqlOperationalEventRetentionService>();
 builder.Services.AddScoped<IOperationalEventStore, SqlOperationalEventStore>();
 builder.Services.AddScoped<ISqlOperationalMetricsReader, SqlOperationalMetricsReader>();
@@ -63,6 +64,7 @@ app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
 app.Run();
+
 
 
 
