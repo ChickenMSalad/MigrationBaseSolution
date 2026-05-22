@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { queryOperationalEvents } from '../events/operationalEventTimelineApi';
 import type { OperationalEventRecord } from '../events/operationalEventTimelineTypes';
 import {
+  fetchExecutionPhaseHistory,
+  fetchExecutionPhases,
+  transitionExecutionPhase,
+} from './executionLifecycleApi';
+import type { ExecutionPhaseHistoryRecord } from './executionLifecycleTypes';
+import {
   createExecutionSession,
   fetchRecentExecutionSessions,
   recordExecutionSessionSnapshot,
@@ -12,6 +18,10 @@ export function ExecutionSessionWorkspace() {
   const [sessions, setSessions] = useState<ExecutionSessionRecord[]>([]);
   const [selectedSession, setSelectedSession] = useState<ExecutionSessionRecord | null>(null);
   const [sessionEvents, setSessionEvents] = useState<OperationalEventRecord[]>([]);
+  const [phaseHistory, setPhaseHistory] = useState<ExecutionPhaseHistoryRecord[]>([]);
+  const [phases, setPhases] = useState<string[]>([]);
+  const [selectedPhase, setSelectedPhase] = useState('validating');
+  const [transitionReason, setTransitionReason] = useState('');
   const [name, setName] = useState('');
   const [sourceConnector, setSourceConnector] = useState('');
   const [targetConnector, setTargetConnector] = useState('');
@@ -31,13 +41,17 @@ export function ExecutionSessionWorkspace() {
 
   async function loadSessionEvents(session: ExecutionSessionRecord) {
     try {
-      const response = await queryOperationalEvents({
-        executionSessionId: session.executionSessionId,
-        take: 25,
-      });
+      const [eventsResponse, historyResponse] = await Promise.all([
+        queryOperationalEvents({
+          executionSessionId: session.executionSessionId,
+          take: 25,
+        }),
+        fetchExecutionPhaseHistory(session.executionSessionId, 25),
+      ]);
 
       setSelectedSession(session);
-      setSessionEvents(response.events);
+      setSessionEvents(eventsResponse.events);
+      setPhaseHistory(historyResponse.history);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load execution session events.');
@@ -45,7 +59,22 @@ export function ExecutionSessionWorkspace() {
   }
 
   useEffect(() => {
-    void loadSessions();
+    async function loadInitialState() {
+      await loadSessions();
+
+      try {
+        const response = await fetchExecutionPhases();
+        setPhases(response.phases);
+
+        if (response.phases.length > 0) {
+          setSelectedPhase(response.phases[0]);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load execution phases.');
+      }
+    }
+
+    void loadInitialState();
   }, []);
 
   async function submitSession() {
@@ -76,6 +105,27 @@ export function ExecutionSessionWorkspace() {
       await loadSessionEvents(session);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to record correlated snapshot.');
+    }
+  }
+
+  async function transitionSelectedSession() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      await transitionExecutionPhase({
+        executionSessionId: selectedSession.executionSessionId,
+        newPhase: selectedPhase,
+        reason: transitionReason || null,
+      });
+
+      setStatusMessage(`Transitioned ${selectedSession.name} to ${selectedPhase}.`);
+      setTransitionReason('');
+      await loadSessions();
+      await loadSessionEvents({ ...selectedSession, status: selectedPhase });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to transition execution phase.');
     }
   }
 
@@ -140,7 +190,7 @@ export function ExecutionSessionWorkspace() {
                   <td>{session.targetConnector ?? '—'}</td>
                   <td><code>{session.executionSessionId}</code></td>
                   <td>
-                    <button type="button" onClick={() => loadSessionEvents(session)}>View events</button>
+                    <button type="button" onClick={() => loadSessionEvents(session)}>View</button>
                     <button type="button" onClick={() => recordSnapshot(session)}>Snapshot</button>
                   </td>
                 </tr>
@@ -151,37 +201,85 @@ export function ExecutionSessionWorkspace() {
       </div>
 
       {selectedSession ? (
-        <div className="table-shell">
-          <h3>Events for {selectedSession.name}</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Created</th>
-                <th>Severity</th>
-                <th>Category</th>
-                <th>Event type</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessionEvents.length === 0 ? (
+        <>
+          <div className="filter-row">
+            <label>
+              Next phase
+              <select value={selectedPhase} onChange={(event) => setSelectedPhase(event.target.value)}>
+                {phases.map((phase) => (
+                  <option key={phase} value={phase}>{phase}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Reason
+              <input value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Reason for transition" />
+            </label>
+            <button type="button" onClick={transitionSelectedSession}>Transition selected session</button>
+          </div>
+
+          <div className="table-shell">
+            <h3>Phase history for {selectedSession.name}</h3>
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={5}>No events are correlated to this execution session yet.</td>
+                  <th>Created</th>
+                  <th>Previous</th>
+                  <th>New</th>
+                  <th>Reason</th>
                 </tr>
-              ) : (
-                sessionEvents.map((event) => (
-                  <tr key={event.operationalEventId}>
-                    <td>{new Date(event.createdUtc).toLocaleString()}</td>
-                    <td>{event.severity}</td>
-                    <td>{event.category}</td>
-                    <td>{event.eventType}</td>
-                    <td>{event.message}</td>
+              </thead>
+              <tbody>
+                {phaseHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={4}>No phase transitions have been recorded yet.</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  phaseHistory.map((item) => (
+                    <tr key={item.executionPhaseHistoryId}>
+                      <td>{new Date(item.createdUtc).toLocaleString()}</td>
+                      <td>{item.previousPhase ?? '—'}</td>
+                      <td>{item.newPhase}</td>
+                      <td>{item.reason ?? '—'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="table-shell">
+            <h3>Events for {selectedSession.name}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Created</th>
+                  <th>Severity</th>
+                  <th>Category</th>
+                  <th>Event type</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sessionEvents.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>No events are correlated to this execution session yet.</td>
+                  </tr>
+                ) : (
+                  sessionEvents.map((event) => (
+                    <tr key={event.operationalEventId}>
+                      <td>{new Date(event.createdUtc).toLocaleString()}</td>
+                      <td>{event.severity}</td>
+                      <td>{event.category}</td>
+                      <td>{event.eventType}</td>
+                      <td>{event.message}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : null}
     </section>
   );
