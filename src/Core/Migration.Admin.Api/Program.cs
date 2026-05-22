@@ -4,6 +4,7 @@ using Migration.Admin.Api.Registration;
 using Migration.Admin.Api.Authentication;
 using Migration.Admin.Api.Endpoints;
 using Migration.Infrastructure.DependencyInjection;
+using Migration.Admin.Api.Endpoints.Operational.Connectors;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAdminApiOperationalRuntimeReadiness(builder.Configuration);
@@ -43,6 +44,7 @@ AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
 
 app.MapSqlOperationalBackboneEndpoints();
+app.MapOperationalConnectorConfigurationEndpoints();
 app.MapSqlOperationalWorkItemQueueEndpoints();
 app.MapSqlOperationalRunCoordinatorEndpoints();
 app.MapSqlOperationalRuntimeReadinessEndpoints();
@@ -57,5 +59,6 @@ app.Run();
 
 
 app.MapOperationalWorkerTelemetryEndpoints();
+
 
 

@@ -6,6 +6,7 @@ import { OperationalRuntimeDashboard } from './components/OperationalRuntimeDash
 import { ManifestImportPanel } from './components/ManifestImportPanel';
 import { EndpointCard } from './components/EndpointCard';
 import { EndpointProbe, adminApiBaseUrl, getJson } from './lib/adminApi';
+import { ConnectorConfigurationWorkspace } from './features/connectors/ConnectorConfigurationWorkspace';
 import './styles.css';
 
 const endpointCatalog: Array<Pick<EndpointProbe, 'label' | 'path'>> = [
@@ -103,9 +104,12 @@ export default function App() {
       <RunLaunchPanel />
       <FailureRetryWorkspace />
   <WorkerTelemetryWorkspace />
+        <ConnectorConfigurationWorkspace />
 </main>
   );
 }
+
+
 
 
 
