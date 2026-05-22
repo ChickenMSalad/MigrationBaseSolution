@@ -8,6 +8,11 @@ import {
 } from './executionLifecycleApi';
 import type { ExecutionPhaseHistoryRecord } from './executionLifecycleTypes';
 import {
+  fetchExecutionPlan,
+  seedExecutionPlan,
+} from './executionPlanApi';
+import type { ExecutionPlanStepRecord } from './executionPlanTypes';
+import {
   createExecutionSession,
   fetchRecentExecutionSessions,
   recordExecutionSessionSnapshot,
@@ -19,6 +24,7 @@ export function ExecutionSessionWorkspace() {
   const [selectedSession, setSelectedSession] = useState<ExecutionSessionRecord | null>(null);
   const [sessionEvents, setSessionEvents] = useState<OperationalEventRecord[]>([]);
   const [phaseHistory, setPhaseHistory] = useState<ExecutionPhaseHistoryRecord[]>([]);
+  const [planSteps, setPlanSteps] = useState<ExecutionPlanStepRecord[]>([]);
   const [phases, setPhases] = useState<string[]>([]);
   const [selectedPhase, setSelectedPhase] = useState('validating');
   const [transitionReason, setTransitionReason] = useState('');
@@ -39,22 +45,24 @@ export function ExecutionSessionWorkspace() {
     }
   }
 
-  async function loadSessionEvents(session: ExecutionSessionRecord) {
+  async function loadSessionDetails(session: ExecutionSessionRecord) {
     try {
-      const [eventsResponse, historyResponse] = await Promise.all([
+      const [eventsResponse, historyResponse, planResponse] = await Promise.all([
         queryOperationalEvents({
           executionSessionId: session.executionSessionId,
           take: 25,
         }),
         fetchExecutionPhaseHistory(session.executionSessionId, 25),
+        fetchExecutionPlan(session.executionSessionId),
       ]);
 
       setSelectedSession(session);
       setSessionEvents(eventsResponse.events);
       setPhaseHistory(historyResponse.history);
+      setPlanSteps(planResponse.steps);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load execution session events.');
+      setError(err instanceof Error ? err.message : 'Failed to load execution session details.');
     }
   }
 
@@ -92,7 +100,7 @@ export function ExecutionSessionWorkspace() {
       setTargetConnector('');
       setNotes('');
       await loadSessions();
-      await loadSessionEvents(session);
+      await loadSessionDetails(session);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create execution session.');
     }
@@ -102,7 +110,7 @@ export function ExecutionSessionWorkspace() {
     try {
       await recordExecutionSessionSnapshot(session.executionSessionId, session.migrationRunId);
       setStatusMessage(`Recorded snapshot for ${session.executionSessionId}`);
-      await loadSessionEvents(session);
+      await loadSessionDetails(session);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to record correlated snapshot.');
     }
@@ -123,9 +131,29 @@ export function ExecutionSessionWorkspace() {
       setStatusMessage(`Transitioned ${selectedSession.name} to ${selectedPhase}.`);
       setTransitionReason('');
       await loadSessions();
-      await loadSessionEvents({ ...selectedSession, status: selectedPhase });
+      await loadSessionDetails({ ...selectedSession, status: selectedPhase });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to transition execution phase.');
+    }
+  }
+
+  async function seedSelectedPlan() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const response = await seedExecutionPlan({
+        executionSessionId: selectedSession.executionSessionId,
+        sourceConnector: selectedSession.sourceConnector,
+        targetConnector: selectedSession.targetConnector,
+      });
+
+      setPlanSteps(response.steps);
+      setStatusMessage(`Seeded ${response.steps.length} execution plan step(s).`);
+      await loadSessionDetails(selectedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to seed execution plan.');
     }
   }
 
@@ -190,7 +218,7 @@ export function ExecutionSessionWorkspace() {
                   <td>{session.targetConnector ?? '—'}</td>
                   <td><code>{session.executionSessionId}</code></td>
                   <td>
-                    <button type="button" onClick={() => loadSessionEvents(session)}>View</button>
+                    <button type="button" onClick={() => loadSessionDetails(session)}>View</button>
                     <button type="button" onClick={() => recordSnapshot(session)}>Snapshot</button>
                   </td>
                 </tr>
@@ -216,6 +244,41 @@ export function ExecutionSessionWorkspace() {
               <input value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Reason for transition" />
             </label>
             <button type="button" onClick={transitionSelectedSession}>Transition selected session</button>
+            <button type="button" onClick={seedSelectedPlan}>Seed execution plan</button>
+          </div>
+
+          <div className="table-shell">
+            <h3>Execution plan for {selectedSession.name}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Type</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Source</th>
+                  <th>Target</th>
+                </tr>
+              </thead>
+              <tbody>
+                {planSteps.length === 0 ? (
+                  <tr>
+                    <td colSpan={6}>No execution plan has been seeded yet.</td>
+                  </tr>
+                ) : (
+                  planSteps.map((step) => (
+                    <tr key={step.executionPlanStepId}>
+                      <td>{step.stepOrder}</td>
+                      <td>{step.stepType}</td>
+                      <td>{step.stepName}</td>
+                      <td>{step.status}</td>
+                      <td>{step.sourceConnector ?? '—'}</td>
+                      <td>{step.targetConnector ?? '—'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
 
           <div className="table-shell">
