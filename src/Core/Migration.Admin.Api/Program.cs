@@ -29,6 +29,7 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseMigrationAdminApiAuthenticationState();
+app.MapAdminSecurityStatusEndpoints();
 
 Migration.Admin.Api.Endpoints.AdminSystemEndpointExtensions.MapAdminSystemEndpoints(app);
 
@@ -45,6 +46,7 @@ app.MapSqlOperationalWorkItemQueueEndpoints();
 app.MapSqlOperationalRunCoordinatorEndpoints();
 app.MapSqlOperationalRuntimeReadinessEndpoints();
 app.Run();
+
 
 
 

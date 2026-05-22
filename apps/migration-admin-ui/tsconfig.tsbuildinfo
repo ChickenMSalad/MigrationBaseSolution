@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/endpointcard.tsx","./src/lib/adminapi.ts"],"version":"6.0.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/auth/authconfig.ts","./src/auth/authsession.ts","./src/components/endpointcard.tsx","./src/components/operatorauthboundarycard.tsx","./src/lib/adminapi.ts"],"version":"6.0.3"}
