@@ -1,4 +1,5 @@
-﻿<Project>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
@@ -49,10 +50,8 @@
     <PackageVersion Include="CloudinaryDotNet" Version="1.27.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
-
-      <PackageVersion Include="Azure.Identity" Version="1.13.2" />
-      <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.7.0" />
+    <PackageVersion Include="Azure.Identity" Version="1.13.2" />
+    <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.7.0" />
+    <PackageVersion Include="Dapper" Version="2.1.66" />
   </ItemGroup>
 </Project>
-
-
