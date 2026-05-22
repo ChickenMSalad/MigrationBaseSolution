@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { buildOperationalEventCsvExportUrl } from './operationalEventExportApi';
 import { queryOperationalEvents } from './operationalEventTimelineApi';
 import type { OperationalEventRecord } from './operationalEventTimelineTypes';
 
@@ -49,6 +50,17 @@ export function OperationalEventTimelineWorkspace() {
     void loadEvents(skip + pageSize);
   }
 
+  function exportCsv() {
+    const url = buildOperationalEventCsvExportUrl({
+      severity: severity || undefined,
+      category: category || undefined,
+      eventType: eventType || undefined,
+      take: 250,
+    });
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
   return (
     <section className="workspace-card">
       <div className="workspace-card__header">
@@ -75,6 +87,7 @@ export function OperationalEventTimelineWorkspace() {
           <input value={eventType} onChange={(event) => setEventType(event.target.value)} placeholder="OperationalMetricsSnapshot" />
         </label>
         <button type="button" onClick={applyFilters}>Apply</button>
+        <button type="button" onClick={exportCsv}>Export CSV</button>
       </div>
 
       <div className="table-shell">

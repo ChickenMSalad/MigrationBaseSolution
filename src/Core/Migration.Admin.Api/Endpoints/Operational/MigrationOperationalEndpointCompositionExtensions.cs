@@ -19,6 +19,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
     public static IEndpointRouteBuilder MapMigrationOperationalEndpoints(
         this IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapOperationalEventExportEndpoints();
         endpoints.MapOperationalEventQueryEndpoints();
         endpoints.MapOperationalEventRetentionEndpoints();
         endpoints.MapOperationalEventEndpoints();
@@ -36,6 +37,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
         return endpoints;
     }
 }
+
 
 
 
