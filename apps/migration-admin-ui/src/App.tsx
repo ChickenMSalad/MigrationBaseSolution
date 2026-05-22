@@ -1,22 +1,15 @@
 ﻿import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
 import { WorkerTelemetryWorkspace } from './features/workers/WorkerTelemetryWorkspace';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
-import { useCallback, useMemo, useState } from 'react';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
+import { useCallback, useMemo, useState } from 'react';
+
 import { FailureRetryWorkspace } from './components/FailureRetryWorkspace';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
 import { RunLaunchPanel } from './components/RunLaunchPanel';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
 import { OperationalRuntimeDashboard } from './components/OperationalRuntimeDashboard';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
 import { ManifestImportPanel } from './components/ManifestImportPanel';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
 import { EndpointCard } from './components/EndpointCard';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
 import { EndpointProbe, adminApiBaseUrl, getJson } from './lib/adminApi';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
 import { ConnectorConfigurationWorkspace } from './features/connectors/ConnectorConfigurationWorkspace';
-import { CredentialVaultWorkspace } from './features/credentials/CredentialVaultWorkspace';
+
 import './styles.css';
 
 const endpointCatalog: Array<Pick<EndpointProbe, 'label' | 'path'>> = [
