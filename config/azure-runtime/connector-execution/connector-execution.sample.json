@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "ConnectorExecution": {
+      "Enabled": true,
+      "DefaultMode": "ValidateOnly",
+      "RequireSourceIdentifier": true,
+      "RequireTargetIdentifierForWrite": false,
+      "UseNoOpConnectorExecutor": true
+    }
+  }
+}
