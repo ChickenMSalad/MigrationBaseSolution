@@ -1,0 +1,32 @@
+{
+  "azureExecutionEnvironmentProfiles": [
+    {
+      "name": "dev-worker",
+      "environmentName": "dev",
+      "deploymentRing": "inner",
+      "hostRole": "queue-worker",
+      "allowsRealMigrationExecution": false,
+      "requiresReadinessEvidence": true,
+      "requiresOperatorApproval": true,
+      "maxConcurrentRuns": 1,
+      "maxConcurrentWorkItems": 2,
+      "operationalStoreName": "sql",
+      "queueProfileName": "dev-queue",
+      "telemetryProfileName": "dev-appinsights"
+    },
+    {
+      "name": "prod-worker",
+      "environmentName": "prod",
+      "deploymentRing": "stable",
+      "hostRole": "queue-worker",
+      "allowsRealMigrationExecution": true,
+      "requiresReadinessEvidence": true,
+      "requiresOperatorApproval": true,
+      "maxConcurrentRuns": 1,
+      "maxConcurrentWorkItems": 4,
+      "operationalStoreName": "sql",
+      "queueProfileName": "prod-queue",
+      "telemetryProfileName": "prod-appinsights"
+    }
+  ]
+}
