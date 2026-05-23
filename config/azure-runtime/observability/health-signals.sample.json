@@ -1,0 +1,30 @@
+{
+  "healthSignals": [
+    {
+      "name": "sql.operationalStore.connectivity",
+      "category": "sql",
+      "source": "operational-store",
+      "description": "SQL operational store connectivity and command readiness.",
+      "defaultSeverity": "Critical",
+      "blocksDeployment": true,
+      "blocksExecution": true,
+      "tags": {
+        "phase": "p5.4",
+        "owner": "platform"
+      }
+    },
+    {
+      "name": "worker.heartbeat.freshness",
+      "category": "worker",
+      "source": "queue-worker",
+      "description": "Worker heartbeat freshness relative to expected cadence.",
+      "defaultSeverity": "Degraded",
+      "blocksDeployment": false,
+      "blocksExecution": true,
+      "tags": {
+        "phase": "p5.4",
+        "owner": "operations"
+      }
+    }
+  ]
+}
