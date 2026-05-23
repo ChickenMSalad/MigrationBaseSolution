@@ -1,0 +1,37 @@
+{
+  "azureInfrastructureClients": [
+    {
+      "name": "operational-sql",
+      "kind": "Sql",
+      "configurationSection": "AzureRuntime:OperationalSql",
+      "purpose": "SQL-first durable operational state, run queues, manifests, failures, and replay history",
+      "requiresManagedIdentity": true,
+      "requiresSecretMaterial": false,
+      "requiredSettings": [
+        "AzureRuntime:OperationalSql:Server",
+        "AzureRuntime:OperationalSql:Database"
+      ],
+      "capabilities": [
+        "durable-state",
+        "work-claim",
+        "run-history"
+      ]
+    },
+    {
+      "name": "artifact-storage",
+      "kind": "BlobStorage",
+      "configurationSection": "AzureRuntime:ArtifactStorage",
+      "purpose": "Large manifest ingestion/export artifacts and operational evidence",
+      "requiresManagedIdentity": true,
+      "requiresSecretMaterial": false,
+      "requiredSettings": [
+        "AzureRuntime:ArtifactStorage:AccountName",
+        "AzureRuntime:ArtifactStorage:ContainerName"
+      ],
+      "capabilities": [
+        "large-artifacts",
+        "evidence"
+      ]
+    }
+  ]
+}
