@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ManifestExecutionCompletion": {
+      "Enabled": true,
+      "RequireFinalCheckpoint": false,
+      "RequireAuditHandoff": true,
+      "UseInMemoryCompletionSink": true
+    }
+  }
+}
