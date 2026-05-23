@@ -1,0 +1,43 @@
+{
+  "azureWorkerRetryPolicies": [
+    {
+      "name": "queue-worker-default",
+      "workloadRole": "queue-worker",
+      "maxAttempts": 5,
+      "initialDelay": "00:00:05",
+      "maxDelay": "00:05:00",
+      "backoffMultiplier": 2.0,
+      "useJitter": true,
+      "failureDisposition": "abandon",
+      "retryableFailureClassifications": [
+        "transient-sql",
+        "transient-storage",
+        "transient-network",
+        "throttled"
+      ],
+      "nonRetryableFailureClassifications": [
+        "validation",
+        "policy-blocked",
+        "approval-required"
+      ]
+    },
+    {
+      "name": "dispatcher-default",
+      "workloadRole": "dispatcher",
+      "maxAttempts": 3,
+      "initialDelay": "00:00:10",
+      "maxDelay": "00:02:00",
+      "backoffMultiplier": 2.0,
+      "useJitter": true,
+      "failureDisposition": "fail-work-item",
+      "retryableFailureClassifications": [
+        "transient-sql",
+        "lock-contention"
+      ],
+      "nonRetryableFailureClassifications": [
+        "invalid-state",
+        "admission-denied"
+      ]
+    }
+  ]
+}
