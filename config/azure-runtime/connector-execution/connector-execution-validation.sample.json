@@ -1,0 +1,12 @@
+{
+  "AzureRuntime": {
+    "ConnectorExecutionValidation": {
+      "Enabled": true,
+      "RequireRunId": true,
+      "RequireManifestId": true,
+      "RequireItemId": true,
+      "RequireSourceIdentifier": true,
+      "RequireTargetIdentifierForWrite": false
+    }
+  }
+}
