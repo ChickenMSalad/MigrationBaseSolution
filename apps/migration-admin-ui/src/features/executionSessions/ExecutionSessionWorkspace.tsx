@@ -9,6 +9,8 @@ import {
 import { buildExecutionDiagnosticBundleUrl } from './executionDiagnosticExportApi';
 import { analyzeExecutionReplayReadiness } from './executionReplayApi';
 import { prepareExecutionReplayManifest } from './executionReplayPreparationApi';
+import { evaluateExecutionReplayPolicy } from './executionReplayPolicyApi';
+import type { ExecutionReplayPolicyEvaluationResult } from './executionReplayPolicyTypes';
 import { approveExecutionReplay, fetchExecutionReplayApprovalHistory } from './executionReplayApprovalApi';
 import type { ExecutionReplayApprovalRecord, ExecutionReplayApprovalResult } from './executionReplayApprovalTypes';
 import { materializeExecutionReplay } from './executionReplayMaterializationApi';
@@ -59,6 +61,7 @@ export function ExecutionSessionWorkspace() {
   const [queueSummary, setQueueSummary] = useState<ExecutionWorkItemQueueSummary | null>(null);
   const [replayAnalysis, setReplayAnalysis] = useState<ExecutionReplayAnalysisResult | null>(null);
   const [replayPreparation, setReplayPreparation] = useState<ExecutionReplayPreparationResult | null>(null);
+  const [replayPolicy, setReplayPolicy] = useState<ExecutionReplayPolicyEvaluationResult | null>(null);
   const [replayMaterialization, setReplayMaterialization] = useState<ExecutionReplayMaterializationResult | null>(null);
   const [replayApproval, setReplayApproval] = useState<ExecutionReplayApprovalResult | null>(null);
   const [replayApprovalHistory, setReplayApprovalHistory] = useState<ExecutionReplayApprovalRecord[]>([]);
@@ -224,6 +227,19 @@ async function materializeSelectedReplay() {
       await loadSessions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to materialize replay session.');
+    }
+  }
+  async function evaluateSelectedReplayPolicy() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const result = await evaluateExecutionReplayPolicy(selectedSession.executionSessionId, replayScope);
+      setReplayPolicy(result);
+      setStatusMessage(`Replay policy decision: ${result.decision}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to evaluate replay policy.');
     }
   }
 async function prepareSelectedReplayManifest() {
@@ -514,6 +530,7 @@ async function pauseSelectedSession() {
                 <option value="all">all</option>
               </select>
             </label>
+            <button type="button" onClick={evaluateSelectedReplayPolicy}>Evaluate policy</button>
             <button type="button" onClick={prepareSelectedReplayManifest}>Prepare replay manifest</button>
             <label>Replay approval<input value={replayApprovalNote} onChange={(event) => setReplayApprovalNote(event.target.value)} placeholder="Required approval note" /></label>
             <label>Approved by<input value={replayApprovedBy} onChange={(event) => setReplayApprovedBy(event.target.value)} placeholder="Operator" /></label>
@@ -602,6 +619,33 @@ async function pauseSelectedSession() {
                 <article><span>Depth</span><strong>{replayMaterialization.replayDepth}</strong></article>
                 <article><span>Work items</span><strong>{replayMaterialization.workItemCount}</strong></article>
               </div>
+            </div>
+          ) : null}
+          {replayPolicy ? (
+            <div className="table-shell">
+              <h3>Replay policy</h3>
+              <div className="metric-grid">
+                <article><span>Decision</span><strong>{replayPolicy.decision}</strong></article>
+                <article><span>Policy score</span><strong>{replayPolicy.policyScore}</strong></article>
+                <article><span>Prepared items</span><strong>{replayPolicy.metrics.preparedItemCount}</strong></article>
+                <article><span>Dead-letter %</span><strong>{replayPolicy.metrics.deadLetteredPercent}</strong></article>
+              </div>
+              <table>
+                <thead><tr><th>Severity</th><th>Code</th><th>Message</th></tr></thead>
+                <tbody>
+                  {replayPolicy.violations.length === 0 ? (
+                    <tr><td colSpan={3}>No replay policy violations.</td></tr>
+                  ) : (
+                    replayPolicy.violations.map((violation) => (
+                      <tr key={`${violation.severity}-${violation.code}`}>
+                        <td>{violation.severity}</td>
+                        <td><code>{violation.code}</code></td>
+                        <td>{violation.message}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           ) : null}
 {replayPreparation ? (
@@ -762,6 +806,7 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
 

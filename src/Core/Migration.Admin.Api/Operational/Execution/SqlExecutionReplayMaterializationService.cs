@@ -10,17 +10,20 @@ public sealed class SqlExecutionReplayMaterializationService : IExecutionReplayM
     private readonly IConfiguration _configuration;
     private readonly IExecutionReplayPreparationService _preparationService;
     private readonly IExecutionReplayApprovalService _approvalService;
+    private readonly IExecutionReplayPolicyService _policyService;
     private readonly IOperationalEventStore _eventStore;
 
     public SqlExecutionReplayMaterializationService(
         IConfiguration configuration,
         IExecutionReplayPreparationService preparationService,
         IExecutionReplayApprovalService approvalService,
+        IExecutionReplayPolicyService policyService,
         IOperationalEventStore eventStore)
     {
         _configuration = configuration;
         _preparationService = preparationService;
         _approvalService = approvalService;
+        _policyService = policyService;
         _eventStore = eventStore;
     }
 
@@ -31,6 +34,16 @@ public sealed class SqlExecutionReplayMaterializationService : IExecutionReplayM
         if (string.IsNullOrWhiteSpace(request.ApprovalNote))
         {
             throw new InvalidOperationException("Replay approval note is required.");
+        }
+
+        var policy = await _policyService.EvaluateAsync(
+            request.SourceExecutionSessionId,
+            request.Scope,
+            cancellationToken);
+
+        if (policy.Decision == "block")
+        {
+            throw new InvalidOperationException("Replay materialization was blocked by replay policy.");
         }
 
         var approval = await _approvalService.FindActiveApprovalAsync(
@@ -113,7 +126,7 @@ VALUES
             sessionCommand.Parameters.AddWithValue("@Name", $"Replay of {source.Name}");
             sessionCommand.Parameters.AddWithValue("@SourceConnector", DbValue(source.SourceConnector));
             sessionCommand.Parameters.AddWithValue("@TargetConnector", DbValue(source.TargetConnector));
-            sessionCommand.Parameters.AddWithValue("@Notes", $"Replay session derived from {request.SourceExecutionSessionId:D}.");
+            sessionCommand.Parameters.AddWithValue("@Notes", $"Replay session derived from {request.SourceExecutionSessionId:D}. Policy decision: {policy.Decision}.");
             sessionCommand.Parameters.AddWithValue("@ReplaySourceExecutionSessionId", request.SourceExecutionSessionId);
             sessionCommand.Parameters.AddWithValue("@ReplayScope", preparation.Scope);
             sessionCommand.Parameters.AddWithValue("@ReplayDepth", source.ReplayDepth + 1);
@@ -174,7 +187,7 @@ VALUES
             "info",
             "execution",
             "Migration.Admin.Api",
-            $"Replay execution session materialized from {request.SourceExecutionSessionId:D} with {preparation.Items.Count} work item(s). Approval: {approval.ReplayApprovalId:D}.",
+            $"Replay execution session materialized from {request.SourceExecutionSessionId:D} with {preparation.Items.Count} work item(s). Policy decision: {policy.Decision}.",
             null,
             replaySessionId,
             source.MigrationRunId,
@@ -190,10 +203,7 @@ VALUES
             preparation.Findings);
     }
 
-    private async Task AssertNoActiveReplayConflictAsync(
-        SqlConnection connection,
-        Guid sourceExecutionSessionId,
-        CancellationToken cancellationToken)
+    private async Task AssertNoActiveReplayConflictAsync(SqlConnection connection, Guid sourceExecutionSessionId, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -202,9 +212,7 @@ FROM dbo.MigrationExecutionSessions
 WHERE ReplaySourceExecutionSessionId = @SourceExecutionSessionId
   AND Status IN ('created', 'validating', 'manifest-loading', 'queued', 'running', 'paused');
 ";
-
         command.Parameters.AddWithValue("@SourceExecutionSessionId", sourceExecutionSessionId);
-
         var activeCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
         if (activeCount > 0)
         {
