@@ -1,0 +1,17 @@
+{
+  "environmentName": "prod",
+  "deploymentRing": "production",
+  "requiredCategories": [
+    "RuntimeTopology",
+    "WorkerStabilization",
+    "DeploymentAutomation",
+    "Observability",
+    "RealMigrationValidation",
+    "ProductionGovernance"
+  ],
+  "minimumStatusForProduction": "Validated",
+  "notes": [
+    "This sample is a P5 closeout artifact only.",
+    "It does not enable hosting, workers, deployments, or Program.cs wiring by itself."
+  ]
+}
