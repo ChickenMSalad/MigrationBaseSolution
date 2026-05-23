@@ -1,0 +1,50 @@
+{
+  "realMigrationValidation": {
+    "scenarios": [
+      {
+        "scenarioName": "sample-small-real-run",
+        "environmentName": "dev",
+        "sourceSystem": "source-system-name",
+        "targetSystem": "target-system-name",
+        "manifestStoreName": "sql-manifest-store",
+        "expectedManifestRowCount": 100,
+        "maximumAllowedFailures": 0,
+        "requiresOperatorApproval": true,
+        "requiresReplayValidation": true,
+        "metadata": {
+          "purpose": "Validate cloud-hosted real execution against SQL-backed run state before larger production-like runs."
+        }
+      }
+    ],
+    "checkpoints": [
+      {
+        "checkpointName": "manifest-loaded-from-sql",
+        "category": "manifest",
+        "requirement": "Manifest rows are loaded from the durable SQL operational store, not from Excel or CSV runtime state.",
+        "isRequired": true,
+        "sortOrder": 10
+      },
+      {
+        "checkpointName": "worker-heartbeats-observed",
+        "category": "worker",
+        "requirement": "Worker lifecycle and heartbeat records are visible during execution.",
+        "isRequired": true,
+        "sortOrder": 20
+      },
+      {
+        "checkpointName": "operator-events-recorded",
+        "category": "audit",
+        "requirement": "Operator-visible execution and validation events are emitted and correlated to the run.",
+        "isRequired": true,
+        "sortOrder": 30
+      },
+      {
+        "checkpointName": "rerun-replay-path-verified",
+        "category": "replay",
+        "requirement": "Rerun and replay validation paths are explicitly exercised or intentionally waived with approval.",
+        "isRequired": true,
+        "sortOrder": 40
+      }
+    ]
+  }
+}
