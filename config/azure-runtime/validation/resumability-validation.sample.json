@@ -1,0 +1,9 @@
+{
+  "resumabilityValidation": {
+    "minimumCheckpointCount": 2,
+    "maximumAllowedRecoveryDelay": "00:15:00",
+    "requiresDurableCursorVerification": true,
+    "requiresIdempotencyVerification": true,
+    "requiresOperatorEvidence": true
+  }
+}
