@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "FailureIncident": {
+      "Enabled": true,
+      "RecordRetryDecisions": true,
+      "RecordReplayDecisions": true,
+      "UseInMemoryIncidentStore": true
+    }
+  }
+}
