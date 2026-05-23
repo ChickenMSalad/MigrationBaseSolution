@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "WorkerDispatchDeadLetter": {
+      "Enabled": true,
+      "DeadLetterQueueName": "migration-work-items-deadletter",
+      "ReleaseClaimOnDeadLetter": true,
+      "UseInMemoryDeadLetterSink": true
+    }
+  }
+}
