@@ -1,0 +1,14 @@
+{
+  "deploymentAutomationCloseout": {
+    "environmentName": "dev",
+    "deploymentRing": "internal",
+    "releaseArtifactId": "release-artifact-placeholder",
+    "pipelineRunId": "pipeline-run-placeholder",
+    "readinessEvidenceId": "readiness-evidence-placeholder",
+    "healthCheckEvidenceId": "health-check-evidence-placeholder",
+    "infrastructureValidated": true,
+    "applicationValidated": true,
+    "rollbackPlanValidated": true,
+    "promotionGatesSatisfied": true
+  }
+}
