@@ -112,8 +112,7 @@ public sealed class AzureRuntimeCompositionPlanner : IAzureRuntimeCompositionPla
         string name,
         AzureRuntimeCompositionStepKind kind,
         string purpose,
-        params string[] dependsOn) =>
-        new()
+        params string[] dependsOn) => new()
         {
             Name = name,
             Kind = kind,

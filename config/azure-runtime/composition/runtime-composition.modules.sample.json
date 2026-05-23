@@ -1,0 +1,32 @@
+{
+  "runtimeComposition": {
+    "modules": [
+      {
+        "moduleKey": "configuration",
+        "moduleName": "Configuration Composition",
+        "stage": "Configuration",
+        "order": 100,
+        "enabledByDefault": true,
+        "description": "Loads layered Azure runtime configuration before host-specific runtime services are wired."
+      },
+      {
+        "moduleKey": "sql-operational-store",
+        "moduleName": "SQL Operational Store",
+        "stage": "Sql",
+        "order": 400,
+        "enabledByDefault": true,
+        "description": "Provides the durable SQL-first operational execution store used by workers and operators.",
+        "dependsOnModuleKeys": [ "configuration" ]
+      },
+      {
+        "moduleKey": "worker-runtime",
+        "moduleName": "Worker Runtime",
+        "stage": "WorkerRuntime",
+        "order": 600,
+        "enabledByDefault": true,
+        "description": "Wires worker lifecycle, leases, heartbeat, retry, poison handling, and shutdown coordination.",
+        "dependsOnModuleKeys": [ "configuration", "sql-operational-store" ]
+      }
+    ]
+  }
+}
