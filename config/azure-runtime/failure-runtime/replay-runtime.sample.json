@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ReplayRuntime": {
+      "Enabled": true,
+      "RequireApproval": true,
+      "AllowOperatorOverride": true,
+      "BlockPoisonReplay": true
+    }
+  }
+}
