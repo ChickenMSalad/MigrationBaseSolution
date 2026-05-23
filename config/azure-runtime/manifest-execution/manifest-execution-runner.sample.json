@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ManifestExecutionRunner": {
+      "Enabled": true,
+      "ContinueOnItemFailure": true,
+      "MaxItemAttempts": 3,
+      "UseNoOpItemHandler": true
+    }
+  }
+}
