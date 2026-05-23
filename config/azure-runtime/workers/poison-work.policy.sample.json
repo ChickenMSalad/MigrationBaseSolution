@@ -1,0 +1,15 @@
+{
+  "azureRuntime": {
+    "workers": {
+      "poisonWorkPolicy": {
+        "policyName": "default",
+        "maxConsecutiveFailures": 5,
+        "maxTotalAttempts": 10,
+        "minimumRetryWindow": "00:15:00",
+        "defaultPoisonAction": "RequireOperatorReview",
+        "quarantineBeforeDeadLetter": true,
+        "emitOperationalEvent": true
+      }
+    }
+  }
+}
