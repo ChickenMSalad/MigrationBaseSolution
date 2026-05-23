@@ -1,0 +1,28 @@
+{
+  "deploymentHealthChecks": [
+    {
+      "name": "sql-operational-store-connectivity",
+      "description": "Confirms the SQL-first operational store is reachable before migration execution is enabled.",
+      "scope": "SqlOperationalStore",
+      "severity": "Blocking",
+      "expectedEvidenceKey": "sql.connection.verified",
+      "isRequiredForPromotion": true
+    },
+    {
+      "name": "worker-heartbeat-readiness",
+      "description": "Confirms workers can publish lifecycle and heartbeat evidence before live work is admitted.",
+      "scope": "Worker",
+      "severity": "Blocking",
+      "expectedEvidenceKey": "worker.heartbeat.verified",
+      "isRequiredForPromotion": true
+    },
+    {
+      "name": "telemetry-ingestion-readiness",
+      "description": "Confirms deployment telemetry can be emitted and queried for the target environment.",
+      "scope": "Telemetry",
+      "severity": "Warning",
+      "expectedEvidenceKey": "telemetry.ingestion.verified",
+      "isRequiredForPromotion": false
+    }
+  ]
+}
