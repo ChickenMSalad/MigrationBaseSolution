@@ -1,0 +1,39 @@
+{
+  "productionReadinessGates": [
+    {
+      "gateId": "p5.1.topology-closeout",
+      "name": "Azure runtime topology closeout completed",
+      "category": "RuntimeTopology",
+      "severity": "Blocking",
+      "evidenceKey": "azure-runtime-topology-handoff"
+    },
+    {
+      "gateId": "p5.2.worker-stabilization-closeout",
+      "name": "Worker stabilization closeout completed",
+      "category": "WorkerStability",
+      "severity": "Blocking",
+      "evidenceKey": "azure-worker-stabilization-closeout"
+    },
+    {
+      "gateId": "p5.3.deployment-automation-closeout",
+      "name": "Deployment automation closeout completed",
+      "category": "DeploymentAutomation",
+      "severity": "Blocking",
+      "evidenceKey": "azure-deployment-automation-closeout"
+    },
+    {
+      "gateId": "p5.4.observability-closeout",
+      "name": "Observability closeout completed",
+      "category": "Observability",
+      "severity": "Blocking",
+      "evidenceKey": "azure-observability-closeout"
+    },
+    {
+      "gateId": "p5.5.real-validation-closeout",
+      "name": "Real migration validation closeout completed",
+      "category": "RealMigrationValidation",
+      "severity": "Blocking",
+      "evidenceKey": "real-migration-validation-closeout"
+    }
+  ]
+}
