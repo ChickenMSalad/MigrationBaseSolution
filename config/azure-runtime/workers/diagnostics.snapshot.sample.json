@@ -1,0 +1,13 @@
+{
+  "AzureRuntime": {
+    "Workers": {
+      "Diagnostics": {
+        "Enabled": true,
+        "SnapshotInterval": "00:01:00",
+        "StaleHeartbeatThreshold": "00:05:00",
+        "StaleLeaseThreshold": "00:05:00",
+        "IncludeHostAttributes": true
+      }
+    }
+  }
+}
