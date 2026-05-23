@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "WorkerDispatchCompletion": {
+      "Enabled": true,
+      "ReleaseClaimOnCompletion": true,
+      "RecordAbandonedCompletions": true,
+      "RecordPoisonedCompletions": true,
+      "UseInMemoryCompletionSink": true
+    }
+  }
+}
