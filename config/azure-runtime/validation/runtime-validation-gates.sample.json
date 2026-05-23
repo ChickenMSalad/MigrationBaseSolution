@@ -1,0 +1,48 @@
+{
+  "azureRuntimeValidationGates": [
+    {
+      "gateKey": "sql.connectivity.configured",
+      "displayName": "SQL connectivity configured",
+      "category": "data",
+      "appliesToEnvironment": "all",
+      "appliesToHostRole": "all",
+      "severity": "Blocking",
+      "requiredForDeployment": true,
+      "description": "The SQL-first operational store connection path must be configured before deploying a runtime host.",
+      "remediationHint": "Configure the environment-specific SQL connection source through Key Vault, managed identity, or approved deployment settings."
+    },
+    {
+      "gateKey": "storage.artifacts.configured",
+      "displayName": "Artifact storage configured",
+      "category": "storage",
+      "appliesToEnvironment": "all",
+      "appliesToHostRole": "all",
+      "severity": "Blocking",
+      "requiredForDeployment": true,
+      "description": "Migration manifests, exports, and evidence artifacts require an approved artifact storage account/container mapping.",
+      "remediationHint": "Register the artifact storage account/container mapping for the target environment."
+    },
+    {
+      "gateKey": "telemetry.connection.configured",
+      "displayName": "Telemetry configured",
+      "category": "observability",
+      "appliesToEnvironment": "all",
+      "appliesToHostRole": "all",
+      "severity": "Warning",
+      "requiredForDeployment": true,
+      "description": "Application Insights or equivalent telemetry must be wired before real migration execution.",
+      "remediationHint": "Configure the telemetry connection string or managed identity-backed telemetry ingestion settings."
+    },
+    {
+      "gateKey": "worker.queue.mapping.configured",
+      "displayName": "Worker queue mapping configured",
+      "category": "worker",
+      "appliesToEnvironment": "all",
+      "appliesToHostRole": "queue-worker",
+      "severity": "Blocking",
+      "requiredForDeployment": true,
+      "description": "Queue workers require explicit queue binding metadata before being admitted into an environment.",
+      "remediationHint": "Register queue namespace, queue name, visibility timeout, and poison queue settings for the worker host role."
+    }
+  ]
+}
