@@ -1,0 +1,12 @@
+{
+  "AzureRuntime": {
+    "ConnectorExecutionEvidence": {
+      "Enabled": true,
+      "RequireAuditHandoff": true,
+      "RecordSuccessfulExecutions": true,
+      "RecordSkippedExecutions": true,
+      "RecordFailedExecutions": true,
+      "UseInMemoryEvidenceSink": true
+    }
+  }
+}
