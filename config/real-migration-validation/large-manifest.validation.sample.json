@@ -1,0 +1,44 @@
+{
+  "largeManifestValidation": {
+    "profileName": "large-manifest-sql-operational-validation",
+    "environmentName": "prod-like",
+    "expectedManifestRowCount": 1500000,
+    "minimumAcceptedManifestRowCount": 500000,
+    "maximumAcceptedManifestRowCount": 2000000,
+    "expectedShardCount": 32,
+    "maximumRowsPerShard": 50000,
+    "maximumManifestLoadDuration": "00:20:00",
+    "maximumQueueProjectionDuration": "00:20:00",
+    "maximumOperationalQueryDuration": "00:00:05",
+    "requireSqlOperationalStore": true,
+    "requireResumeMarkers": true,
+    "requireReplayEligibilitySnapshot": true,
+    "requireSourceTargetIdentifierMapping": true
+  },
+  "checks": [
+    {
+      "checkName": "manifest-row-count-within-profile",
+      "category": "manifest",
+      "description": "Confirms the ingested manifest row count is within the expected large-run range.",
+      "severity": "Blocking",
+      "expectedEvidenceKey": "manifest.rowCount",
+      "blocksProductionReadiness": true
+    },
+    {
+      "checkName": "sql-operational-store-is-source-of-truth",
+      "category": "sql",
+      "description": "Confirms operational execution state is durable in SQL rather than Excel or transient files.",
+      "severity": "Blocking",
+      "expectedEvidenceKey": "operationalStore.sql.enabled",
+      "blocksProductionReadiness": true
+    },
+    {
+      "checkName": "resume-markers-exist-for-large-run",
+      "category": "resumability",
+      "description": "Confirms large-run resume markers are persisted before production promotion.",
+      "severity": "Required",
+      "expectedEvidenceKey": "resumability.markerCount",
+      "blocksProductionReadiness": true
+    }
+  ]
+}
