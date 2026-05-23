@@ -1,0 +1,28 @@
+{
+  "checklistId": "prod-readiness-standard-v1",
+  "environmentName": "prod",
+  "deploymentRing": "production",
+  "items": [
+    {
+      "key": "sql-operational-store-ready",
+      "displayName": "SQL operational store is provisioned, backed up, and reachable by managed identity",
+      "domain": "DataAndSqlDurability",
+      "severity": "Blocking",
+      "evidenceHint": "Attach deployment evidence, connection validation output, and backup policy reference."
+    },
+    {
+      "key": "worker-stabilization-controls-ready",
+      "displayName": "Worker heartbeat, drain, lease, retry, poison-work, concurrency, abandonment, and circuit-breaker contracts are represented",
+      "domain": "WorkerStability",
+      "severity": "Required",
+      "evidenceHint": "Attach P5.2 closeout evidence and validation output."
+    },
+    {
+      "key": "observability-controls-ready",
+      "displayName": "Correlation, logs, metrics, health signals, alerts, dashboards, and anomaly contracts are represented",
+      "domain": "Observability",
+      "severity": "Required",
+      "evidenceHint": "Attach P5.4 closeout evidence and dashboard/alert manifest references."
+    }
+  ]
+}
