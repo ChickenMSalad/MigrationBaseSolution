@@ -1,0 +1,16 @@
+{
+  "AzureRuntime": {
+    "Workers": {
+      "Heartbeat": {
+        "Enabled": true,
+        "IntervalSeconds": 30,
+        "StaleAfterSeconds": 180,
+        "LostAfterSeconds": 600,
+        "RequireHostRole": true,
+        "IncludeCapacitySnapshot": true,
+        "IncludeDrainState": true,
+        "IncludeExecutionIsolationState": true
+      }
+    }
+  }
+}
