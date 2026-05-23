@@ -1,0 +1,12 @@
+{
+  "AzureRuntime": {
+    "Workers": {
+      "Lifecycle": {
+        "DrainOnShutdown": true,
+        "DrainTimeout": "00:02:00",
+        "StopAcceptingWorkTimeout": "00:00:30",
+        "AbandonUnfinishedWorkOnTimeout": true
+      }
+    }
+  }
+}
