@@ -1,0 +1,24 @@
+{
+  "queueBindings": [
+    {
+      "name": "dispatcher",
+      "queueName": "migration-dispatch",
+      "purpose": "Dispatcher admission and work scheduling."
+    },
+    {
+      "name": "worker",
+      "queueName": "migration-work",
+      "purpose": "Worker execution work item delivery."
+    },
+    {
+      "name": "poison",
+      "queueName": "migration-poison",
+      "purpose": "Poison work parking and operator triage."
+    },
+    {
+      "name": "events",
+      "queueName": "migration-events",
+      "purpose": "Operational event fan-out."
+    }
+  ]
+}
