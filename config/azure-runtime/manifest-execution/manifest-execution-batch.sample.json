@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "ManifestExecutionBatch": {
+      "Enabled": true,
+      "DefaultBatchSize": 100,
+      "MaxBatchSize": 1000,
+      "RequireCursorCheckpointing": true,
+      "UseInMemoryBatchProvider": true
+    }
+  }
+}
