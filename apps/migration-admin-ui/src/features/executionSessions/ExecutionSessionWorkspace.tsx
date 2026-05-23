@@ -9,8 +9,8 @@ import {
 import { buildExecutionDiagnosticBundleUrl } from './executionDiagnosticExportApi';
 import { analyzeExecutionReplayReadiness } from './executionReplayApi';
 import { prepareExecutionReplayManifest } from './executionReplayPreparationApi';
-import { approveExecutionReplay } from './executionReplayApprovalApi';
-import type { ExecutionReplayApprovalResult } from './executionReplayApprovalTypes';
+import { approveExecutionReplay, fetchExecutionReplayApprovalHistory } from './executionReplayApprovalApi';
+import type { ExecutionReplayApprovalRecord, ExecutionReplayApprovalResult } from './executionReplayApprovalTypes';
 import { materializeExecutionReplay } from './executionReplayMaterializationApi';
 import { fetchExecutionReplayLineage } from './executionReplayLineageApi';
 import type { ExecutionReplayLineageResult } from './executionReplayLineageTypes';
@@ -61,6 +61,7 @@ export function ExecutionSessionWorkspace() {
   const [replayPreparation, setReplayPreparation] = useState<ExecutionReplayPreparationResult | null>(null);
   const [replayMaterialization, setReplayMaterialization] = useState<ExecutionReplayMaterializationResult | null>(null);
   const [replayApproval, setReplayApproval] = useState<ExecutionReplayApprovalResult | null>(null);
+  const [replayApprovalHistory, setReplayApprovalHistory] = useState<ExecutionReplayApprovalRecord[]>([]);
   const [replayApprovedBy, setReplayApprovedBy] = useState('operator');
   const [replayApprovalMinutes, setReplayApprovalMinutes] = useState(60);
   const [replayLineage, setReplayLineage] = useState<ExecutionReplayLineageResult | null>(null);
@@ -116,6 +117,8 @@ export function ExecutionSessionWorkspace() {
       setWorkItems(queueResponse.items);
       setQueueSummary(queueSummaryResponse);
       setReplayLineage(lineageResponse);
+      const approvalHistoryResponse = await fetchExecutionReplayApprovalHistory(session.executionSessionId, 25);
+      setReplayApprovalHistory(approvalHistoryResponse.approvals);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load execution session details.');
@@ -557,7 +560,29 @@ async function pauseSelectedSession() {
               </table>
             </div>
           ) : null}
-          {replayApproval ? (
+                    <div className="table-shell">
+            <h3>Replay approval audit trail</h3>
+            <table>
+              <thead><tr><th>Created</th><th>Status</th><th>Scope</th><th>Approved by</th><th>Expires</th><th>Replay session</th></tr></thead>
+              <tbody>
+                {replayApprovalHistory.length === 0 ? (
+                  <tr><td colSpan={6}>No replay approvals have been recorded for this session.</td></tr>
+                ) : (
+                  replayApprovalHistory.map((approval) => (
+                    <tr key={approval.replayApprovalId}>
+                      <td>{new Date(approval.createdUtc).toLocaleString()}</td>
+                      <td>{approval.status}</td>
+                      <td>{approval.scope}</td>
+                      <td>{approval.approvedBy}</td>
+                      <td>{new Date(approval.expiresUtc).toLocaleString()}</td>
+                      <td>{approval.replayExecutionSessionId ? <code>{approval.replayExecutionSessionId}</code> : 'â€”'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+{replayApproval ? (
             <div className="table-shell">
               <h3>Replay approval</h3>
               <div className="metric-grid">
@@ -737,6 +762,7 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
 

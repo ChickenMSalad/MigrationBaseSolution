@@ -27,3 +27,8 @@ export type ExecutionReplayApprovalResult = {
     message: string;
   }[];
 };
+
+export type ExecutionReplayApprovalHistoryResponse = {
+  sourceExecutionSessionId: string;
+  approvals: ExecutionReplayApprovalRecord[];
+};

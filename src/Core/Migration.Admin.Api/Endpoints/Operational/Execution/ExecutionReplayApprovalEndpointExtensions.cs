@@ -23,6 +23,27 @@ public static class ExecutionReplayApprovalEndpointExtensions
         })
         .WithName("ApproveExecutionReplay");
 
+        group.MapGet("/{sourceExecutionSessionId:guid}/approvals", async (
+            IExecutionReplayApprovalService service,
+            Guid sourceExecutionSessionId,
+            int? take,
+            CancellationToken cancellationToken) =>
+        {
+            var approvals = await service.ReadHistoryAsync(
+                sourceExecutionSessionId,
+                Math.Clamp(take.GetValueOrDefault(25), 1, 250),
+                cancellationToken);
+
+            return Results.Ok(new ExecutionReplayApprovalHistoryResponse(
+                sourceExecutionSessionId,
+                approvals));
+        })
+        .WithName("GetExecutionReplayApprovalHistory");
+
         return endpoints;
     }
 }
+
+public sealed record ExecutionReplayApprovalHistoryResponse(
+    Guid SourceExecutionSessionId,
+    IReadOnlyList<ExecutionReplayApprovalRecord> Approvals);

@@ -11,6 +11,11 @@ public interface IExecutionReplayApprovalService
         string scope,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<ExecutionReplayApprovalRecord>> ReadHistoryAsync(
+        Guid sourceExecutionSessionId,
+        int take,
+        CancellationToken cancellationToken);
+
     Task ConsumeAsync(
         Guid replayApprovalId,
         Guid replayExecutionSessionId,

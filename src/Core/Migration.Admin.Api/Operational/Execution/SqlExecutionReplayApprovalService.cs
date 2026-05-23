@@ -158,6 +158,51 @@ ORDER BY CreatedUtc DESC;
         return ReadApproval(reader);
     }
 
+    public async Task<IReadOnlyList<ExecutionReplayApprovalRecord>> ReadHistoryAsync(
+        Guid sourceExecutionSessionId,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        var safeTake = Math.Clamp(take, 1, 250);
+        var approvals = new List<ExecutionReplayApprovalRecord>();
+        var connectionString = GetConnectionString();
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+SELECT TOP (@Take)
+    ReplayApprovalId,
+    SourceExecutionSessionId,
+    Scope,
+    ApprovedBy,
+    ApprovalNote,
+    CASE
+        WHEN Status = 'approved' AND ExpiresUtc <= SYSUTCDATETIME() THEN 'expired'
+        ELSE Status
+    END AS Status,
+    ExpiresUtc,
+    CreatedUtc,
+    ConsumedUtc,
+    ReplayExecutionSessionId
+FROM dbo.MigrationExecutionReplayApprovals
+WHERE SourceExecutionSessionId = @SourceExecutionSessionId
+ORDER BY CreatedUtc DESC;
+";
+
+        command.Parameters.AddWithValue("@SourceExecutionSessionId", sourceExecutionSessionId);
+        command.Parameters.AddWithValue("@Take", safeTake);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            approvals.Add(ReadApproval(reader));
+        }
+
+        return approvals;
+    }
+
     public async Task ConsumeAsync(
         Guid replayApprovalId,
         Guid replayExecutionSessionId,
