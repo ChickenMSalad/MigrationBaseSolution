@@ -1,0 +1,32 @@
+{
+  "metrics": [
+    {
+      "name": "migration.worker.heartbeat.age.seconds",
+      "category": "Worker",
+      "unit": "Seconds",
+      "kind": "Gauge",
+      "dimensions": [ "environment", "hostRole", "workerId" ]
+    },
+    {
+      "name": "migration.workitem.completed.count",
+      "category": "Execution",
+      "unit": "Count",
+      "kind": "Counter",
+      "dimensions": [ "environment", "hostRole", "connector", "migrationType", "outcome" ]
+    },
+    {
+      "name": "migration.workitem.duration.ms",
+      "category": "Execution",
+      "unit": "Milliseconds",
+      "kind": "Duration",
+      "dimensions": [ "environment", "hostRole", "connector", "migrationType", "outcome" ]
+    },
+    {
+      "name": "migration.queue.depth.count",
+      "category": "Queue",
+      "unit": "Count",
+      "kind": "Gauge",
+      "dimensions": [ "environment", "queueName", "priority" ]
+    }
+  ]
+}
