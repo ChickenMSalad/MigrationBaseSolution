@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { queryOperationalEvents } from '../events/operationalEventTimelineApi';
 import type { OperationalEventRecord } from '../events/operationalEventTimelineTypes';
 import {
@@ -7,6 +7,8 @@ import {
   resumeExecutionSession,
 } from './executionControlApi';
 import { buildExecutionDiagnosticBundleUrl } from './executionDiagnosticExportApi';
+import { analyzeExecutionReplayReadiness } from './executionReplayApi';
+import type { ExecutionReplayAnalysisResult } from './executionReplayTypes';
 import {
   fetchExecutionPhaseHistory,
   fetchExecutionPhases,
@@ -47,6 +49,7 @@ export function ExecutionSessionWorkspace() {
   const [planSteps, setPlanSteps] = useState<ExecutionPlanStepRecord[]>([]);
   const [workItems, setWorkItems] = useState<ExecutionWorkItemRecord[]>([]);
   const [queueSummary, setQueueSummary] = useState<ExecutionWorkItemQueueSummary | null>(null);
+  const [replayAnalysis, setReplayAnalysis] = useState<ExecutionReplayAnalysisResult | null>(null);
   const [phases, setPhases] = useState<string[]>([]);
   const [selectedPhase, setSelectedPhase] = useState('validating');
   const [transitionReason, setTransitionReason] = useState('');
@@ -149,7 +152,20 @@ export function ExecutionSessionWorkspace() {
     window.open(buildExecutionDiagnosticBundleUrl(selectedSession.executionSessionId), '_blank', 'noopener,noreferrer');
   }
 
-  async function pauseSelectedSession() {
+    async function analyzeSelectedReplayReadiness() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const result = await analyzeExecutionReplayReadiness(selectedSession.executionSessionId);
+      setReplayAnalysis(result);
+      setStatusMessage(`Replay analysis complete. Risk score: ${result.riskScore}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze replay readiness.');
+    }
+  }
+async function pauseSelectedSession() {
     if (!selectedSession) {
       return;
     }
@@ -385,8 +401,8 @@ export function ExecutionSessionWorkspace() {
                   <td>{new Date(session.createdUtc).toLocaleString()}</td>
                   <td>{session.name}</td>
                   <td>{session.status}</td>
-                  <td>{session.sourceConnector ?? '—'}</td>
-                  <td>{session.targetConnector ?? '—'}</td>
+                  <td>{session.sourceConnector ?? 'â€”'}</td>
+                  <td>{session.targetConnector ?? 'â€”'}</td>
                   <td><code>{session.executionSessionId}</code></td>
                   <td>
                     <button type="button" onClick={() => loadSessionDetails(session)}>View</button>
@@ -409,11 +425,35 @@ export function ExecutionSessionWorkspace() {
             <button type="button" onClick={pauseSelectedSession} disabled={selectedSession.status === 'paused' || selectedIsTerminal}>Pause session</button>
             <button type="button" onClick={resumeSelectedSession} disabled={selectedSession.status !== 'paused'}>Resume session</button>
             <button type="button" onClick={cancelSelectedSession} disabled={selectedIsTerminal}>Cancel session</button>
-            <button type="button" onClick={exportSelectedDiagnostics}>Export diagnostics</button>
+            <button type="button" onClick={exportSelectedDiagnostics}>Export diagnostics</button>`r`n            <button type="button" onClick={analyzeSelectedReplayReadiness}>Analyze replay</button>
             <span className="status-pill">Selected: {selectedSession.status}</span>
           </div>
 
-          <div className="filter-row">
+                    {replayAnalysis ? (
+            <div className="table-shell">
+              <h3>Replay readiness</h3>
+              <div className="metric-grid">
+                <article><span>Risk score</span><strong>{replayAnalysis.riskScore}</strong></article>
+                <article><span>Recommended</span><strong>{replayAnalysis.replayRecommended ? 'Yes' : 'No'}</strong></article>
+                <article><span>Findings</span><strong>{replayAnalysis.findings.length}</strong></article>
+                <article><span>Events</span><strong>{replayAnalysis.stateSummary.operationalEventCount}</strong></article>
+              </div>
+              <p>{replayAnalysis.recommendation}</p>
+              <table>
+                <thead><tr><th>Severity</th><th>Code</th><th>Finding</th></tr></thead>
+                <tbody>
+                  {replayAnalysis.findings.map((finding) => (
+                    <tr key={`${finding.severity}-${finding.code}-${finding.message}`}>
+                      <td>{finding.severity}</td>
+                      <td><code>{finding.code}</code></td>
+                      <td>{finding.message}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+<div className="filter-row">
             <label>
               Next phase
               <select value={selectedPhase} onChange={(event) => setSelectedPhase(event.target.value)}>
@@ -495,9 +535,9 @@ export function ExecutionSessionWorkspace() {
                       <td>{item.workItemType}</td>
                       <td>{item.workItemName}</td>
                       <td>{item.status}</td>
-                      <td>{item.workerId ?? '—'}</td>
+                      <td>{item.workerId ?? 'â€”'}</td>
                       <td>{item.retryCount}/{item.maxRetries}</td>
-                      <td>{item.leaseExpiresUtc ? new Date(item.leaseExpiresUtc).toLocaleString() : '—'}</td>
+                      <td>{item.leaseExpiresUtc ? new Date(item.leaseExpiresUtc).toLocaleString() : 'â€”'}</td>
                       <td>
                         <button
                           type="button"
@@ -518,3 +558,4 @@ export function ExecutionSessionWorkspace() {
     </section>
   );
 }
+
