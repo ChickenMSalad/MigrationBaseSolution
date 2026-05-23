@@ -1,0 +1,45 @@
+{
+  "rollbackPlans": [
+    {
+      "planId": "dev-api-rollback-standard",
+      "environmentName": "dev",
+      "deploymentTarget": "operator-api",
+      "releaseVersion": "current-release-placeholder",
+      "previousReleaseVersion": "previous-release-placeholder",
+      "strategy": "RedeployPreviousArtifact",
+      "approvalRequirement": "RequiredForProduction",
+      "requiresDatabaseRestorePoint": false,
+      "requiresArtifactRestorePoint": true,
+      "requiredEvidenceKeys": [
+        "deployment.artifact.previous",
+        "deployment.health.previous"
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "actionName": "ResolvePreviousArtifact",
+          "description": "Resolve the previously approved deployment artifact for the target host role.",
+          "isDestructive": false,
+          "requiresManualConfirmation": false,
+          "evidenceKey": "deployment.artifact.previous"
+        },
+        {
+          "order": 2,
+          "actionName": "RedeployPreviousArtifact",
+          "description": "Redeploy the previous artifact using the environment deployment profile.",
+          "isDestructive": false,
+          "requiresManualConfirmation": true,
+          "evidenceKey": "deployment.rollback.operator-approval"
+        },
+        {
+          "order": 3,
+          "actionName": "CaptureRollbackEvidence",
+          "description": "Capture health, version, and deployment evidence after rollback completes.",
+          "isDestructive": false,
+          "requiresManualConfirmation": false,
+          "evidenceKey": "deployment.rollback.evidence"
+        }
+      ]
+    }
+  ]
+}
