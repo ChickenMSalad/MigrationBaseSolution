@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "FailureRuntimeCloseout": {
+      "Enabled": true,
+      "RequireReadinessEvaluation": true,
+      "RequireIncidentRecording": true,
+      "RequireReplayAdmissionControl": true
+    }
+  }
+}
