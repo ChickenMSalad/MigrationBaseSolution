@@ -1,0 +1,60 @@
+{
+  "observabilityAnomalyRules": [
+    {
+      "ruleId": "worker-heartbeat-stalled",
+      "displayName": "Worker heartbeat stalled",
+      "description": "Detects workers that stop reporting heartbeat signals while assigned work is still active.",
+      "signalName": "worker.heartbeat.age.seconds",
+      "severity": "Critical",
+      "evaluationWindow": {
+        "durationSeconds": 300,
+        "minimumSamples": 3,
+        "consecutiveBreachesRequired": 2
+      },
+      "threshold": {
+        "operator": "GreaterThan",
+        "value": 180,
+        "unit": "seconds",
+        "baselineMode": "Static"
+      },
+      "appliesToHostRoles": [ "QueueWorker", "Dispatcher" ],
+      "recommendedActions": [
+        "Check worker process health and shutdown/drain state.",
+        "Verify lease renewal and queue visibility timeout behavior.",
+        "Review poison work and abandonment signals for the same run."
+      ],
+      "tags": {
+        "phase": "P5.4",
+        "category": "worker-stabilization"
+      }
+    },
+    {
+      "ruleId": "migration-failure-rate-elevated",
+      "displayName": "Migration failure rate elevated",
+      "description": "Detects a sustained increase in failed migration work items for an active execution run.",
+      "signalName": "migration.workItem.failureRate.percent",
+      "severity": "Error",
+      "evaluationWindow": {
+        "durationSeconds": 600,
+        "minimumSamples": 5,
+        "consecutiveBreachesRequired": 2
+      },
+      "threshold": {
+        "operator": "GreaterThanOrEqual",
+        "value": 10,
+        "unit": "percent",
+        "baselineMode": "Static"
+      },
+      "appliesToHostRoles": [ "QueueWorker" ],
+      "recommendedActions": [
+        "Inspect correlated structured logs for source/target API failures.",
+        "Review retry exhaustion and poison work classifications.",
+        "Pause admission if failures are caused by target throttling or invalid credentials."
+      ],
+      "tags": {
+        "phase": "P5.4",
+        "category": "real-migration-validation"
+      }
+    }
+  ]
+}
