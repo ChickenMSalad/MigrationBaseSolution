@@ -1,0 +1,30 @@
+{
+  "runtimeComposition": {
+    "name": "dev:queue-worker:runtime-composition",
+    "environmentName": "dev",
+    "hostRole": "queue-worker",
+    "requiredConfigurationSections": [
+      "AzureRuntime",
+      "AzureRuntime:Sql",
+      "AzureRuntime:Storage",
+      "AzureRuntime:Queueing",
+      "AzureRuntime:Telemetry"
+    ],
+    "requiredOperationalStores": [
+      "SqlOperationalStore",
+      "ManifestStore",
+      "ExecutionStateStore",
+      "OperationalEventStore"
+    ],
+    "steps": [
+      { "name": "configuration", "kind": "Configuration", "required": true },
+      { "name": "options", "kind": "Options", "required": true, "dependsOn": [ "configuration" ] },
+      { "name": "persistence", "kind": "Persistence", "required": true, "dependsOn": [ "options" ] },
+      { "name": "queueing", "kind": "Queueing", "required": true, "dependsOn": [ "persistence" ] },
+      { "name": "observability", "kind": "Observability", "required": true, "dependsOn": [ "options" ] },
+      { "name": "governance", "kind": "Governance", "required": true, "dependsOn": [ "persistence" ] },
+      { "name": "worker-runtime", "kind": "WorkerRuntime", "required": true, "dependsOn": [ "queueing", "observability", "governance" ] },
+      { "name": "validation", "kind": "Validation", "required": true, "dependsOn": [ "worker-runtime" ] }
+    ]
+  }
+}
