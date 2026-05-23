@@ -1,0 +1,37 @@
+{
+  "maintenanceModes": [
+    {
+      "environmentName": "prod",
+      "state": "Scheduled",
+      "scope": "Environment",
+      "scopeKey": "prod",
+      "reason": "Planned production maintenance window",
+      "requestedBy": "operations",
+      "startsAtUtc": "2026-06-01T02:00:00Z",
+      "expiresAtUtc": "2026-06-01T04:00:00Z",
+      "blocksNewRuns": true,
+      "blocksNewWorkItems": true,
+      "allowsInFlightDrain": true,
+      "metadata": {
+        "changeTicket": "CHG-0000"
+      }
+    }
+  ],
+  "operationalFreezes": [
+    {
+      "environmentName": "prod",
+      "scope": "Environment",
+      "scopeKey": "prod",
+      "freezeCode": "prod-freeze",
+      "reason": "Production freeze during validation period",
+      "requestedBy": "operations",
+      "blocksPromotion": true,
+      "blocksExecution": false,
+      "blocksReplay": true,
+      "blocksDeployment": true,
+      "allowedBypassRoles": [
+        "BreakGlassOperator"
+      ]
+    }
+  ]
+}
