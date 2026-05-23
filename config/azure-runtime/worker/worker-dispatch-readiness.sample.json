@@ -1,0 +1,12 @@
+{
+  "AzureRuntime": {
+    "WorkerDispatcherReadiness": {
+      "Enabled": true,
+      "RequireQueueReader": true,
+      "RequireQueueWriter": true,
+      "RequireClaimStore": true,
+      "RequireCompletionSink": true,
+      "RequireDeadLetterSink": true
+    }
+  }
+}
