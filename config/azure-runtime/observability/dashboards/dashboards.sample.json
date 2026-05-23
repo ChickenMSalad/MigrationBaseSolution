@@ -1,0 +1,38 @@
+{
+  "dashboards": [
+    {
+      "dashboardId": "migration-runtime-overview",
+      "displayName": "Migration Runtime Overview",
+      "environmentName": "sample",
+      "workloadName": "migration-runtime",
+      "dashboardType": "operations-overview",
+      "panels": [
+        {
+          "panelId": "active-runs",
+          "title": "Active Runs",
+          "signalName": "migration.runs.active",
+          "visualizationType": "stat",
+          "queryHint": "Count active durable migration runs by environment and workload."
+        },
+        {
+          "panelId": "worker-heartbeats",
+          "title": "Worker Heartbeats",
+          "signalName": "migration.workers.heartbeat.age.seconds",
+          "visualizationType": "time-series",
+          "queryHint": "Track heartbeat age by worker role and instance."
+        },
+        {
+          "panelId": "failed-work-items",
+          "title": "Failed Work Items",
+          "signalName": "migration.workitems.failed",
+          "visualizationType": "time-series",
+          "queryHint": "Track failed work-item count grouped by run, connector, and failure category."
+        }
+      ],
+      "tags": {
+        "phase": "P5.4",
+        "owner": "operations"
+      }
+    }
+  ]
+}
