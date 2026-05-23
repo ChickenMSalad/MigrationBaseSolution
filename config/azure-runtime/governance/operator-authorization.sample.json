@@ -1,0 +1,26 @@
+{
+  "operatorAuthorization": {
+    "requirements": [
+      {
+        "requirementId": "prod-emergency-stop",
+        "displayName": "Production emergency stop authorization",
+        "protectedAction": "EmergencyStop",
+        "minimumRole": "MigrationOperatorAdmin",
+        "requiresJustification": true,
+        "requiresSecondOperator": true,
+        "requiresDeploymentRingMatch": true,
+        "allowedEnvironments": [ "prod" ]
+      },
+      {
+        "requirementId": "prod-maintenance-override",
+        "displayName": "Production maintenance override authorization",
+        "protectedAction": "MaintenanceOverride",
+        "minimumRole": "MigrationOperatorAdmin",
+        "requiresJustification": true,
+        "requiresSecondOperator": true,
+        "requiresDeploymentRingMatch": true,
+        "allowedEnvironments": [ "prod" ]
+      }
+    ]
+  }
+}
