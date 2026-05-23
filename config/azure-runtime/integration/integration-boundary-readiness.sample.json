@@ -1,0 +1,30 @@
+{
+  "azureIntegrationBoundaryReadiness": {
+    "checks": [
+      {
+        "name": "operational-sql-store",
+        "boundary": "sql",
+        "description": "SQL-first operational store must be configured before live worker execution.",
+        "level": "blocking",
+        "requiredConfigurationKeys": [
+          "AzureRuntime:Sql:OperationalStore"
+        ],
+        "requiredCapabilities": [
+          "sql.operational-store"
+        ]
+      },
+      {
+        "name": "queue-binding",
+        "boundary": "queue",
+        "description": "Queue binding must be known before dispatcher/worker runtime implementation.",
+        "level": "required",
+        "requiredConfigurationKeys": [
+          "AzureRuntime:Queues:Execution"
+        ],
+        "requiredCapabilities": [
+          "queue.execution"
+        ]
+      }
+    ]
+  }
+}
