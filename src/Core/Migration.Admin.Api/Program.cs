@@ -26,6 +26,7 @@ builder.Services.AddMigrationAdminApiOperationalRunMirror(builder.Configuration)
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
 builder.Services.AddAdminApiConnectorCredentialVault();
+builder.Services.Configure<ExecutionReplayAdmissionBackgroundOptions>(builder.Configuration.GetSection(ExecutionReplayAdmissionBackgroundOptions.SectionName));
 builder.Services.Configure<ExecutionReplayAdmissionOptions>(builder.Configuration.GetSection(ExecutionReplayAdmissionOptions.SectionName));
 builder.Services.Configure<OperationalEventRetentionOptions>(builder.Configuration.GetSection(OperationalEventRetentionOptions.SectionName));
 builder.Services.Configure<ExecutionReplayAdmissionOptions>(builder.Configuration.GetSection(ExecutionReplayAdmissionOptions.SectionName));
@@ -34,6 +35,7 @@ builder.Services.AddScoped<IOperationalEventQueryService, SqlOperationalEventQue
 builder.Services.AddScoped<IOperationalEventRetentionService, SqlOperationalEventRetentionService>();
 builder.Services.AddScoped<IExecutionWorkerHeartbeatStore, SqlExecutionWorkerHeartbeatStore>();
 builder.Services.AddScoped<IExecutionReplayLineageService, SqlExecutionReplayLineageService>();
+builder.Services.AddHostedService<ExecutionReplayAdmissionBackgroundService>();
 builder.Services.AddScoped<IExecutionReplayAdmissionService, SqlExecutionReplayAdmissionService>();
 builder.Services.AddScoped<IExecutionReplayPolicyOverrideService, SqlExecutionReplayPolicyOverrideService>();
 builder.Services.AddScoped<IExecutionReplayPolicyService, SqlExecutionReplayPolicyService>();
@@ -82,6 +84,8 @@ app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
 app.Run();
+
+
 
 
 
