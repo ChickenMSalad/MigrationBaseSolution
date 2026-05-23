@@ -1,0 +1,57 @@
+{
+  "AzureHostingProfiles": {
+    "Version": "P5.1.3",
+    "Profiles": [
+      {
+        "Name": "admin-api",
+        "Role": "ControlPlaneApi",
+        "RecommendedHosting": "AzureAppService",
+        "RequiresSql": true,
+        "RequiresStorage": false,
+        "RequiresQueue": false,
+        "RequiresManagedIdentity": true,
+        "Notes": "Operator/control-plane HTTP API. Keep separate from long-running execution workers."
+      },
+      {
+        "Name": "operator-ui",
+        "Role": "OperatorUi",
+        "RecommendedHosting": "AzureStaticWebAppsOrAppService",
+        "RequiresSql": false,
+        "RequiresStorage": false,
+        "RequiresQueue": false,
+        "RequiresManagedIdentity": false,
+        "Notes": "UI should call the admin/control-plane API rather than directly touching operational SQL."
+      },
+      {
+        "Name": "queue-worker",
+        "Role": "ExecutionWorker",
+        "RecommendedHosting": "AzureContainerAppsJobOrWorkerService",
+        "RequiresSql": true,
+        "RequiresStorage": true,
+        "RequiresQueue": true,
+        "RequiresManagedIdentity": true,
+        "Notes": "Long-running migration execution process. Scale and deploy independently from operator surfaces."
+      },
+      {
+        "Name": "scheduler-dispatcher",
+        "Role": "Dispatcher",
+        "RecommendedHosting": "AzureContainerAppsOrWorkerService",
+        "RequiresSql": true,
+        "RequiresStorage": false,
+        "RequiresQueue": true,
+        "RequiresManagedIdentity": true,
+        "Notes": "Converts durable SQL run state into executable queue work. Keep concurrency conservative."
+      },
+      {
+        "Name": "manifest-ingestion",
+        "Role": "ManifestIngestion",
+        "RecommendedHosting": "AzureContainerAppsJobOrAppService",
+        "RequiresSql": true,
+        "RequiresStorage": true,
+        "RequiresQueue": false,
+        "RequiresManagedIdentity": true,
+        "Notes": "Ingests CSV/Excel/import artifacts into SQL-first operational manifest tables."
+      }
+    ]
+  }
+}
