@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ManifestExecutionContext": {
+      "Enabled": true,
+      "RequireStateTransitionPolicy": true,
+      "RecordCheckpoints": true,
+      "MaxCheckpointCount": 10000
+    }
+  }
+}
