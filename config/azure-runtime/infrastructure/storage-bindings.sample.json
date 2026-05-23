@@ -1,0 +1,32 @@
+{
+  "storageAccounts": [
+    {
+      "name": "migration-operational-artifacts",
+      "accountName": "stmbsopsdev001",
+      "resourceGroupName": "rg-migrationbase-dev",
+      "useManagedIdentity": true,
+      "tags": {
+        "workload": "MigrationBaseSolution",
+        "purpose": "migration-operational-artifacts"
+      }
+    }
+  ],
+  "containers": [
+    {
+      "name": "manifests",
+      "storageAccountBindingName": "migration-operational-artifacts",
+      "containerName": "manifests",
+      "purpose": "ManifestIngestion",
+      "requiresPrivateEndpoint": true,
+      "allowPublicAccess": false
+    },
+    {
+      "name": "exports",
+      "storageAccountBindingName": "migration-operational-artifacts",
+      "containerName": "exports",
+      "purpose": "OperationalExport",
+      "requiresPrivateEndpoint": true,
+      "allowPublicAccess": false
+    }
+  ]
+}
