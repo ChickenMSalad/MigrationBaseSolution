@@ -1,0 +1,11 @@
+{
+  "phase": "P6.3",
+  "name": "Worker Runtime Foundation Closeout",
+  "status": "ready-for-p6.4",
+  "handoffTargets": [
+    "queue-dispatcher-mechanics",
+    "manifest-execution-runtime",
+    "failure-retry-replay-runtime-integration"
+  ],
+  "programCsRequired": false
+}
