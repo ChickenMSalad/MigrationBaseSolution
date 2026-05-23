@@ -24,15 +24,6 @@ public static class MigrationOperationalEndpointCompositionExtensions
         endpoints.MapOperationalEventQueryEndpoints();
         endpoints.MapOperationalEventRetentionEndpoints();
         endpoints.MapExecutionWorkerTelemetryEndpoints();
-        endpoints.MapExecutionReplayLineageEndpoints();
-        endpoints.MapExecutionReplayAdmissionEndpoints();
-        endpoints.MapExecutionReplayPolicyOverrideEndpoints();
-        endpoints.MapExecutionReplayPolicyEndpoints();
-        endpoints.MapExecutionReplayApprovalEndpoints();
-        endpoints.MapExecutionReplayMaterializationEndpoints();
-        endpoints.MapExecutionReplayPreparationEndpoints();
-        endpoints.MapExecutionReplayAnalysisEndpoints();
-        endpoints.MapExecutionDiagnosticExportEndpoints();
         endpoints.MapExecutionControlEndpoints();
         endpoints.MapExecutionWorkItemQueueEndpoints();
         endpoints.MapExecutionPlanEndpoints();
@@ -50,9 +41,20 @@ public static class MigrationOperationalEndpointCompositionExtensions
         endpoints.MapOperationalCapacityEndpoints();
         endpoints.MapOperationalCostAnalyticsEndpoints();
 
+        endpoints.MapExecutionReplayEndpoints();
         return endpoints;
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

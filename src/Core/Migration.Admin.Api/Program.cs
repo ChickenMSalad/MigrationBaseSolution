@@ -9,6 +9,7 @@ using Migration.Admin.Api.Authentication;
 using Migration.Admin.Api.Endpoints;
 using Migration.Infrastructure.DependencyInjection;
 using Migration.Admin.Api.Endpoints.Operational.Connectors;
+using Migration.Admin.Api.Operational;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAdminApiOperationalRuntimeReadiness(builder.Configuration);
@@ -26,33 +27,13 @@ builder.Services.AddMigrationAdminApiOperationalRunMirror(builder.Configuration)
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);
 builder.Services.AddAdminApiConnectorCredentialVault();
-builder.Services.Configure<ExecutionReplayAdmissionBackgroundOptions>(builder.Configuration.GetSection(ExecutionReplayAdmissionBackgroundOptions.SectionName));
-builder.Services.Configure<ExecutionReplayAdmissionOptions>(builder.Configuration.GetSection(ExecutionReplayAdmissionOptions.SectionName));
 builder.Services.Configure<OperationalEventRetentionOptions>(builder.Configuration.GetSection(OperationalEventRetentionOptions.SectionName));
-builder.Services.Configure<ExecutionReplayAdmissionOptions>(builder.Configuration.GetSection(ExecutionReplayAdmissionOptions.SectionName));
 builder.Services.Configure<OperationalEventSnapshotRecorderOptions>(builder.Configuration.GetSection(OperationalEventSnapshotRecorderOptions.SectionName));
-builder.Services.AddScoped<IOperationalEventQueryService, SqlOperationalEventQueryService>();
 builder.Services.AddScoped<IOperationalEventRetentionService, SqlOperationalEventRetentionService>();
-builder.Services.AddScoped<IExecutionWorkerHeartbeatStore, SqlExecutionWorkerHeartbeatStore>();
-builder.Services.AddScoped<IExecutionReplayLineageService, SqlExecutionReplayLineageService>();
-builder.Services.AddHostedService<ExecutionReplayAdmissionBackgroundService>();
-builder.Services.AddScoped<IExecutionReplayAdmissionService, SqlExecutionReplayAdmissionService>();
-builder.Services.AddScoped<IExecutionReplayPolicyOverrideService, SqlExecutionReplayPolicyOverrideService>();
-builder.Services.AddScoped<IExecutionReplayPolicyService, SqlExecutionReplayPolicyService>();
-builder.Services.AddScoped<IExecutionReplayApprovalService, SqlExecutionReplayApprovalService>();
-builder.Services.AddScoped<IExecutionReplayMaterializationService, SqlExecutionReplayMaterializationService>();
-builder.Services.AddScoped<IExecutionReplayPreparationService, SqlExecutionReplayPreparationService>();
-builder.Services.AddScoped<IExecutionReplayAnalysisService, SqlExecutionReplayAnalysisService>();
-builder.Services.AddScoped<IExecutionDiagnosticExportService, SqlExecutionDiagnosticExportService>();
-builder.Services.AddScoped<IExecutionControlService, SqlExecutionControlService>();
-builder.Services.AddScoped<IExecutionWorkItemQueueStore, SqlExecutionWorkItemQueueStore>();
-builder.Services.AddScoped<IExecutionPlanStore, SqlExecutionPlanStore>();
-builder.Services.AddScoped<IExecutionLifecycleService, SqlExecutionLifecycleService>();
-builder.Services.AddScoped<IExecutionSessionStore, SqlExecutionSessionStore>();
-builder.Services.AddScoped<IOperationalEventStore, SqlOperationalEventStore>();
 builder.Services.AddScoped<ISqlOperationalMetricsReader, SqlOperationalMetricsReader>();
 builder.Services.AddHostedService<OperationalEventRetentionWorker>();
 builder.Services.AddHostedService<OperationalEventSnapshotRecorderService>();
+builder.Services.AddOperationalAdminServices(builder.Configuration);
 var app = builder.Build();
 
 app.UseSwagger();
@@ -84,6 +65,29 @@ app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
 app.Run();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
