@@ -1,0 +1,26 @@
+{
+  "environmentName": "dev",
+  "deploymentRing": "nonprod",
+  "runtimeProfile": "sql-first-worker-runtime",
+  "generatedBy": "p5.1.22-topology-handoff",
+  "items": [
+    {
+      "key": "sql-operational-store",
+      "description": "SQL Server remains the durable operational store for manifests, run state, work items, failures, reruns, and source/target identifier mapping.",
+      "requiredForP52": true,
+      "status": "ReadyForWorkerStabilization"
+    },
+    {
+      "key": "worker-host-roles",
+      "description": "Queue worker, dispatcher, operator UI, API, and manifest ingestion roles have explicit runtime descriptors.",
+      "requiredForP52": true,
+      "status": "ReadyForWorkerStabilization"
+    },
+    {
+      "key": "environment-boundaries",
+      "description": "Environment, promotion, drift, capacity, isolation, tenant, and readiness contracts are available before worker hardening starts.",
+      "requiredForP52": true,
+      "status": "ReadyForWorkerStabilization"
+    }
+  ]
+}
