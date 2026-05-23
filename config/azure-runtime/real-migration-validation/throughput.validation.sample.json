@@ -1,0 +1,16 @@
+{
+  "throughputValidationProfiles": [
+    {
+      "profileName": "small-real-run-baseline",
+      "environmentName": "dev",
+      "workloadName": "real-migration-validation",
+      "expectedManifestRows": 1000,
+      "maxConcurrentWorkers": 2,
+      "targetItemsPerMinute": 100,
+      "minimumSustainedMinutes": 10,
+      "maximumAcceptableLatency": "00:05:00",
+      "requireSqlRunStateVerification": true,
+      "requireOperationalEventCorrelation": true
+    }
+  ]
+}
