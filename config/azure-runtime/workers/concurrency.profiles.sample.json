@@ -1,0 +1,34 @@
+{
+  "azureRuntime": {
+    "workerConcurrencyProfiles": [
+      {
+        "name": "queue-executor-standard",
+        "workerRole": "QueueExecutor",
+        "maxConcurrentRuns": 1,
+        "maxConcurrentWorkItems": 8,
+        "maxConcurrentWorkItemsPerRun": 4,
+        "prefetchCount": 8,
+        "drainTargetSeconds": 60,
+        "allowDynamicScaleDown": true,
+        "allowDynamicScaleUp": false,
+        "metadata": {
+          "purpose": "Default bounded concurrency for queue execution workers"
+        }
+      },
+      {
+        "name": "dispatcher-standard",
+        "workerRole": "Dispatcher",
+        "maxConcurrentRuns": 2,
+        "maxConcurrentWorkItems": 16,
+        "maxConcurrentWorkItemsPerRun": 8,
+        "prefetchCount": 16,
+        "drainTargetSeconds": 30,
+        "allowDynamicScaleDown": true,
+        "allowDynamicScaleUp": true,
+        "metadata": {
+          "purpose": "Default dispatch concurrency profile"
+        }
+      }
+    ]
+  }
+}
