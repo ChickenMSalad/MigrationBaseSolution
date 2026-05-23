@@ -1,0 +1,59 @@
+{
+  "deploymentValidationScripts": [
+    {
+      "key": "sql-connectivity",
+      "displayName": "SQL operational store connectivity",
+      "scriptPath": "tools/deployment/validate-sql-connectivity.ps1",
+      "requirement": "Blocking",
+      "targetEnvironments": [
+        "dev",
+        "test",
+        "prod"
+      ],
+      "requiredSettings": [
+        "ConnectionStrings:OperationalSql",
+        "AzureRuntime:EnvironmentName"
+      ],
+      "requiredEvidenceKeys": [
+        "sql.server",
+        "sql.database",
+        "sql.schemaVersion"
+      ]
+    },
+    {
+      "key": "storage-artifacts",
+      "displayName": "Artifact storage reachability",
+      "scriptPath": "tools/deployment/validate-artifact-storage.ps1",
+      "requirement": "Required",
+      "targetEnvironments": [
+        "test",
+        "prod"
+      ],
+      "requiredSettings": [
+        "AzureRuntime:Storage:ArtifactContainerName"
+      ],
+      "requiredEvidenceKeys": [
+        "storage.account",
+        "storage.container"
+      ]
+    },
+    {
+      "key": "worker-host-health",
+      "displayName": "Worker host deployment health",
+      "scriptPath": "tools/deployment/validate-worker-host-health.ps1",
+      "requirement": "Required",
+      "targetEnvironments": [
+        "dev",
+        "test",
+        "prod"
+      ],
+      "requiredSettings": [
+        "AzureRuntime:Worker:HostRole"
+      ],
+      "requiredEvidenceKeys": [
+        "worker.role",
+        "worker.capacityProfile"
+      ]
+    }
+  ]
+}
