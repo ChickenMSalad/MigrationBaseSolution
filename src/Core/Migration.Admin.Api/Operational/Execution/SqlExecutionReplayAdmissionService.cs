@@ -40,73 +40,62 @@ public sealed class SqlExecutionReplayAdmissionService : IExecutionReplayAdmissi
 
         foreach (var session in pending)
         {
+            ExecutionReplayAdmissionDecision decision;
+
             if (!options.Enabled)
             {
-                decisions.Add(new ExecutionReplayAdmissionDecision(
-                    session.ExecutionSessionId,
-                    session.Name,
-                    "deferred",
-                    "Replay admission is disabled.",
-                    session.CreatedUtc));
-                continue;
+                decision = new ExecutionReplayAdmissionDecision(session.ExecutionSessionId, session.Name, "deferred", "Replay admission is disabled.", session.CreatedUtc);
             }
-
-            if (!withinWindow)
+            else if (!withinWindow)
             {
-                decisions.Add(new ExecutionReplayAdmissionDecision(
-                    session.ExecutionSessionId,
-                    session.Name,
-                    "deferred",
-                    "Current UTC time is outside the configured replay admission window.",
-                    session.CreatedUtc));
-                continue;
+                decision = new ExecutionReplayAdmissionDecision(session.ExecutionSessionId, session.Name, "deferred", "Current UTC time is outside the configured replay admission window.", session.CreatedUtc);
             }
-
-            if (activeReplayCount >= maxConcurrent)
+            else if (activeReplayCount >= maxConcurrent)
             {
-                decisions.Add(new ExecutionReplayAdmissionDecision(
+                decision = new ExecutionReplayAdmissionDecision(session.ExecutionSessionId, session.Name, "deferred", $"Active replay concurrency {activeReplayCount} is at or above limit {maxConcurrent}.", session.CreatedUtc);
+            }
+            else
+            {
+                await AdmitAsync(connection, session.ExecutionSessionId, cancellationToken);
+                activeReplayCount++;
+
+                decision = new ExecutionReplayAdmissionDecision(session.ExecutionSessionId, session.Name, "admitted", "Replay session admitted to queued state.", session.CreatedUtc);
+
+                await _eventStore.WriteAsync(
+                    "ExecutionReplayAdmitted",
+                    "info",
+                    "execution",
+                    "Migration.Admin.Api",
+                    "Replay execution session admitted to queued state.",
+                    null,
                     session.ExecutionSessionId,
-                    session.Name,
-                    "deferred",
-                    $"Active replay concurrency {activeReplayCount} is at or above limit {maxConcurrent}.",
-                    session.CreatedUtc));
-                continue;
+                    session.MigrationRunId,
+                    cancellationToken);
             }
 
-            await AdmitAsync(connection, session.ExecutionSessionId, cancellationToken);
-            activeReplayCount++;
+            decisions.Add(decision);
 
-            decisions.Add(new ExecutionReplayAdmissionDecision(
-                session.ExecutionSessionId,
-                session.Name,
-                "admitted",
-                "Replay session admitted to queued state.",
-                session.CreatedUtc));
-
-            await _eventStore.WriteAsync(
-                "ExecutionReplayAdmitted",
-                "info",
-                "execution",
-                "Migration.Admin.Api",
-                "Replay execution session admitted to queued state.",
-                null,
-                session.ExecutionSessionId,
-                session.MigrationRunId,
+            await PersistDecisionAsync(
+                connection,
+                decision,
+                activeReplayCount,
+                maxConcurrent,
+                withinWindow,
                 cancellationToken);
-        }
 
-        foreach (var deferred in decisions.Where(x => x.Decision == "deferred"))
-        {
-            await _eventStore.WriteAsync(
-                "ExecutionReplayDeferred",
-                "info",
-                "execution",
-                "Migration.Admin.Api",
-                deferred.Reason,
-                null,
-                deferred.ExecutionSessionId,
-                null,
-                cancellationToken);
+            if (decision.Decision == "deferred")
+            {
+                await _eventStore.WriteAsync(
+                    "ExecutionReplayDeferred",
+                    "info",
+                    "execution",
+                    "Migration.Admin.Api",
+                    decision.Reason,
+                    null,
+                    decision.ExecutionSessionId,
+                    session.MigrationRunId,
+                    cancellationToken);
+            }
         }
 
         return new ExecutionReplayAdmissionEvaluationResult(
@@ -117,9 +106,97 @@ public sealed class SqlExecutionReplayAdmissionService : IExecutionReplayAdmissi
             Decisions: decisions);
     }
 
-    private static bool IsWithinAllowedWindow(
-        ExecutionReplayAdmissionOptions options,
-        DateTimeOffset now)
+    public async Task<IReadOnlyList<ExecutionReplayAdmissionDecisionRecord>> ReadHistoryAsync(
+        Guid executionSessionId,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        var safeTake = Math.Clamp(take, 1, 250);
+        var decisions = new List<ExecutionReplayAdmissionDecisionRecord>();
+        var connectionString = GetConnectionString();
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+SELECT TOP (@Take)
+    ReplayAdmissionDecisionId,
+    ExecutionSessionId,
+    Decision,
+    Reason,
+    ActiveReplayCount,
+    MaxConcurrentReplays,
+    WithinAllowedWindow,
+    CreatedUtc
+FROM dbo.MigrationExecutionReplayAdmissionDecisions
+WHERE ExecutionSessionId = @ExecutionSessionId
+ORDER BY CreatedUtc DESC;
+";
+        command.Parameters.AddWithValue("@ExecutionSessionId", executionSessionId);
+        command.Parameters.AddWithValue("@Take", safeTake);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            decisions.Add(new ExecutionReplayAdmissionDecisionRecord(
+                reader.GetGuid(0),
+                reader.GetGuid(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetInt32(4),
+                reader.GetInt32(5),
+                reader.GetBoolean(6),
+                reader.GetFieldValue<DateTimeOffset>(7)));
+        }
+
+        return decisions;
+    }
+
+    private static async Task PersistDecisionAsync(
+        SqlConnection connection,
+        ExecutionReplayAdmissionDecision decision,
+        int activeReplayCount,
+        int maxConcurrentReplays,
+        bool withinAllowedWindow,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+INSERT INTO dbo.MigrationExecutionReplayAdmissionDecisions
+(
+    ReplayAdmissionDecisionId,
+    ExecutionSessionId,
+    Decision,
+    Reason,
+    ActiveReplayCount,
+    MaxConcurrentReplays,
+    WithinAllowedWindow,
+    CreatedUtc
+)
+VALUES
+(
+    NEWID(),
+    @ExecutionSessionId,
+    @Decision,
+    @Reason,
+    @ActiveReplayCount,
+    @MaxConcurrentReplays,
+    @WithinAllowedWindow,
+    SYSUTCDATETIME()
+);
+";
+        command.Parameters.AddWithValue("@ExecutionSessionId", decision.ExecutionSessionId);
+        command.Parameters.AddWithValue("@Decision", decision.Decision);
+        command.Parameters.AddWithValue("@Reason", decision.Reason);
+        command.Parameters.AddWithValue("@ActiveReplayCount", activeReplayCount);
+        command.Parameters.AddWithValue("@MaxConcurrentReplays", maxConcurrentReplays);
+        command.Parameters.AddWithValue("@WithinAllowedWindow", withinAllowedWindow);
+
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static bool IsWithinAllowedWindow(ExecutionReplayAdmissionOptions options, DateTimeOffset now)
     {
         var start = Math.Clamp(options.AllowedStartHourUtc, 0, 23);
         var end = Math.Clamp(options.AllowedEndHourUtc, 1, 24);
@@ -133,9 +210,7 @@ public sealed class SqlExecutionReplayAdmissionService : IExecutionReplayAdmissi
         return hour >= start || hour < end;
     }
 
-    private static async Task<int> CountActiveReplaysAsync(
-        SqlConnection connection,
-        CancellationToken cancellationToken)
+    private static async Task<int> CountActiveReplaysAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -148,10 +223,7 @@ WHERE ReplaySourceExecutionSessionId IS NOT NULL
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
     }
 
-    private static async Task<IReadOnlyList<PendingReplaySession>> ReadPendingReplaySessionsAsync(
-        SqlConnection connection,
-        int take,
-        CancellationToken cancellationToken)
+    private static async Task<IReadOnlyList<PendingReplaySession>> ReadPendingReplaySessionsAsync(SqlConnection connection, int take, CancellationToken cancellationToken)
     {
         var sessions = new List<PendingReplaySession>();
 
@@ -167,26 +239,22 @@ WHERE ReplaySourceExecutionSessionId IS NOT NULL
   AND Status = 'admission-pending'
 ORDER BY CreatedUtc ASC;
 ";
-
         command.Parameters.AddWithValue("@Take", take);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             sessions.Add(new PendingReplaySession(
-                ExecutionSessionId: reader.GetGuid(0),
-                MigrationRunId: reader.IsDBNull(1) ? null : reader.GetGuid(1),
-                Name: reader.GetString(2),
-                CreatedUtc: reader.GetFieldValue<DateTimeOffset>(3)));
+                reader.GetGuid(0),
+                reader.IsDBNull(1) ? null : reader.GetGuid(1),
+                reader.GetString(2),
+                reader.GetFieldValue<DateTimeOffset>(3)));
         }
 
         return sessions;
     }
 
-    private static async Task AdmitAsync(
-        SqlConnection connection,
-        Guid executionSessionId,
-        CancellationToken cancellationToken)
+    private static async Task AdmitAsync(SqlConnection connection, Guid executionSessionId, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -195,7 +263,6 @@ SET Status = 'queued'
 WHERE ExecutionSessionId = @ExecutionSessionId
   AND Status = 'admission-pending';
 ";
-
         command.Parameters.AddWithValue("@ExecutionSessionId", executionSessionId);
 
         var updated = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -207,10 +274,7 @@ WHERE ExecutionSessionId = @ExecutionSessionId
 
     private string GetConnectionString()
     {
-        var connectionString =
-            _configuration.GetConnectionString("OperationalSql") ??
-            _configuration["OperationalSql:ConnectionString"];
-
+        var connectionString = _configuration.GetConnectionString("OperationalSql") ?? _configuration["OperationalSql:ConnectionString"];
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException("Operational SQL connection string is not configured.");

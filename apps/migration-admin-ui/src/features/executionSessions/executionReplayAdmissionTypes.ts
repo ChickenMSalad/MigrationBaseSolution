@@ -17,3 +17,19 @@ export type ExecutionReplayAdmissionEvaluationResult = {
   withinAllowedWindow: boolean;
   decisions: ExecutionReplayAdmissionDecision[];
 };
+
+export type ExecutionReplayAdmissionDecisionRecord = {
+  replayAdmissionDecisionId: string;
+  executionSessionId: string;
+  decision: string;
+  reason: string;
+  activeReplayCount: number;
+  maxConcurrentReplays: number;
+  withinAllowedWindow: boolean;
+  createdUtc: string;
+};
+
+export type ExecutionReplayAdmissionDecisionHistoryResponse = {
+  executionSessionId: string;
+  decisions: ExecutionReplayAdmissionDecisionRecord[];
+};

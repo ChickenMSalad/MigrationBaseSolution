@@ -23,6 +23,23 @@ public static class ExecutionReplayAdmissionEndpointExtensions
         })
         .WithName("EvaluateExecutionReplayAdmission");
 
+        group.MapGet("/{executionSessionId:guid}/admission/history", async (
+            IExecutionReplayAdmissionService service,
+            Guid executionSessionId,
+            int? take,
+            CancellationToken cancellationToken) =>
+        {
+            var decisions = await service.ReadHistoryAsync(
+                executionSessionId,
+                Math.Clamp(take.GetValueOrDefault(25), 1, 250),
+                cancellationToken);
+
+            return Results.Ok(new ExecutionReplayAdmissionDecisionHistoryResponse(
+                executionSessionId,
+                decisions));
+        })
+        .WithName("GetExecutionReplayAdmissionHistory");
+
         return endpoints;
     }
 }
