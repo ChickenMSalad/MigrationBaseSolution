@@ -1,0 +1,18 @@
+namespace Migration.Admin.Api.Operational.Execution;
+
+public sealed record EvaluateExecutionReplayAdmissionRequest(
+    int? Take);
+
+public sealed record ExecutionReplayAdmissionEvaluationResult(
+    DateTimeOffset GeneratedUtc,
+    int ActiveReplayCount,
+    int MaxConcurrentReplays,
+    bool WithinAllowedWindow,
+    IReadOnlyList<ExecutionReplayAdmissionDecision> Decisions);
+
+public sealed record ExecutionReplayAdmissionDecision(
+    Guid ExecutionSessionId,
+    string Name,
+    string Decision,
+    string Reason,
+    DateTimeOffset CreatedUtc);

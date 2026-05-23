@@ -126,7 +126,7 @@ VALUES
     @Name,
     @SourceConnector,
     @TargetConnector,
-    'queued',
+    'admission-pending',
     SYSUTCDATETIME(),
     @Notes,
     @ReplaySourceExecutionSessionId,
@@ -140,7 +140,7 @@ VALUES
             sessionCommand.Parameters.AddWithValue("@Name", $"Replay of {source.Name}");
             sessionCommand.Parameters.AddWithValue("@SourceConnector", DbValue(source.SourceConnector));
             sessionCommand.Parameters.AddWithValue("@TargetConnector", DbValue(source.TargetConnector));
-            sessionCommand.Parameters.AddWithValue("@Notes", $"Replay session derived from {request.SourceExecutionSessionId:D}. Policy decision: {policy.Decision}.");
+            sessionCommand.Parameters.AddWithValue("@Notes", $"Replay session derived from {request.SourceExecutionSessionId:D}. Awaiting replay admission. Policy decision: {policy.Decision}.");
             sessionCommand.Parameters.AddWithValue("@ReplaySourceExecutionSessionId", request.SourceExecutionSessionId);
             sessionCommand.Parameters.AddWithValue("@ReplayScope", preparation.Scope);
             sessionCommand.Parameters.AddWithValue("@ReplayDepth", source.ReplayDepth + 1);
@@ -206,7 +206,7 @@ VALUES
             "info",
             "execution",
             "Migration.Admin.Api",
-            $"Replay execution session materialized from {request.SourceExecutionSessionId:D} with {preparation.Items.Count} work item(s). Policy decision: {policy.Decision}.",
+            $"Replay execution session materialized from {request.SourceExecutionSessionId:D} with {preparation.Items.Count} work item(s) and is waiting for admission. Policy decision: {policy.Decision}.",
             null,
             replaySessionId,
             source.MigrationRunId,
@@ -229,7 +229,7 @@ VALUES
 SELECT COUNT(1)
 FROM dbo.MigrationExecutionSessions
 WHERE ReplaySourceExecutionSessionId = @SourceExecutionSessionId
-  AND Status IN ('created', 'validating', 'manifest-loading', 'queued', 'running', 'paused');
+  AND Status IN ('created', 'validating', 'manifest-loading', 'admission-pending', 'queued', 'running', 'paused');
 ";
         command.Parameters.AddWithValue("@SourceExecutionSessionId", sourceExecutionSessionId);
         var activeCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
