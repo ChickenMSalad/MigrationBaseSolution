@@ -1,0 +1,29 @@
+{
+  "environmentName": "dev",
+  "requiredGates": [
+    {
+      "gateCode": "correlation-contracts",
+      "displayName": "Correlation contracts are defined",
+      "severity": "Blocking",
+      "requiredEvidenceKeys": [ "correlation.contract.registry" ]
+    },
+    {
+      "gateCode": "structured-logs",
+      "displayName": "Structured log contracts are defined",
+      "severity": "Blocking",
+      "requiredEvidenceKeys": [ "structured.log.contract.registry" ]
+    },
+    {
+      "gateCode": "metrics-and-health",
+      "displayName": "Metrics and health signals are defined",
+      "severity": "Blocking",
+      "requiredEvidenceKeys": [ "metric.contract.registry", "health.signal.contract.registry" ]
+    },
+    {
+      "gateCode": "alerts-and-dashboards",
+      "displayName": "Alert and dashboard contracts are defined",
+      "severity": "Warning",
+      "requiredEvidenceKeys": [ "alert.rule.contract.registry", "dashboard.contract.registry" ]
+    }
+  ]
+}
