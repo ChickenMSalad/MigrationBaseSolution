@@ -1,0 +1,49 @@
+{
+  "environmentName": "prod",
+  "deploymentRing": "production",
+  "requestedBy": "operator",
+  "handoffItems": [
+    {
+      "key": "runtime-topology.accepted",
+      "area": "RuntimeTopology",
+      "description": "Azure topology, tenant boundaries, capacity, and isolation contracts have been accepted.",
+      "status": "Accepted",
+      "evidenceReference": "P5.1 closeout"
+    },
+    {
+      "key": "worker-stabilization.accepted",
+      "area": "WorkerStabilization",
+      "description": "Worker lifecycle, heartbeat, drain, lease, retry, poison, concurrency, abandonment, circuit breaker, and diagnostics contracts have been accepted.",
+      "status": "Accepted",
+      "evidenceReference": "P5.2 closeout"
+    },
+    {
+      "key": "deployment-automation.accepted",
+      "area": "DeploymentAutomation",
+      "description": "Deployment pipeline, environment, parameter, validation, artifact, rollback, approval, and health-check contracts have been accepted.",
+      "status": "Accepted",
+      "evidenceReference": "P5.3 closeout"
+    },
+    {
+      "key": "observability.accepted",
+      "area": "Observability",
+      "description": "Correlation, structured logs, metrics, health signals, alerts, dashboards, and anomaly contracts have been accepted.",
+      "status": "Accepted",
+      "evidenceReference": "P5.4 closeout"
+    },
+    {
+      "key": "real-migration-validation.accepted",
+      "area": "RealMigrationValidation",
+      "description": "Execution, resumability, replay, fault injection, throughput, audit, and large-manifest validation contracts have been accepted.",
+      "status": "Accepted",
+      "evidenceReference": "P5.5 closeout"
+    },
+    {
+      "key": "production-governance.accepted",
+      "area": "OperationalGovernance",
+      "description": "Readiness, maintenance mode, emergency stop/drain, authorization, override, and checklist governance contracts have been accepted.",
+      "status": "ReadyForOperationalHandoff",
+      "evidenceReference": "P5.6 closeout"
+    }
+  ]
+}
