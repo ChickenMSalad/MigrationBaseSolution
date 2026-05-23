@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ManifestExecutionCloseout": {
+      "Enabled": true,
+      "RequireReadinessEvaluation": true,
+      "RequireCompletionHandoff": true,
+      "RequireCheckpointBoundary": true
+    }
+  }
+}
