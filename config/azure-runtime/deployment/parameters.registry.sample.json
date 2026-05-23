@@ -1,0 +1,45 @@
+{
+  "schema": "migrationbase.azure.deployment.parameters.v1",
+  "parameters": [
+    {
+      "name": "sqlServerName",
+      "category": "sql",
+      "valueType": "string",
+      "requirement": "Required",
+      "isSecret": false,
+      "appliesToHostRoles": [ "api", "worker", "dispatcher", "operator-ui" ],
+      "appliesToEnvironments": [ "dev", "test", "prod" ],
+      "description": "Logical SQL Server name that hosts the operational migration database."
+    },
+    {
+      "name": "operationalDatabaseName",
+      "category": "sql",
+      "valueType": "string",
+      "requirement": "Required",
+      "isSecret": false,
+      "appliesToHostRoles": [ "api", "worker", "dispatcher", "operator-ui" ],
+      "appliesToEnvironments": [ "dev", "test", "prod" ],
+      "description": "SQL-first durable store used for manifests, work items, run state, reruns, and audit history."
+    },
+    {
+      "name": "applicationInsightsConnectionString",
+      "category": "telemetry",
+      "valueType": "secret-reference",
+      "requirement": "RequiredForProduction",
+      "isSecret": true,
+      "appliesToHostRoles": [ "*" ],
+      "appliesToEnvironments": [ "prod" ],
+      "description": "Application Insights connection string or Key Vault reference."
+    },
+    {
+      "name": "artifactStorageAccountName",
+      "category": "storage",
+      "valueType": "string",
+      "requirement": "Required",
+      "isSecret": false,
+      "appliesToHostRoles": [ "worker", "dispatcher" ],
+      "appliesToEnvironments": [ "dev", "test", "prod" ],
+      "description": "Storage account used for ingestion/export artifacts, not operational run state."
+    }
+  ]
+}
