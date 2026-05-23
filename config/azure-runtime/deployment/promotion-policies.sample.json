@@ -1,0 +1,50 @@
+{
+  "promotionPolicies": [
+    {
+      "name": "dev-to-test",
+      "sourceEnvironment": "dev",
+      "targetEnvironment": "test",
+      "deploymentRing": "nonprod",
+      "requireManualApproval": false,
+      "gates": [
+        {
+          "name": "configuration-validation",
+          "description": "P5.1 runtime configuration validation completed successfully.",
+          "required": true,
+          "evidenceKey": "runtimeConfigurationValidation",
+          "expectedValue": "passed"
+        },
+        {
+          "name": "deployment-readiness",
+          "description": "Deployment readiness evidence manifest completed successfully.",
+          "required": true,
+          "evidenceKey": "deploymentReadiness",
+          "expectedValue": "passed"
+        }
+      ]
+    },
+    {
+      "name": "test-to-prod",
+      "sourceEnvironment": "test",
+      "targetEnvironment": "prod",
+      "deploymentRing": "prod",
+      "requireManualApproval": true,
+      "gates": [
+        {
+          "name": "real-migration-smoke-run",
+          "description": "A controlled real migration smoke run completed with acceptable results.",
+          "required": true,
+          "evidenceKey": "realMigrationSmokeRun",
+          "expectedValue": "passed"
+        },
+        {
+          "name": "rollback-plan-reviewed",
+          "description": "Rollback or operational recovery plan was reviewed before production promotion.",
+          "required": true,
+          "evidenceKey": "rollbackPlanReviewed",
+          "expectedValue": "true"
+        }
+      ]
+    }
+  ]
+}
