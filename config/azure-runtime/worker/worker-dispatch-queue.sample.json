@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "WorkerDispatchQueue": {
+      "Enabled": true,
+      "QueueName": "migration-work-items",
+      "MaxReadBatchSize": 8,
+      "EmptyQueueDelay": "00:00:05",
+      "UseInMemoryQueue": true
+    }
+  }
+}
