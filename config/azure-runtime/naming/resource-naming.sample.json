@@ -1,0 +1,38 @@
+{
+  "AzureRuntime": {
+    "ResourceNaming": {
+      "Organization": "migration",
+      "Application": "base",
+      "Environment": "dev",
+      "RegionCode": "eus",
+      "Separator": "-",
+      "IncludeRegionInNames": true,
+      "ResourceTypeTokens": {
+        "resourceGroup": "rg",
+        "appServicePlan": "asp",
+        "webApp": "app",
+        "functionApp": "func",
+        "containerApp": "ca",
+        "containerAppsEnvironment": "cae",
+        "storageAccount": "st",
+        "keyVault": "kv",
+        "sqlServer": "sql",
+        "sqlDatabase": "sqldb",
+        "applicationInsights": "appi",
+        "logAnalyticsWorkspace": "law",
+        "serviceBusNamespace": "sb",
+        "queue": "q"
+      }
+    },
+    "ResourceTags": {
+      "Owner": "migration-platform",
+      "CostCenter": "migration",
+      "DataClassification": "internal",
+      "OperationalStore": "sql-first",
+      "AdditionalTags": {
+        "managedBy": "MigrationBaseSolution",
+        "deploymentPhase": "P5"
+      }
+    }
+  }
+}
