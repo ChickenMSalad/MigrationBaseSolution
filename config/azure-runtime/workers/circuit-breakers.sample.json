@@ -1,0 +1,32 @@
+{
+  "azureWorkerCircuitBreakers": {
+    "policies": [
+      {
+        "name": "default-worker-execution",
+        "enabled": true,
+        "failureThreshold": 10,
+        "consecutiveFailureThreshold": 5,
+        "minimumSampleSize": 20,
+        "failureRatioThreshold": 0.5,
+        "samplingWindow": "00:05:00",
+        "openDuration": "00:02:00",
+        "halfOpenProbeInterval": "00:00:30",
+        "halfOpenProbeLimit": 1,
+        "description": "Default worker execution protection for repeated transient or downstream failures."
+      },
+      {
+        "name": "source-api-throttle-protection",
+        "enabled": true,
+        "failureThreshold": 25,
+        "consecutiveFailureThreshold": 8,
+        "minimumSampleSize": 50,
+        "failureRatioThreshold": 0.35,
+        "samplingWindow": "00:10:00",
+        "openDuration": "00:05:00",
+        "halfOpenProbeInterval": "00:01:00",
+        "halfOpenProbeLimit": 2,
+        "description": "Protects source-system calls when throttling or repeated API failures are observed."
+      }
+    ]
+  }
+}
