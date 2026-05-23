@@ -1,0 +1,23 @@
+{
+  "azureWorkerStabilizationReadiness": {
+    "purpose": "P5.2 closeout checklist for worker stabilization before deployment automation and real execution validation.",
+    "defaultStatus": "Defined",
+    "requiredCapabilityKeys": [
+      "worker.lifecycle",
+      "worker.heartbeat",
+      "worker.shutdown",
+      "worker.lease",
+      "worker.retry",
+      "worker.poison",
+      "worker.concurrency",
+      "worker.abandonment",
+      "worker.circuitBreaker",
+      "worker.diagnostics"
+    ],
+    "handoffTargets": [
+      "P5.3 Deployment Automation",
+      "P5.4 Telemetry/Observability",
+      "P5.5 Real Migration Execution Validation"
+    ]
+  }
+}
