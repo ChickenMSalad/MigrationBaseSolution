@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "FailureRuntime": {
+      "Enabled": true,
+      "ClassifyTransientFailures": true,
+      "ClassifyPoisonFailures": true,
+      "AllowReplayEligibilityClassification": true
+    }
+  }
+}
