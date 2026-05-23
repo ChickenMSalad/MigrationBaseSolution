@@ -13,8 +13,8 @@ import { evaluateExecutionReplayPolicy, fetchExecutionReplayPolicyHistory } from
 import type { ExecutionReplayPolicyEvaluationRecord, ExecutionReplayPolicyEvaluationResult } from './executionReplayPolicyTypes';
 import { approveExecutionReplay, fetchExecutionReplayApprovalHistory } from './executionReplayApprovalApi';
 import type { ExecutionReplayApprovalRecord, ExecutionReplayApprovalResult } from './executionReplayApprovalTypes';
-import { evaluateExecutionReplayAdmission } from './executionReplayAdmissionApi';
-import type { ExecutionReplayAdmissionEvaluationResult } from './executionReplayAdmissionTypes';
+import { evaluateExecutionReplayAdmission, fetchExecutionReplayAdmissionHistory } from './executionReplayAdmissionApi';
+import type { ExecutionReplayAdmissionDecisionRecord, ExecutionReplayAdmissionEvaluationResult } from './executionReplayAdmissionTypes';
 import { materializeExecutionReplay } from './executionReplayMaterializationApi';
 import { fetchExecutionReplayLineage } from './executionReplayLineageApi';
 import type { ExecutionReplayLineageResult } from './executionReplayLineageTypes';
@@ -67,6 +67,7 @@ export function ExecutionSessionWorkspace() {
   const [replayPolicyHistory, setReplayPolicyHistory] = useState<ExecutionReplayPolicyEvaluationRecord[]>([]);
   const [replayMaterialization, setReplayMaterialization] = useState<ExecutionReplayMaterializationResult | null>(null);
   const [replayAdmission, setReplayAdmission] = useState<ExecutionReplayAdmissionEvaluationResult | null>(null);
+  const [replayAdmissionHistory, setReplayAdmissionHistory] = useState<ExecutionReplayAdmissionDecisionRecord[]>([]);
   const [replayAdmissionTake, setReplayAdmissionTake] = useState(25);
   const [replayApproval, setReplayApproval] = useState<ExecutionReplayApprovalResult | null>(null);
   const [replayApprovalHistory, setReplayApprovalHistory] = useState<ExecutionReplayApprovalRecord[]>([]);
@@ -125,6 +126,8 @@ export function ExecutionSessionWorkspace() {
       setWorkItems(queueResponse.items);
       setQueueSummary(queueSummaryResponse);
       setReplayLineage(lineageResponse);
+      const admissionHistoryResponse = await fetchExecutionReplayAdmissionHistory(session.executionSessionId, 25);
+      setReplayAdmissionHistory(admissionHistoryResponse.decisions);
       const policyHistoryResponse = await fetchExecutionReplayPolicyHistory(session.executionSessionId, 25);
       setReplayPolicyHistory(policyHistoryResponse.evaluations);
       const approvalHistoryResponse = await fetchExecutionReplayApprovalHistory(session.executionSessionId, 25);
@@ -634,7 +637,29 @@ async function pauseSelectedSession() {
               </div>
             </div>
           ) : null}
-          {replayAdmission ? (
+                    <div className="table-shell">
+            <h3>Replay admission history</h3>
+            <table>
+              <thead><tr><th>Created</th><th>Decision</th><th>Reason</th><th>Active</th><th>Limit</th><th>Window</th></tr></thead>
+              <tbody>
+                {replayAdmissionHistory.length === 0 ? (
+                  <tr><td colSpan={6}>No replay admission decisions have been recorded for this session.</td></tr>
+                ) : (
+                  replayAdmissionHistory.map((decision) => (
+                    <tr key={decision.replayAdmissionDecisionId}>
+                      <td>{new Date(decision.createdUtc).toLocaleString()}</td>
+                      <td>{decision.decision}</td>
+                      <td>{decision.reason}</td>
+                      <td>{decision.activeReplayCount}</td>
+                      <td>{decision.maxConcurrentReplays}</td>
+                      <td>{decision.withinAllowedWindow ? 'Yes' : 'No'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+{replayAdmission ? (
             <div className="table-shell">
               <h3>Replay admission</h3>
               <div className="metric-grid">
@@ -879,6 +904,7 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
 
