@@ -15,6 +15,7 @@ import { approveExecutionReplay, fetchExecutionReplayApprovalHistory } from './e
 import type { ExecutionReplayApprovalRecord, ExecutionReplayApprovalResult } from './executionReplayApprovalTypes';
 import { fetchExecutionReplayAdmissionBackgroundStatus } from './executionReplayAdmissionBackgroundApi';
 import type { ExecutionReplayAdmissionBackgroundStatus } from './executionReplayAdmissionBackgroundTypes';
+import { forceAdmitExecutionReplay, forceDeferExecutionReplay } from './executionReplayAdmissionManualApi';
 import { evaluateExecutionReplayAdmission, fetchExecutionReplayAdmissionHistory } from './executionReplayAdmissionApi';
 import type { ExecutionReplayAdmissionDecisionRecord, ExecutionReplayAdmissionEvaluationResult } from './executionReplayAdmissionTypes';
 import { materializeExecutionReplay } from './executionReplayMaterializationApi';
@@ -72,6 +73,8 @@ export function ExecutionSessionWorkspace() {
   const [replayAdmissionBackgroundStatus, setReplayAdmissionBackgroundStatus] = useState<ExecutionReplayAdmissionBackgroundStatus | null>(null);
   const [replayAdmissionHistory, setReplayAdmissionHistory] = useState<ExecutionReplayAdmissionDecisionRecord[]>([]);
   const [replayAdmissionTake, setReplayAdmissionTake] = useState(25);
+  const [manualAdmissionOperator, setManualAdmissionOperator] = useState('operator');
+  const [manualAdmissionReason, setManualAdmissionReason] = useState('');
   const [replayApproval, setReplayApproval] = useState<ExecutionReplayApprovalResult | null>(null);
   const [replayApprovalHistory, setReplayApprovalHistory] = useState<ExecutionReplayApprovalRecord[]>([]);
   const [replayApprovedBy, setReplayApprovedBy] = useState('operator');
@@ -228,7 +231,48 @@ export function ExecutionSessionWorkspace() {
       setError(err instanceof Error ? err.message : 'Failed to approve replay.');
     }
   }
-  async function evaluateReplayAdmissionQueue() {
+    async function forceAdmitSelectedReplay() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const result = await forceAdmitExecutionReplay({
+        executionSessionId: selectedSession.executionSessionId,
+        operator: manualAdmissionOperator,
+        reason: manualAdmissionReason,
+      });
+
+      setManualAdmissionReason('');
+      setStatusMessage(`Replay admission decision recorded: ${result.decision}.`);
+      await loadSessions();
+      await loadSessionDetails(selectedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to force-admit replay session.');
+    }
+  }
+
+  async function forceDeferSelectedReplay() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const result = await forceDeferExecutionReplay({
+        executionSessionId: selectedSession.executionSessionId,
+        operator: manualAdmissionOperator,
+        reason: manualAdmissionReason,
+      });
+
+      setManualAdmissionReason('');
+      setStatusMessage(`Replay admission decision recorded: ${result.decision}.`);
+      await loadSessions();
+      await loadSessionDetails(selectedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to force-defer replay session.');
+    }
+  }
+async function evaluateReplayAdmissionQueue() {
     try {
       const result = await evaluateExecutionReplayAdmission({
         take: replayAdmissionTake,
@@ -572,7 +616,17 @@ async function pauseSelectedSession() {
               Admission take
               <input type="number" min="1" max="250" value={replayAdmissionTake} onChange={(event) => setReplayAdmissionTake(Number(event.target.value))} />
             </label>
-            <button type="button" onClick={evaluateReplayAdmissionQueue}>Evaluate admission</button><button type="button" onClick={materializeSelectedReplay} disabled={!replayApprovalNote.trim()}>Materialize replay</button>
+            <button type="button" onClick={evaluateReplayAdmissionQueue}>Evaluate admission</button>
+            <label>
+              Manual admission operator
+              <input value={manualAdmissionOperator} onChange={(event) => setManualAdmissionOperator(event.target.value)} placeholder="Operator" />
+            </label>
+            <label>
+              Manual admission reason
+              <input value={manualAdmissionReason} onChange={(event) => setManualAdmissionReason(event.target.value)} placeholder="Required reason" />
+            </label>
+            <button type="button" onClick={forceAdmitSelectedReplay} disabled={!selectedSession || !manualAdmissionOperator.trim() || !manualAdmissionReason.trim()}>Force admit replay</button>
+            <button type="button" onClick={forceDeferSelectedReplay} disabled={!selectedSession || !manualAdmissionOperator.trim() || !manualAdmissionReason.trim()}>Force defer replay</button><button type="button" onClick={materializeSelectedReplay} disabled={!replayApprovalNote.trim()}>Materialize replay</button>
             <span className="status-pill">Selected: {selectedSession.status}</span>
           </div>
 
@@ -928,6 +982,7 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
 
