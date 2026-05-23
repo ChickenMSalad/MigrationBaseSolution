@@ -1,0 +1,12 @@
+{
+  "AzureRuntime": {
+    "RetryRuntime": {
+      "Enabled": true,
+      "MaxAttempts": 3,
+      "InitialDelay": "00:00:05",
+      "MaxDelay": "00:05:00",
+      "BackoffMultiplier": 2.0,
+      "RetryUnknownFailures": false
+    }
+  }
+}
