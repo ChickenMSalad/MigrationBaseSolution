@@ -33,6 +33,16 @@ public static class ExecutionControlEndpointExtensions
         })
         .WithName("ResumeExecutionSession");
 
+        group.MapPost("/cancel", async (
+            IExecutionControlService service,
+            CancelExecutionSessionRequest request,
+            CancellationToken cancellationToken) =>
+        {
+            await service.CancelAsync(request, cancellationToken);
+            return Results.Ok();
+        })
+        .WithName("CancelExecutionSession");
+
         return endpoints;
     }
 }

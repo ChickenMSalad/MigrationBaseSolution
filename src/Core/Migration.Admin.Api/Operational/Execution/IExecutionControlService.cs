@@ -9,4 +9,8 @@ public interface IExecutionControlService
     Task ResumeAsync(
         ResumeExecutionSessionRequest request,
         CancellationToken cancellationToken);
+
+    Task CancelAsync(
+        CancelExecutionSessionRequest request,
+        CancellationToken cancellationToken);
 }

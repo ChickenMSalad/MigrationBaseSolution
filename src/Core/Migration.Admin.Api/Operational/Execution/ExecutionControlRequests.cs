@@ -7,3 +7,7 @@ public sealed record PauseExecutionSessionRequest(
 public sealed record ResumeExecutionSessionRequest(
     Guid ExecutionSessionId,
     string? Reason);
+
+public sealed record CancelExecutionSessionRequest(
+    Guid ExecutionSessionId,
+    string? Reason);

@@ -42,6 +42,86 @@ public sealed class SqlExecutionControlService : IExecutionControlService
             cancellationToken);
     }
 
+    public async Task CancelAsync(
+        CancelExecutionSessionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var connectionString = GetConnectionString();
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        Guid? migrationRunId = null;
+        var cancelledWorkItems = 0;
+
+        await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
+        {
+            await using (var sessionCommand = connection.CreateCommand())
+            {
+                sessionCommand.Transaction = (SqlTransaction)transaction;
+                sessionCommand.CommandText = @"
+UPDATE dbo.MigrationExecutionSessions
+SET
+    Status = 'cancelled',
+    CompletedUtc = SYSUTCDATETIME()
+OUTPUT inserted.MigrationRunId
+WHERE ExecutionSessionId = @ExecutionSessionId;
+";
+
+                sessionCommand.Parameters.AddWithValue("@ExecutionSessionId", request.ExecutionSessionId);
+
+                var result = await sessionCommand.ExecuteScalarAsync(cancellationToken);
+                if (result is null)
+                {
+                    throw new InvalidOperationException($"Execution session was not found: {request.ExecutionSessionId}");
+                }
+
+                migrationRunId = result == DBNull.Value ? null : (Guid)result;
+            }
+
+            await using (var workCommand = connection.CreateCommand())
+            {
+                workCommand.Transaction = (SqlTransaction)transaction;
+                workCommand.CommandText = @"
+UPDATE dbo.MigrationExecutionWorkItems
+SET
+    Status = 'cancelled',
+    WorkerId = NULL,
+    LeaseId = NULL,
+    LeaseExpiresUtc = NULL,
+    CompletedUtc = SYSUTCDATETIME(),
+    ErrorMessage = @Reason
+WHERE ExecutionSessionId = @ExecutionSessionId
+  AND Status IN ('pending', 'leased', 'running', 'failed');
+";
+
+                workCommand.Parameters.AddWithValue("@ExecutionSessionId", request.ExecutionSessionId);
+                workCommand.Parameters.AddWithValue("@Reason", string.IsNullOrWhiteSpace(request.Reason)
+                    ? "Execution session cancelled."
+                    : request.Reason.Trim());
+
+                cancelledWorkItems = await workCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        var message = string.IsNullOrWhiteSpace(request.Reason)
+            ? $"Execution session cancelled. {cancelledWorkItems} work item(s) cancelled."
+            : $"Execution session cancelled. {cancelledWorkItems} work item(s) cancelled. Reason: {request.Reason.Trim()}";
+
+        await _eventStore.WriteAsync(
+            eventType: "ExecutionSessionCancelled",
+            severity: "warning",
+            category: "execution",
+            source: "Migration.Admin.Api",
+            message: message,
+            payloadJson: null,
+            executionSessionId: request.ExecutionSessionId,
+            migrationRunId: migrationRunId,
+            cancellationToken: cancellationToken);
+    }
+
     private async Task SetStatusAsync(
         Guid executionSessionId,
         string status,
