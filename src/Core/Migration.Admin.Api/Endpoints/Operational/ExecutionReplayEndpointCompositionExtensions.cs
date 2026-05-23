@@ -15,10 +15,12 @@ public static class ExecutionReplayEndpointCompositionExtensions
         endpoints.MapExecutionReplayApprovalEndpoints();
         endpoints.MapExecutionReplayPolicyEndpoints();
         endpoints.MapExecutionReplayPolicyOverrideEndpoints();
+        endpoints.MapExecutionReplayAdmissionManualEndpoints();
         endpoints.MapExecutionReplayAdmissionStatusEndpoints();
         endpoints.MapExecutionReplayAdmissionEndpoints();
 
         return endpoints;
     }
 }
+
 

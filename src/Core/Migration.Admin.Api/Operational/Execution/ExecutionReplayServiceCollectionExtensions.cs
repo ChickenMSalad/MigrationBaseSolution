@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Migration.Admin.Api.Operational.Execution;
@@ -23,6 +23,7 @@ public static class ExecutionReplayServiceCollectionExtensions
         services.AddScoped<IExecutionReplayApprovalService, SqlExecutionReplayApprovalService>();
         services.AddScoped<IExecutionReplayPolicyService, SqlExecutionReplayPolicyService>();
         services.AddScoped<IExecutionReplayPolicyOverrideService, SqlExecutionReplayPolicyOverrideService>();
+        services.AddScoped<IExecutionReplayAdmissionManualService, SqlExecutionReplayAdmissionManualService>();
         services.AddScoped<IExecutionReplayAdmissionService, SqlExecutionReplayAdmissionService>();
 
         services.AddHostedService<ExecutionReplayAdmissionBackgroundService>();
@@ -30,3 +31,4 @@ public static class ExecutionReplayServiceCollectionExtensions
         return services;
     }
 }
+
