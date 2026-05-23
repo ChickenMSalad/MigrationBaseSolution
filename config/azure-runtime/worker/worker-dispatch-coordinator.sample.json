@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "WorkerDispatchCoordinator": {
+      "Enabled": true,
+      "MaxClaimBatchSize": 4,
+      "ClaimLeaseDuration": "00:05:00",
+      "StopAfterFirstClaimFailure": false
+    }
+  }
+}
