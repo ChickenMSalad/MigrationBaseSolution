@@ -9,15 +9,18 @@ public sealed class SqlExecutionReplayMaterializationService : IExecutionReplayM
 
     private readonly IConfiguration _configuration;
     private readonly IExecutionReplayPreparationService _preparationService;
+    private readonly IExecutionReplayApprovalService _approvalService;
     private readonly IOperationalEventStore _eventStore;
 
     public SqlExecutionReplayMaterializationService(
         IConfiguration configuration,
         IExecutionReplayPreparationService preparationService,
+        IExecutionReplayApprovalService approvalService,
         IOperationalEventStore eventStore)
     {
         _configuration = configuration;
         _preparationService = preparationService;
+        _approvalService = approvalService;
         _eventStore = eventStore;
     }
 
@@ -28,6 +31,16 @@ public sealed class SqlExecutionReplayMaterializationService : IExecutionReplayM
         if (string.IsNullOrWhiteSpace(request.ApprovalNote))
         {
             throw new InvalidOperationException("Replay approval note is required.");
+        }
+
+        var approval = await _approvalService.FindActiveApprovalAsync(
+            request.SourceExecutionSessionId,
+            request.Scope,
+            cancellationToken);
+
+        if (approval is null)
+        {
+            throw new InvalidOperationException("An active replay approval is required before materialization.");
         }
 
         var preparation = await _preparationService.PrepareAsync(
@@ -55,6 +68,8 @@ public sealed class SqlExecutionReplayMaterializationService : IExecutionReplayM
         {
             throw new InvalidOperationException($"Replay depth limit exceeded. Maximum replay depth is {MaxReplayDepth}.");
         }
+
+        await AssertNoActiveReplayConflictAsync(connection, request.SourceExecutionSessionId, cancellationToken);
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
@@ -102,7 +117,7 @@ VALUES
             sessionCommand.Parameters.AddWithValue("@ReplaySourceExecutionSessionId", request.SourceExecutionSessionId);
             sessionCommand.Parameters.AddWithValue("@ReplayScope", preparation.Scope);
             sessionCommand.Parameters.AddWithValue("@ReplayDepth", source.ReplayDepth + 1);
-            sessionCommand.Parameters.AddWithValue("@ReplayApprovalNote", request.ApprovalNote.Trim());
+            sessionCommand.Parameters.AddWithValue("@ReplayApprovalNote", approval.ApprovalNote);
 
             await sessionCommand.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -152,12 +167,14 @@ VALUES
 
         await transaction.CommitAsync(cancellationToken);
 
+        await _approvalService.ConsumeAsync(approval.ReplayApprovalId, replaySessionId, cancellationToken);
+
         await _eventStore.WriteAsync(
             "ExecutionReplayMaterialized",
             "info",
             "execution",
             "Migration.Admin.Api",
-            $"Replay execution session materialized from {request.SourceExecutionSessionId:D} with {preparation.Items.Count} work item(s).",
+            $"Replay execution session materialized from {request.SourceExecutionSessionId:D} with {preparation.Items.Count} work item(s). Approval: {approval.ReplayApprovalId:D}.",
             null,
             replaySessionId,
             source.MigrationRunId,
@@ -171,6 +188,28 @@ VALUES
             preparation.Items.Count,
             DateTimeOffset.UtcNow,
             preparation.Findings);
+    }
+
+    private async Task AssertNoActiveReplayConflictAsync(
+        SqlConnection connection,
+        Guid sourceExecutionSessionId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+SELECT COUNT(1)
+FROM dbo.MigrationExecutionSessions
+WHERE ReplaySourceExecutionSessionId = @SourceExecutionSessionId
+  AND Status IN ('created', 'validating', 'manifest-loading', 'queued', 'running', 'paused');
+";
+
+        command.Parameters.AddWithValue("@SourceExecutionSessionId", sourceExecutionSessionId);
+
+        var activeCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
+        if (activeCount > 0)
+        {
+            throw new InvalidOperationException("An active replay already exists for this source execution session.");
+        }
     }
 
     private async Task<SourceSession?> ReadSourceSessionAsync(SqlConnection connection, Guid executionSessionId, CancellationToken cancellationToken)
