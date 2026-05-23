@@ -13,6 +13,8 @@ import { evaluateExecutionReplayPolicy, fetchExecutionReplayPolicyHistory } from
 import type { ExecutionReplayPolicyEvaluationRecord, ExecutionReplayPolicyEvaluationResult } from './executionReplayPolicyTypes';
 import { approveExecutionReplay, fetchExecutionReplayApprovalHistory } from './executionReplayApprovalApi';
 import type { ExecutionReplayApprovalRecord, ExecutionReplayApprovalResult } from './executionReplayApprovalTypes';
+import { evaluateExecutionReplayAdmission } from './executionReplayAdmissionApi';
+import type { ExecutionReplayAdmissionEvaluationResult } from './executionReplayAdmissionTypes';
 import { materializeExecutionReplay } from './executionReplayMaterializationApi';
 import { fetchExecutionReplayLineage } from './executionReplayLineageApi';
 import type { ExecutionReplayLineageResult } from './executionReplayLineageTypes';
@@ -64,6 +66,8 @@ export function ExecutionSessionWorkspace() {
   const [replayPolicy, setReplayPolicy] = useState<ExecutionReplayPolicyEvaluationResult | null>(null);
   const [replayPolicyHistory, setReplayPolicyHistory] = useState<ExecutionReplayPolicyEvaluationRecord[]>([]);
   const [replayMaterialization, setReplayMaterialization] = useState<ExecutionReplayMaterializationResult | null>(null);
+  const [replayAdmission, setReplayAdmission] = useState<ExecutionReplayAdmissionEvaluationResult | null>(null);
+  const [replayAdmissionTake, setReplayAdmissionTake] = useState(25);
   const [replayApproval, setReplayApproval] = useState<ExecutionReplayApprovalResult | null>(null);
   const [replayApprovalHistory, setReplayApprovalHistory] = useState<ExecutionReplayApprovalRecord[]>([]);
   const [replayApprovedBy, setReplayApprovedBy] = useState('operator');
@@ -210,6 +214,19 @@ export function ExecutionSessionWorkspace() {
       setStatusMessage(`Replay approved until ${new Date(result.approval.expiresUtc).toLocaleString()}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve replay.');
+    }
+  }
+  async function evaluateReplayAdmissionQueue() {
+    try {
+      const result = await evaluateExecutionReplayAdmission({
+        take: replayAdmissionTake,
+      });
+
+      setReplayAdmission(result);
+      setStatusMessage(`Replay admission evaluated: ${result.decisions.length} decision(s).`);
+      await loadSessions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to evaluate replay admission.');
     }
   }
 async function materializeSelectedReplay() {
@@ -539,7 +556,11 @@ async function pauseSelectedSession() {
             <label>Approved by<input value={replayApprovedBy} onChange={(event) => setReplayApprovedBy(event.target.value)} placeholder="Operator" /></label>
             <label>Approval minutes<input type="number" min="5" max="1440" value={replayApprovalMinutes} onChange={(event) => setReplayApprovalMinutes(Number(event.target.value))} /></label>
             <button type="button" onClick={approveSelectedReplay} disabled={!replayApprovalNote.trim() || !replayApprovedBy.trim()}>Approve replay</button>
-            <button type="button" onClick={materializeSelectedReplay} disabled={!replayApprovalNote.trim()}>Materialize replay</button>
+                        <label>
+              Admission take
+              <input type="number" min="1" max="250" value={replayAdmissionTake} onChange={(event) => setReplayAdmissionTake(Number(event.target.value))} />
+            </label>
+            <button type="button" onClick={evaluateReplayAdmissionQueue}>Evaluate admission</button><button type="button" onClick={materializeSelectedReplay} disabled={!replayApprovalNote.trim()}>Materialize replay</button>
             <span className="status-pill">Selected: {selectedSession.status}</span>
           </div>
 
@@ -611,6 +632,35 @@ async function pauseSelectedSession() {
                 <article><span>Approved by</span><strong>{replayApproval.approval.approvedBy}</strong></article>
                 <article><span>Expires</span><strong>{new Date(replayApproval.approval.expiresUtc).toLocaleString()}</strong></article>
               </div>
+            </div>
+          ) : null}
+          {replayAdmission ? (
+            <div className="table-shell">
+              <h3>Replay admission</h3>
+              <div className="metric-grid">
+                <article><span>Active replays</span><strong>{replayAdmission.activeReplayCount}</strong></article>
+                <article><span>Max concurrent</span><strong>{replayAdmission.maxConcurrentReplays}</strong></article>
+                <article><span>Allowed window</span><strong>{replayAdmission.withinAllowedWindow ? 'Yes' : 'No'}</strong></article>
+                <article><span>Decisions</span><strong>{replayAdmission.decisions.length}</strong></article>
+              </div>
+              <table>
+                <thead><tr><th>Created</th><th>Decision</th><th>Name</th><th>Reason</th><th>Session</th></tr></thead>
+                <tbody>
+                  {replayAdmission.decisions.length === 0 ? (
+                    <tr><td colSpan={5}>No admission-pending replay sessions were evaluated.</td></tr>
+                  ) : (
+                    replayAdmission.decisions.map((decision) => (
+                      <tr key={decision.executionSessionId}>
+                        <td>{new Date(decision.createdUtc).toLocaleString()}</td>
+                        <td>{decision.decision}</td>
+                        <td>{decision.name}</td>
+                        <td>{decision.reason}</td>
+                        <td><code>{decision.executionSessionId}</code></td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           ) : null}
 {replayMaterialization ? (
@@ -829,6 +879,7 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
 
