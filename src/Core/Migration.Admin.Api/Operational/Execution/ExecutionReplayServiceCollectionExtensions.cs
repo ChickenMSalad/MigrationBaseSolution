@@ -12,6 +12,7 @@ public static class ExecutionReplayServiceCollectionExtensions
         services.Configure<ExecutionReplayAdmissionOptions>(
             configuration.GetSection(ExecutionReplayAdmissionOptions.SectionName));
 
+        services.Configure<ExecutionReplayAdmissionHealthOptions>(configuration.GetSection(ExecutionReplayAdmissionHealthOptions.SectionName));
         services.Configure<ExecutionReplayAdmissionBackgroundOptions>(
             configuration.GetSection(ExecutionReplayAdmissionBackgroundOptions.SectionName));
 
@@ -23,6 +24,7 @@ public static class ExecutionReplayServiceCollectionExtensions
         services.AddScoped<IExecutionReplayApprovalService, SqlExecutionReplayApprovalService>();
         services.AddScoped<IExecutionReplayPolicyService, SqlExecutionReplayPolicyService>();
         services.AddScoped<IExecutionReplayPolicyOverrideService, SqlExecutionReplayPolicyOverrideService>();
+        services.AddScoped<IExecutionReplayAdmissionHealthService, SqlExecutionReplayAdmissionHealthService>();
         services.AddScoped<IExecutionReplayAdmissionManualService, SqlExecutionReplayAdmissionManualService>();
         services.AddScoped<IExecutionReplayAdmissionService, SqlExecutionReplayAdmissionService>();
 
@@ -31,4 +33,6 @@ public static class ExecutionReplayServiceCollectionExtensions
         return services;
     }
 }
+
+
 

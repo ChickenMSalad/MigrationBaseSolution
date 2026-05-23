@@ -15,6 +15,7 @@ public static class ExecutionReplayEndpointCompositionExtensions
         endpoints.MapExecutionReplayApprovalEndpoints();
         endpoints.MapExecutionReplayPolicyEndpoints();
         endpoints.MapExecutionReplayPolicyOverrideEndpoints();
+        endpoints.MapExecutionReplayAdmissionHealthEndpoints();
         endpoints.MapExecutionReplayAdmissionManualEndpoints();
         endpoints.MapExecutionReplayAdmissionStatusEndpoints();
         endpoints.MapExecutionReplayAdmissionEndpoints();
@@ -22,5 +23,6 @@ public static class ExecutionReplayEndpointCompositionExtensions
         return endpoints;
     }
 }
+
 
 
