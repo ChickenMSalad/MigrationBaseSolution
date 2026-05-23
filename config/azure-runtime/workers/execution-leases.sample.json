@@ -1,0 +1,28 @@
+{
+  "azureRuntime": {
+    "workers": {
+      "executionLeases": [
+        {
+          "leaseName": "queue-executor-active-work",
+          "workerRole": "queue-executor",
+          "storeName": "SqlOperationalStore",
+          "leaseDuration": "00:05:00",
+          "renewalInterval": "00:01:00",
+          "abandonmentTimeout": "00:10:00",
+          "requiresFencingToken": true,
+          "allowsCooperativeRelease": true
+        },
+        {
+          "leaseName": "service-bus-dispatcher-active-work",
+          "workerRole": "service-bus-dispatcher",
+          "storeName": "SqlOperationalStore",
+          "leaseDuration": "00:05:00",
+          "renewalInterval": "00:01:00",
+          "abandonmentTimeout": "00:10:00",
+          "requiresFencingToken": true,
+          "allowsCooperativeRelease": true
+        }
+      ]
+    }
+  }
+}
