@@ -1,0 +1,15 @@
+{
+  "workerExecutionOutcomeRetry": {
+    "maxAttempts": 5,
+    "initialDelaySeconds": 5,
+    "maxDelaySeconds": 300,
+    "backoffMultiplier": 2.0,
+    "useJitter": true,
+    "terminalOutcomes": [
+      "Completed",
+      "NonRetryableFailure",
+      "Cancelled",
+      "Poisoned"
+    ]
+  }
+}
