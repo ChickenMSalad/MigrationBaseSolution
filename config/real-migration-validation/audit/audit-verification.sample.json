@@ -1,0 +1,30 @@
+{
+  "contractName": "real-migration-audit-verification-baseline",
+  "validationProfile": "p5.5-real-migration-validation",
+  "sourceSystem": "source-dam-or-cms",
+  "targetSystem": "target-dam-or-cms",
+  "checkpoints": [
+    {
+      "name": "manifest-row-audit-complete",
+      "description": "Every executed manifest row has a durable audit outcome in SQL.",
+      "level": "Blocking",
+      "expectedEvidenceType": "sql-audit-query-result",
+      "blocksPromotion": true
+    },
+    {
+      "name": "source-target-identifier-map-complete",
+      "description": "Created or updated target identifiers are traceable back to source identifiers.",
+      "level": "Required",
+      "expectedEvidenceType": "identifier-map-export",
+      "blocksPromotion": true
+    }
+  ],
+  "evidenceRequirements": [
+    {
+      "evidenceKey": "sql-run-audit-summary",
+      "evidenceSource": "operational-sql-store",
+      "requiredForProductionReadiness": true,
+      "retentionPolicyKey": "migration-run-audit-retention"
+    }
+  ]
+}
