@@ -1,0 +1,22 @@
+{
+  "runtimeCompositionHostBindings": [
+    {
+      "key": "configuration.azure-runtime",
+      "kind": "Configuration",
+      "requirement": "Required",
+      "configurationSection": "AzureRuntime"
+    },
+    {
+      "key": "store.sql-operational",
+      "kind": "OperationalStore",
+      "requirement": "Required",
+      "configurationSection": "AzureRuntime:Sql"
+    },
+    {
+      "key": "telemetry.observability",
+      "kind": "Telemetry",
+      "requirement": "RequiredForProduction",
+      "configurationSection": "AzureRuntime:Telemetry"
+    }
+  ]
+}
