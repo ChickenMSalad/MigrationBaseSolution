@@ -10,6 +10,8 @@ import { buildExecutionDiagnosticBundleUrl } from './executionDiagnosticExportAp
 import { analyzeExecutionReplayReadiness } from './executionReplayApi';
 import { prepareExecutionReplayManifest } from './executionReplayPreparationApi';
 import { materializeExecutionReplay } from './executionReplayMaterializationApi';
+import { fetchExecutionReplayLineage } from './executionReplayLineageApi';
+import type { ExecutionReplayLineageResult } from './executionReplayLineageTypes';
 import type { ExecutionReplayMaterializationResult } from './executionReplayMaterializationTypes';
 import type { ExecutionReplayPreparationResult } from './executionReplayPreparationTypes';
 import type { ExecutionReplayAnalysisResult } from './executionReplayTypes';
@@ -56,6 +58,7 @@ export function ExecutionSessionWorkspace() {
   const [replayAnalysis, setReplayAnalysis] = useState<ExecutionReplayAnalysisResult | null>(null);
   const [replayPreparation, setReplayPreparation] = useState<ExecutionReplayPreparationResult | null>(null);
   const [replayMaterialization, setReplayMaterialization] = useState<ExecutionReplayMaterializationResult | null>(null);
+  const [replayLineage, setReplayLineage] = useState<ExecutionReplayLineageResult | null>(null);
   const [replayApprovalNote, setReplayApprovalNote] = useState('');
   const [replayScope, setReplayScope] = useState('failed-only');
   const [phases, setPhases] = useState<string[]>([]);
@@ -89,7 +92,7 @@ export function ExecutionSessionWorkspace() {
 
   async function loadSessionDetails(session: ExecutionSessionRecord) {
     try {
-      const [eventsResponse, historyResponse, planResponse, queueResponse, queueSummaryResponse] = await Promise.all([
+      const [eventsResponse, historyResponse, planResponse, queueResponse, queueSummaryResponse, lineageResponse] = await Promise.all([
         queryOperationalEvents({
           executionSessionId: session.executionSessionId,
           take: 25,
@@ -98,6 +101,7 @@ export function ExecutionSessionWorkspace() {
         fetchExecutionPlan(session.executionSessionId),
         fetchRecentExecutionWorkItems(session.executionSessionId, 100),
         fetchExecutionWorkItemQueueSummary(session.executionSessionId),
+        fetchExecutionReplayLineage(session.executionSessionId),
       ]);
 
       setSelectedSession(session);
@@ -106,6 +110,7 @@ export function ExecutionSessionWorkspace() {
       setPlanSteps(planResponse.steps);
       setWorkItems(queueResponse.items);
       setQueueSummary(queueSummaryResponse);
+      setReplayLineage(lineageResponse);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load execution session details.');
@@ -487,7 +492,44 @@ async function pauseSelectedSession() {
             <span className="status-pill">Selected: {selectedSession.status}</span>
           </div>
 
-                                        {replayMaterialization ? (
+                                                  {replayLineage ? (
+            <div className="table-shell">
+              <h3>Replay lineage</h3>
+              <div className="metric-grid">
+                <article><span>Root session</span><strong>{replayLineage.rootExecutionSessionId}</strong></article>
+                <article><span>Source session</span><strong>{replayLineage.sourceExecutionSessionId ?? 'â€”'}</strong></article>
+                <article><span>Replay depth</span><strong>{replayLineage.replayDepth}</strong></article>
+                <article><span>Children</span><strong>{replayLineage.children.length}</strong></article>
+              </div>
+              <table>
+                <thead><tr><th>Type</th><th>Name</th><th>Status</th><th>Scope</th><th>Session</th></tr></thead>
+                <tbody>
+                  {replayLineage.ancestors.map((node) => (
+                    <tr key={`ancestor-${node.executionSessionId}`}>
+                      <td>ancestor</td>
+                      <td>{node.name}</td>
+                      <td>{node.status}</td>
+                      <td>{node.replayScope ?? 'â€”'}</td>
+                      <td><code>{node.executionSessionId}</code></td>
+                    </tr>
+                  ))}
+                  {replayLineage.children.map((node) => (
+                    <tr key={`child-${node.executionSessionId}`}>
+                      <td>child</td>
+                      <td>{node.name}</td>
+                      <td>{node.status}</td>
+                      <td>{node.replayScope ?? 'â€”'}</td>
+                      <td><code>{node.executionSessionId}</code></td>
+                    </tr>
+                  ))}
+                  {replayLineage.ancestors.length === 0 && replayLineage.children.length === 0 ? (
+                    <tr><td colSpan={5}>No replay ancestors or children found.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+{replayMaterialization ? (
             <div className="table-shell">
               <h3>Replay materialized</h3>
               <div className="metric-grid">
@@ -656,6 +698,7 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
 

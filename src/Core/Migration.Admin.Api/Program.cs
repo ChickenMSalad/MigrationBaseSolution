@@ -31,6 +31,7 @@ builder.Services.Configure<OperationalEventSnapshotRecorderOptions>(builder.Conf
 builder.Services.AddScoped<IOperationalEventQueryService, SqlOperationalEventQueryService>();
 builder.Services.AddScoped<IOperationalEventRetentionService, SqlOperationalEventRetentionService>();
 builder.Services.AddScoped<IExecutionWorkerHeartbeatStore, SqlExecutionWorkerHeartbeatStore>();
+builder.Services.AddScoped<IExecutionReplayLineageService, SqlExecutionReplayLineageService>();
 builder.Services.AddScoped<IExecutionReplayMaterializationService, SqlExecutionReplayMaterializationService>();
 builder.Services.AddScoped<IExecutionReplayPreparationService, SqlExecutionReplayPreparationService>();
 builder.Services.AddScoped<IExecutionReplayAnalysisService, SqlExecutionReplayAnalysisService>();
@@ -75,6 +76,7 @@ app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
 app.Run();
+
 
 
 
