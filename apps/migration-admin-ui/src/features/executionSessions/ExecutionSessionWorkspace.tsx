@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { queryOperationalEvents } from '../events/operationalEventTimelineApi';
 import type { OperationalEventRecord } from '../events/operationalEventTimelineTypes';
 import {
+  cancelExecutionSession,
   pauseExecutionSession,
   resumeExecutionSession,
 } from './executionControlApi';
@@ -35,6 +36,8 @@ import type {
   ExecutionWorkItemRecord,
 } from './executionWorkItemTypes';
 
+const terminalStatuses = new Set(['cancelled', 'completed', 'failed']);
+
 export function ExecutionSessionWorkspace() {
   const [sessions, setSessions] = useState<ExecutionSessionRecord[]>([]);
   const [selectedSession, setSelectedSession] = useState<ExecutionSessionRecord | null>(null);
@@ -58,6 +61,9 @@ export function ExecutionSessionWorkspace() {
   const [notes, setNotes] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedIsTerminal = selectedSession ? terminalStatuses.has(selectedSession.status) : false;
+  const selectedCanLease = selectedSession ? selectedSession.status !== 'paused' && !selectedIsTerminal : false;
 
   async function loadSessions() {
     try {
@@ -142,7 +148,6 @@ export function ExecutionSessionWorkspace() {
     try {
       await pauseExecutionSession(selectedSession.executionSessionId, controlReason || undefined);
       const updatedSession = { ...selectedSession, status: 'paused' };
-      setSelectedSession(updatedSession);
       setControlReason('');
       setStatusMessage(`Paused ${selectedSession.name}.`);
       await loadSessions();
@@ -160,13 +165,29 @@ export function ExecutionSessionWorkspace() {
     try {
       await resumeExecutionSession(selectedSession.executionSessionId, controlReason || undefined);
       const updatedSession = { ...selectedSession, status: 'queued' };
-      setSelectedSession(updatedSession);
       setControlReason('');
       setStatusMessage(`Resumed ${selectedSession.name}.`);
       await loadSessions();
       await loadSessionDetails(updatedSession);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resume execution session.');
+    }
+  }
+
+  async function cancelSelectedSession() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      await cancelExecutionSession(selectedSession.executionSessionId, controlReason || undefined);
+      const updatedSession = { ...selectedSession, status: 'cancelled' };
+      setControlReason('');
+      setStatusMessage(`Cancelled ${selectedSession.name}.`);
+      await loadSessions();
+      await loadSessionDetails(updatedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel execution session.');
     }
   }
 
@@ -374,10 +395,11 @@ export function ExecutionSessionWorkspace() {
           <div className="filter-row">
             <label>
               Control reason
-              <input value={controlReason} onChange={(event) => setControlReason(event.target.value)} placeholder="Pause/resume reason" />
+              <input value={controlReason} onChange={(event) => setControlReason(event.target.value)} placeholder="Pause/resume/cancel reason" />
             </label>
-            <button type="button" onClick={pauseSelectedSession} disabled={selectedSession.status === 'paused'}>Pause session</button>
+            <button type="button" onClick={pauseSelectedSession} disabled={selectedSession.status === 'paused' || selectedIsTerminal}>Pause session</button>
             <button type="button" onClick={resumeSelectedSession} disabled={selectedSession.status !== 'paused'}>Resume session</button>
+            <button type="button" onClick={cancelSelectedSession} disabled={selectedIsTerminal}>Cancel session</button>
             <span className="status-pill">Selected: {selectedSession.status}</span>
           </div>
 
@@ -394,9 +416,9 @@ export function ExecutionSessionWorkspace() {
               Reason
               <input value={transitionReason} onChange={(event) => setTransitionReason(event.target.value)} placeholder="Reason for transition" />
             </label>
-            <button type="button" onClick={transitionSelectedSession}>Transition selected session</button>
-            <button type="button" onClick={seedSelectedPlan}>Seed execution plan</button>
-            <button type="button" onClick={expandSelectedPlanToQueue}>Expand work queue</button>
+            <button type="button" onClick={transitionSelectedSession} disabled={selectedIsTerminal}>Transition selected session</button>
+            <button type="button" onClick={seedSelectedPlan} disabled={selectedIsTerminal}>Seed execution plan</button>
+            <button type="button" onClick={expandSelectedPlanToQueue} disabled={selectedIsTerminal}>Expand work queue</button>
           </div>
 
           <div className="metric-grid">
@@ -421,7 +443,7 @@ export function ExecutionSessionWorkspace() {
               Lease seconds
               <input type="number" min="30" max="3600" value={leaseSeconds} onChange={(event) => setLeaseSeconds(Number(event.target.value))} />
             </label>
-            <button type="button" onClick={leaseSelectedWorkItems} disabled={selectedSession.status === 'paused'}>Lease work</button>
+            <button type="button" onClick={leaseSelectedWorkItems} disabled={!selectedCanLease}>Lease work</button>
           </div>
 
           <div className="filter-row">
@@ -433,7 +455,7 @@ export function ExecutionSessionWorkspace() {
               <input type="checkbox" checked={includeExpiredLeases} onChange={(event) => setIncludeExpiredLeases(event.target.checked)} />
               Include expired leases
             </label>
-            <button type="button" onClick={requeueSelectedWorkItems}>Requeue recoverable work</button>
+            <button type="button" onClick={requeueSelectedWorkItems} disabled={selectedIsTerminal}>Requeue recoverable work</button>
           </div>
 
           <div className="table-shell">
@@ -470,7 +492,7 @@ export function ExecutionSessionWorkspace() {
                         <button
                           type="button"
                           onClick={() => renewWorkItem(item)}
-                          disabled={!item.leaseId || !item.workerId || item.status !== 'leased'}
+                          disabled={!item.leaseId || !item.workerId || item.status !== 'leased' || selectedIsTerminal}
                         >
                           Renew lease
                         </button>
