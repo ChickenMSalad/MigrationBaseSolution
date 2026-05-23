@@ -6,6 +6,7 @@ import {
   pauseExecutionSession,
   resumeExecutionSession,
 } from './executionControlApi';
+import { buildExecutionDiagnosticBundleUrl } from './executionDiagnosticExportApi';
 import {
   fetchExecutionPhaseHistory,
   fetchExecutionPhases,
@@ -138,6 +139,14 @@ export function ExecutionSessionWorkspace() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create execution session.');
     }
+  }
+
+  function exportSelectedDiagnostics() {
+    if (!selectedSession) {
+      return;
+    }
+
+    window.open(buildExecutionDiagnosticBundleUrl(selectedSession.executionSessionId), '_blank', 'noopener,noreferrer');
   }
 
   async function pauseSelectedSession() {
@@ -400,6 +409,7 @@ export function ExecutionSessionWorkspace() {
             <button type="button" onClick={pauseSelectedSession} disabled={selectedSession.status === 'paused' || selectedIsTerminal}>Pause session</button>
             <button type="button" onClick={resumeSelectedSession} disabled={selectedSession.status !== 'paused'}>Resume session</button>
             <button type="button" onClick={cancelSelectedSession} disabled={selectedIsTerminal}>Cancel session</button>
+            <button type="button" onClick={exportSelectedDiagnostics}>Export diagnostics</button>
             <span className="status-pill">Selected: {selectedSession.status}</span>
           </div>
 
