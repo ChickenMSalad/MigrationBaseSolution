@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "WorkerDispatch": {
+      "Enabled": true,
+      "QueueName": "migration-work-items",
+      "DefaultClaimLeaseDuration": "00:05:00",
+      "MaxConcurrentClaims": 4,
+      "UseInMemoryClaimStore": true
+    }
+  }
+}
