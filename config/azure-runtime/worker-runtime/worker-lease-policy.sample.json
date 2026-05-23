@@ -1,0 +1,12 @@
+{
+  "AzureRuntime": {
+    "WorkerRuntime": {
+      "Leasing": {
+        "DefaultLeaseDuration": "00:05:00",
+        "RenewalInterval": "00:02:00",
+        "AbandonmentTimeout": "00:15:00",
+        "MaxRenewalFailuresBeforeAbandonment": 3
+      }
+    }
+  }
+}
