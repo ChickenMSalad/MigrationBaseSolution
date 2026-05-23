@@ -1,0 +1,19 @@
+{
+  "replayValidation": [
+    {
+      "validationId": "sample-controlled-replay-validation",
+      "migrationRunId": "run-placeholder",
+      "sourceSystem": "source-system-placeholder",
+      "targetSystem": "target-system-placeholder",
+      "mode": "ControlledReplay",
+      "requireApprovalBeforeReplay": true,
+      "requireSourceTargetMappingVerification": true,
+      "requireIdempotencyEvidence": true,
+      "requiredEvidenceKeys": [
+        "source-target-map-snapshot",
+        "idempotency-check",
+        "operator-approval"
+      ]
+    }
+  ]
+}
