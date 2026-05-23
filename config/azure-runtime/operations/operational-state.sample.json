@@ -1,0 +1,37 @@
+{
+  "environmentName": "dev",
+  "deploymentRing": "inner-loop",
+  "scopeName": "queue-executor",
+  "scopeKind": "host-role",
+  "stateKind": "Ready",
+  "allowsNewWork": true,
+  "allowsReplay": true,
+  "allowsOperatorActions": true,
+  "summary": "Operational state is ready.",
+  "signals": [
+    {
+      "key": "sql.operational-store.healthy",
+      "displayName": "Operational SQL store is healthy",
+      "source": "health-check",
+      "severity": "Informational",
+      "isHealthy": true,
+      "message": "SQL operational store connectivity is available."
+    },
+    {
+      "key": "queue.execution-lane.healthy",
+      "displayName": "Execution queue lane is healthy",
+      "source": "health-check",
+      "severity": "Informational",
+      "isHealthy": true,
+      "message": "Queue lane accepts work and has no poison-message backlog."
+    },
+    {
+      "key": "worker.heartbeat.current",
+      "displayName": "Worker heartbeat is current",
+      "source": "worker-runtime",
+      "severity": "Informational",
+      "isHealthy": true,
+      "message": "Worker heartbeat is within the configured freshness window."
+    }
+  ]
+}
