@@ -1,0 +1,26 @@
+{
+  "azureExecutionIsolation": {
+    "profileName": "dev-shared",
+    "environmentName": "dev",
+    "deploymentRing": "development",
+    "isolationMode": "SharedInfrastructure",
+    "requiredEvidenceKeys": [
+      "sql-database-boundary",
+      "queue-namespace-boundary",
+      "storage-account-boundary"
+    ],
+    "boundaries": [
+      {
+        "name": "dev-default",
+        "environmentName": "dev",
+        "deploymentRing": "development",
+        "tenantBoundary": "shared-dev-tenant",
+        "workloadBoundary": "migration-dev",
+        "allowsSharedWorkers": true,
+        "allowsSharedStorage": true,
+        "allowsSharedQueueNamespace": true,
+        "requiresDedicatedSqlDatabase": false
+      }
+    ]
+  }
+}
