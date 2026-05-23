@@ -1,0 +1,24 @@
+{
+  "environmentName": "dev",
+  "deploymentRing": "nonprod",
+  "checks": [
+    {
+      "resourceGroupName": "rg-migration-dev",
+      "resourceType": "Microsoft.Sql/servers/databases",
+      "resourceName": "migration-operational-sql",
+      "driftCategory": "SkuOrTier",
+      "expectedValue": "ConfiguredByDeploymentProfile",
+      "severity": "Blocking",
+      "remediationHint": "Redeploy the approved environment profile before allowing real migration execution."
+    },
+    {
+      "resourceGroupName": "rg-migration-dev",
+      "resourceType": "Microsoft.Storage/storageAccounts",
+      "resourceName": "migrationartifactsdev",
+      "driftCategory": "NetworkAccess",
+      "expectedValue": "ConfiguredByDeploymentProfile",
+      "severity": "Warning",
+      "remediationHint": "Compare storage account firewall/private endpoint settings against the approved topology profile."
+    }
+  ]
+}
