@@ -22,3 +22,17 @@ public sealed record ExecutionReplayPolicyMetrics(
     int DeadLetteredWorkItemCount,
     int ActiveReplayCount,
     decimal DeadLetteredPercent);
+
+public sealed record ExecutionReplayPolicyEvaluationRecord(
+    Guid ReplayPolicyEvaluationId,
+    Guid SourceExecutionSessionId,
+    string Scope,
+    string Decision,
+    int PolicyScore,
+    string MetricsJson,
+    string ViolationsJson,
+    DateTimeOffset CreatedUtc);
+
+public sealed record ExecutionReplayPolicyEvaluationHistoryResponse(
+    Guid SourceExecutionSessionId,
+    IReadOnlyList<ExecutionReplayPolicyEvaluationRecord> Evaluations);

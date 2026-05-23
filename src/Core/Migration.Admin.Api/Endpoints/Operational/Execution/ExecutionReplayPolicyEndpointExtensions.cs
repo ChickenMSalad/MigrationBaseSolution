@@ -28,6 +28,23 @@ public static class ExecutionReplayPolicyEndpointExtensions
         })
         .WithName("EvaluateExecutionReplayPolicy");
 
+        group.MapGet("/{sourceExecutionSessionId:guid}/policy/history", async (
+            IExecutionReplayPolicyService service,
+            Guid sourceExecutionSessionId,
+            int? take,
+            CancellationToken cancellationToken) =>
+        {
+            var evaluations = await service.ReadHistoryAsync(
+                sourceExecutionSessionId,
+                Math.Clamp(take.GetValueOrDefault(25), 1, 250),
+                cancellationToken);
+
+            return Results.Ok(new ExecutionReplayPolicyEvaluationHistoryResponse(
+                sourceExecutionSessionId,
+                evaluations));
+        })
+        .WithName("GetExecutionReplayPolicyHistory");
+
         return endpoints;
     }
 }

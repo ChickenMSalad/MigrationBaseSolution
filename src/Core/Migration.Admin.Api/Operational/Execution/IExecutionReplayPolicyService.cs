@@ -6,4 +6,9 @@ public interface IExecutionReplayPolicyService
         Guid sourceExecutionSessionId,
         string scope,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<ExecutionReplayPolicyEvaluationRecord>> ReadHistoryAsync(
+        Guid sourceExecutionSessionId,
+        int take,
+        CancellationToken cancellationToken);
 }

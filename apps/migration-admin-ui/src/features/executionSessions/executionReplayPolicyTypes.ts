@@ -23,3 +23,19 @@ export type ExecutionReplayPolicyEvaluationResult = {
   violations: ExecutionReplayPolicyViolation[];
   metrics: ExecutionReplayPolicyMetrics;
 };
+
+export type ExecutionReplayPolicyEvaluationRecord = {
+  replayPolicyEvaluationId: string;
+  sourceExecutionSessionId: string;
+  scope: string;
+  decision: string;
+  policyScore: number;
+  metricsJson: string;
+  violationsJson: string;
+  createdUtc: string;
+};
+
+export type ExecutionReplayPolicyEvaluationHistoryResponse = {
+  sourceExecutionSessionId: string;
+  evaluations: ExecutionReplayPolicyEvaluationRecord[];
+};

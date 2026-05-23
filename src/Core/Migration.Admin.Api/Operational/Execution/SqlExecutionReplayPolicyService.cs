@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Data.SqlClient;
 
 namespace Migration.Admin.Api.Operational.Execution;
@@ -50,87 +51,57 @@ public sealed class SqlExecutionReplayPolicyService : IExecutionReplayPolicyServ
 
         if (bundle.Session is null)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "block",
-                "source-session-missing",
-                "The source execution session does not exist."));
+            violations.Add(new ExecutionReplayPolicyViolation("block", "source-session-missing", "The source execution session does not exist."));
             score += 100;
         }
 
         if (replayDepth >= MaxReplayDepth)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "block",
-                "replay-depth-limit",
-                $"Replay depth {replayDepth} meets or exceeds the maximum depth of {MaxReplayDepth}."));
+            violations.Add(new ExecutionReplayPolicyViolation("block", "replay-depth-limit", $"Replay depth {replayDepth} meets or exceeds the maximum depth of {MaxReplayDepth}."));
             score += 100;
         }
         else if (replayDepth == MaxReplayDepth - 1)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "warn",
-                "replay-depth-near-limit",
-                $"Replay depth {replayDepth} is one level below the maximum depth of {MaxReplayDepth}."));
+            violations.Add(new ExecutionReplayPolicyViolation("warn", "replay-depth-near-limit", $"Replay depth {replayDepth} is one level below the maximum depth of {MaxReplayDepth}."));
             score += 20;
         }
 
         if (activeReplayCount > 0)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "block",
-                "active-replay-conflict",
-                $"{activeReplayCount} active replay session(s) already exist for this source session."));
+            violations.Add(new ExecutionReplayPolicyViolation("block", "active-replay-conflict", $"{activeReplayCount} active replay session(s) already exist for this source session."));
             score += 100;
         }
 
         if (preparedItemCount == 0)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "block",
-                "empty-replay-manifest",
-                "The selected scope produced no replay items."));
+            violations.Add(new ExecutionReplayPolicyViolation("block", "empty-replay-manifest", "The selected scope produced no replay items."));
             score += 80;
         }
         else if (preparedItemCount > BlockPreparedItemCount)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "block",
-                "replay-volume-too-large",
-                $"Replay manifest contains {preparedItemCount} items, above the block threshold of {BlockPreparedItemCount}."));
+            violations.Add(new ExecutionReplayPolicyViolation("block", "replay-volume-too-large", $"Replay manifest contains {preparedItemCount} items, above the block threshold of {BlockPreparedItemCount}."));
             score += 100;
         }
         else if (preparedItemCount > WarnPreparedItemCount)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "warn",
-                "replay-volume-large",
-                $"Replay manifest contains {preparedItemCount} items, above the warning threshold of {WarnPreparedItemCount}."));
+            violations.Add(new ExecutionReplayPolicyViolation("warn", "replay-volume-large", $"Replay manifest contains {preparedItemCount} items, above the warning threshold of {WarnPreparedItemCount}."));
             score += 25;
         }
 
         if (deadLetteredPercent >= BlockDeadLetteredPercent)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "block",
-                "dead-letter-pressure-high",
-                $"Dead-lettered work item percentage is {deadLetteredPercent}%, above the block threshold of {BlockDeadLetteredPercent}%."));
+            violations.Add(new ExecutionReplayPolicyViolation("block", "dead-letter-pressure-high", $"Dead-lettered work item percentage is {deadLetteredPercent}%, above the block threshold of {BlockDeadLetteredPercent}%."));
             score += 100;
         }
         else if (deadLetteredPercent >= WarnDeadLetteredPercent)
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "warn",
-                "dead-letter-pressure-elevated",
-                $"Dead-lettered work item percentage is {deadLetteredPercent}%, above the warning threshold of {WarnDeadLetteredPercent}%."));
+            violations.Add(new ExecutionReplayPolicyViolation("warn", "dead-letter-pressure-elevated", $"Dead-lettered work item percentage is {deadLetteredPercent}%, above the warning threshold of {WarnDeadLetteredPercent}%."));
             score += 30;
         }
 
         if (normalizedScope == "all")
         {
-            violations.Add(new ExecutionReplayPolicyViolation(
-                "warn",
-                "all-scope-replay",
-                "Replay scope 'all' can duplicate completed work and requires extra idempotency review."));
+            violations.Add(new ExecutionReplayPolicyViolation("warn", "all-scope-replay", "Replay scope 'all' can duplicate completed work and requires extra idempotency review."));
             score += 20;
         }
 
@@ -140,7 +111,7 @@ public sealed class SqlExecutionReplayPolicyService : IExecutionReplayPolicyServ
                 ? "warn"
                 : "allow";
 
-        return new ExecutionReplayPolicyEvaluationResult(
+        var result = new ExecutionReplayPolicyEvaluationResult(
             SourceExecutionSessionId: sourceExecutionSessionId,
             Scope: normalizedScope,
             GeneratedUtc: DateTimeOffset.UtcNow,
@@ -148,17 +119,68 @@ public sealed class SqlExecutionReplayPolicyService : IExecutionReplayPolicyServ
             PolicyScore: Math.Clamp(score, 0, 100),
             Violations: violations,
             Metrics: new ExecutionReplayPolicyMetrics(
-                ReplayDepth: replayDepth,
-                PreparedItemCount: preparedItemCount,
-                TotalWorkItemCount: totalWorkItems,
-                FailedWorkItemCount: failedWorkItems,
-                DeadLetteredWorkItemCount: deadLetteredWorkItems,
-                ActiveReplayCount: activeReplayCount,
-                DeadLetteredPercent: deadLetteredPercent));
+                replayDepth,
+                preparedItemCount,
+                totalWorkItems,
+                failedWorkItems,
+                deadLetteredWorkItems,
+                activeReplayCount,
+                deadLetteredPercent));
+
+        await PersistEvaluationAsync(result, cancellationToken);
+
+        return result;
     }
 
-    private async Task<int> ReadReplayDepthAsync(
-        Guid executionSessionId,
+    public async Task<IReadOnlyList<ExecutionReplayPolicyEvaluationRecord>> ReadHistoryAsync(
+        Guid sourceExecutionSessionId,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        var safeTake = Math.Clamp(take, 1, 250);
+        var records = new List<ExecutionReplayPolicyEvaluationRecord>();
+        var connectionString = GetConnectionString();
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+SELECT TOP (@Take)
+    ReplayPolicyEvaluationId,
+    SourceExecutionSessionId,
+    Scope,
+    Decision,
+    PolicyScore,
+    MetricsJson,
+    ViolationsJson,
+    CreatedUtc
+FROM dbo.MigrationExecutionReplayPolicyEvaluations
+WHERE SourceExecutionSessionId = @SourceExecutionSessionId
+ORDER BY CreatedUtc DESC;
+";
+        command.Parameters.AddWithValue("@SourceExecutionSessionId", sourceExecutionSessionId);
+        command.Parameters.AddWithValue("@Take", safeTake);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            records.Add(new ExecutionReplayPolicyEvaluationRecord(
+                reader.GetGuid(0),
+                reader.GetGuid(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetInt32(4),
+                reader.GetString(5),
+                reader.GetString(6),
+                reader.GetFieldValue<DateTimeOffset>(7)));
+        }
+
+        return records;
+    }
+
+    private async Task PersistEvaluationAsync(
+        ExecutionReplayPolicyEvaluationResult result,
         CancellationToken cancellationToken)
     {
         var connectionString = GetConnectionString();
@@ -168,20 +190,56 @@ public sealed class SqlExecutionReplayPolicyService : IExecutionReplayPolicyServ
 
         await using var command = connection.CreateCommand();
         command.CommandText = @"
-SELECT ReplayDepth
-FROM dbo.MigrationExecutionSessions
-WHERE ExecutionSessionId = @ExecutionSessionId;
+INSERT INTO dbo.MigrationExecutionReplayPolicyEvaluations
+(
+    ReplayPolicyEvaluationId,
+    SourceExecutionSessionId,
+    Scope,
+    Decision,
+    PolicyScore,
+    MetricsJson,
+    ViolationsJson,
+    CreatedUtc
+)
+VALUES
+(
+    @ReplayPolicyEvaluationId,
+    @SourceExecutionSessionId,
+    @Scope,
+    @Decision,
+    @PolicyScore,
+    @MetricsJson,
+    @ViolationsJson,
+    SYSUTCDATETIME()
+);
 ";
+        command.Parameters.AddWithValue("@ReplayPolicyEvaluationId", Guid.NewGuid());
+        command.Parameters.AddWithValue("@SourceExecutionSessionId", result.SourceExecutionSessionId);
+        command.Parameters.AddWithValue("@Scope", result.Scope);
+        command.Parameters.AddWithValue("@Decision", result.Decision);
+        command.Parameters.AddWithValue("@PolicyScore", result.PolicyScore);
+        command.Parameters.AddWithValue("@MetricsJson", JsonSerializer.Serialize(result.Metrics));
+        command.Parameters.AddWithValue("@ViolationsJson", JsonSerializer.Serialize(result.Violations));
 
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task<int> ReadReplayDepthAsync(Guid executionSessionId, CancellationToken cancellationToken)
+    {
+        var connectionString = GetConnectionString();
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT ReplayDepth FROM dbo.MigrationExecutionSessions WHERE ExecutionSessionId = @ExecutionSessionId;";
         command.Parameters.AddWithValue("@ExecutionSessionId", executionSessionId);
 
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return result is null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
     }
 
-    private async Task<int> CountActiveReplayChildrenAsync(
-        Guid sourceExecutionSessionId,
-        CancellationToken cancellationToken)
+    private async Task<int> CountActiveReplayChildrenAsync(Guid sourceExecutionSessionId, CancellationToken cancellationToken)
     {
         var connectionString = GetConnectionString();
 
@@ -195,7 +253,6 @@ FROM dbo.MigrationExecutionSessions
 WHERE ReplaySourceExecutionSessionId = @SourceExecutionSessionId
   AND Status IN ('created', 'validating', 'manifest-loading', 'queued', 'running', 'paused');
 ";
-
         command.Parameters.AddWithValue("@SourceExecutionSessionId", sourceExecutionSessionId);
 
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));

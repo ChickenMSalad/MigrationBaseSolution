@@ -9,8 +9,8 @@ import {
 import { buildExecutionDiagnosticBundleUrl } from './executionDiagnosticExportApi';
 import { analyzeExecutionReplayReadiness } from './executionReplayApi';
 import { prepareExecutionReplayManifest } from './executionReplayPreparationApi';
-import { evaluateExecutionReplayPolicy } from './executionReplayPolicyApi';
-import type { ExecutionReplayPolicyEvaluationResult } from './executionReplayPolicyTypes';
+import { evaluateExecutionReplayPolicy, fetchExecutionReplayPolicyHistory } from './executionReplayPolicyApi';
+import type { ExecutionReplayPolicyEvaluationRecord, ExecutionReplayPolicyEvaluationResult } from './executionReplayPolicyTypes';
 import { approveExecutionReplay, fetchExecutionReplayApprovalHistory } from './executionReplayApprovalApi';
 import type { ExecutionReplayApprovalRecord, ExecutionReplayApprovalResult } from './executionReplayApprovalTypes';
 import { materializeExecutionReplay } from './executionReplayMaterializationApi';
@@ -62,6 +62,7 @@ export function ExecutionSessionWorkspace() {
   const [replayAnalysis, setReplayAnalysis] = useState<ExecutionReplayAnalysisResult | null>(null);
   const [replayPreparation, setReplayPreparation] = useState<ExecutionReplayPreparationResult | null>(null);
   const [replayPolicy, setReplayPolicy] = useState<ExecutionReplayPolicyEvaluationResult | null>(null);
+  const [replayPolicyHistory, setReplayPolicyHistory] = useState<ExecutionReplayPolicyEvaluationRecord[]>([]);
   const [replayMaterialization, setReplayMaterialization] = useState<ExecutionReplayMaterializationResult | null>(null);
   const [replayApproval, setReplayApproval] = useState<ExecutionReplayApprovalResult | null>(null);
   const [replayApprovalHistory, setReplayApprovalHistory] = useState<ExecutionReplayApprovalRecord[]>([]);
@@ -120,6 +121,8 @@ export function ExecutionSessionWorkspace() {
       setWorkItems(queueResponse.items);
       setQueueSummary(queueSummaryResponse);
       setReplayLineage(lineageResponse);
+      const policyHistoryResponse = await fetchExecutionReplayPolicyHistory(session.executionSessionId, 25);
+      setReplayPolicyHistory(policyHistoryResponse.evaluations);
       const approvalHistoryResponse = await fetchExecutionReplayApprovalHistory(session.executionSessionId, 25);
       setReplayApprovalHistory(approvalHistoryResponse.approvals);
       setError(null);
@@ -621,7 +624,27 @@ async function pauseSelectedSession() {
               </div>
             </div>
           ) : null}
-          {replayPolicy ? (
+                    <div className="table-shell">
+            <h3>Replay policy history</h3>
+            <table>
+              <thead><tr><th>Created</th><th>Decision</th><th>Scope</th><th>Score</th></tr></thead>
+              <tbody>
+                {replayPolicyHistory.length === 0 ? (
+                  <tr><td colSpan={4}>No replay policy evaluations have been recorded for this session.</td></tr>
+                ) : (
+                  replayPolicyHistory.map((evaluation) => (
+                    <tr key={evaluation.replayPolicyEvaluationId}>
+                      <td>{new Date(evaluation.createdUtc).toLocaleString()}</td>
+                      <td>{evaluation.decision}</td>
+                      <td>{evaluation.scope}</td>
+                      <td>{evaluation.policyScore}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+{replayPolicy ? (
             <div className="table-shell">
               <h3>Replay policy</h3>
               <div className="metric-grid">
@@ -806,6 +829,7 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
 
