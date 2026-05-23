@@ -1,0 +1,25 @@
+{
+  "approvalGates": [
+    {
+      "gateId": "prod-ring-0-approval",
+      "deploymentTargetId": "migration-prod",
+      "environmentName": "prod",
+      "deploymentRing": "ring-0",
+      "decision": "Pending",
+      "requestedBy": "deployment-pipeline",
+      "requirements": [
+        {
+          "requirementId": "change-approval",
+          "name": "Production change approval",
+          "description": "Requires explicit operator approval before production deployment begins.",
+          "appliesToEnvironment": "prod",
+          "appliesToRing": "ring-0",
+          "isRequired": true,
+          "minimumApproverCount": 1,
+          "approverRoles": [ "MigrationOperators", "CloudOperations" ],
+          "requiredEvidenceKeys": [ "deployment-readiness", "rollback-plan", "environment-drift" ]
+        }
+      ]
+    }
+  ]
+}
