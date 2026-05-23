@@ -53,6 +53,24 @@ function Invoke-JsonPost {
     return Invoke-RestMethod -Uri $Url -Method Post -Body $json -ContentType "application/json"
 }
 
+function Send-Heartbeat {
+    param(
+        [string]$Status,
+        [int]$ActiveLeaseCount,
+        [string]$Message
+    )
+
+    Invoke-JsonPost `
+        -Url ($trimmedBaseUrl + "/api/operational/execution-workers/heartbeat") `
+        -Body @{
+            workerId = $WorkerId
+            executionSessionId = $ExecutionSessionId
+            status = $Status
+            activeLeaseCount = $ActiveLeaseCount
+            message = $Message
+        } | Out-Null
+}
+
 if ($AllowUntrustedCertificate) {
     Enable-UntrustedCertificateSupport
 }
@@ -60,10 +78,14 @@ if ($AllowUntrustedCertificate) {
 $trimmedBaseUrl = $BaseUrl.TrimEnd("/")
 $iteration = 0
 
+Send-Heartbeat -Status "starting" -ActiveLeaseCount 0 -Message "Local worker harness starting."
+
 while ($iteration -lt $MaxIterations) {
     $iteration++
 
     Write-Step ("Iteration {0} leasing up to {1} work item(s)" -f $iteration, $BatchSize)
+
+    Send-Heartbeat -Status "leasing" -ActiveLeaseCount 0 -Message "Leasing work items."
 
     $leaseResponse = Invoke-JsonPost `
         -Url ($trimmedBaseUrl + "/api/operational/execution-work-items/lease") `
@@ -75,6 +97,7 @@ while ($iteration -lt $MaxIterations) {
         }
 
     $items = @($leaseResponse.items)
+    Send-Heartbeat -Status "processing" -ActiveLeaseCount $items.Count -Message ("Processing {0} item(s)." -f $items.Count)
 
     if ($items.Count -eq 0) {
         Write-Step "No work items leased."
@@ -109,9 +132,12 @@ while ($iteration -lt $MaxIterations) {
         }
     }
 
+    Send-Heartbeat -Status "idle" -ActiveLeaseCount 0 -Message "Iteration completed."
+
     if ($iteration -lt $MaxIterations) {
         Start-Sleep -Seconds $PollSeconds
     }
 }
 
+Send-Heartbeat -Status "stopped" -ActiveLeaseCount 0 -Message "Local worker harness completed."
 Write-Step "Local worker harness completed."
