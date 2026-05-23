@@ -11,6 +11,7 @@ public sealed class SqlExecutionReplayMaterializationService : IExecutionReplayM
     private readonly IExecutionReplayPreparationService _preparationService;
     private readonly IExecutionReplayApprovalService _approvalService;
     private readonly IExecutionReplayPolicyService _policyService;
+    private readonly IExecutionReplayPolicyOverrideService _policyOverrideService;
     private readonly IOperationalEventStore _eventStore;
 
     public SqlExecutionReplayMaterializationService(
@@ -18,12 +19,14 @@ public sealed class SqlExecutionReplayMaterializationService : IExecutionReplayM
         IExecutionReplayPreparationService preparationService,
         IExecutionReplayApprovalService approvalService,
         IExecutionReplayPolicyService policyService,
+        IExecutionReplayPolicyOverrideService policyOverrideService,
         IOperationalEventStore eventStore)
     {
         _configuration = configuration;
         _preparationService = preparationService;
         _approvalService = approvalService;
         _policyService = policyService;
+        _policyOverrideService = policyOverrideService;
         _eventStore = eventStore;
     }
 
@@ -36,14 +39,25 @@ public sealed class SqlExecutionReplayMaterializationService : IExecutionReplayM
             throw new InvalidOperationException("Replay approval note is required.");
         }
 
-        var policy = await _policyService.EvaluateAsync(
-            request.SourceExecutionSessionId,
-            request.Scope,
-            cancellationToken);
+        var policy = await _policyService.EvaluateAsync(request.SourceExecutionSessionId, request.Scope, cancellationToken);
 
         if (policy.Decision == "block")
         {
             throw new InvalidOperationException("Replay materialization was blocked by replay policy.");
+        }
+
+        ExecutionReplayPolicyOverrideRecord? policyOverride = null;
+        if (policy.Decision == "warn")
+        {
+            policyOverride = await _policyOverrideService.FindActiveOverrideAsync(
+                request.SourceExecutionSessionId,
+                request.Scope,
+                cancellationToken);
+
+            if (policyOverride is null)
+            {
+                throw new InvalidOperationException("Replay policy warning requires an active policy override before materialization.");
+            }
         }
 
         var approval = await _approvalService.FindActiveApprovalAsync(
@@ -181,6 +195,11 @@ VALUES
         await transaction.CommitAsync(cancellationToken);
 
         await _approvalService.ConsumeAsync(approval.ReplayApprovalId, replaySessionId, cancellationToken);
+
+        if (policyOverride is not null)
+        {
+            await _policyOverrideService.ConsumeAsync(policyOverride.ReplayPolicyOverrideId, replaySessionId, cancellationToken);
+        }
 
         await _eventStore.WriteAsync(
             "ExecutionReplayMaterialized",
