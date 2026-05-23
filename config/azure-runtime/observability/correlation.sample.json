@@ -1,0 +1,18 @@
+{
+  "observability": {
+    "correlation": {
+      "requiredDimensions": [
+        "correlation.id",
+        "host.role",
+        "environment.name",
+        "deployment.ring"
+      ],
+      "migrationDimensions": [
+        "migration.run_id",
+        "migration.work_item_id",
+        "worker.instance_id"
+      ],
+      "notes": "Provider-neutral correlation contract for App Insights/OpenTelemetry wiring in later P5.4 sets."
+    }
+  }
+}
