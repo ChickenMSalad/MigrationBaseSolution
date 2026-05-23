@@ -1,0 +1,45 @@
+{
+  "environmentName": "dev",
+  "deploymentRing": "ring0",
+  "targetName": "migration-dev",
+  "targetKind": "container-app-worker",
+  "capturedBy": "operator-or-pipeline",
+  "capturedAtUtc": "2026-05-23T00:00:00Z",
+  "metadata": {
+    "subscriptionAlias": "migration-dev-subscription",
+    "resourceGroup": "rg-migration-dev"
+  },
+  "evidenceItems": [
+    {
+      "key": "sql.operational-store.reachable",
+      "category": "sql",
+      "displayName": "Operational SQL store is reachable",
+      "source": "deployment-validation",
+      "value": "true",
+      "expectedValue": "true",
+      "isRequired": true,
+      "isSatisfied": true,
+      "notes": "Connection validation should use managed identity or approved secret boundary."
+    },
+    {
+      "key": "storage.artifacts.reachable",
+      "category": "storage",
+      "displayName": "Artifact storage account is reachable",
+      "source": "deployment-validation",
+      "value": "true",
+      "expectedValue": "true",
+      "isRequired": true,
+      "isSatisfied": true
+    },
+    {
+      "key": "telemetry.application-insights.configured",
+      "category": "telemetry",
+      "displayName": "Application Insights is configured",
+      "source": "deployment-validation",
+      "value": "true",
+      "expectedValue": "true",
+      "isRequired": true,
+      "isSatisfied": true
+    }
+  ]
+}
