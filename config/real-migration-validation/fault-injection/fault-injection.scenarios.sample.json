@@ -1,0 +1,27 @@
+{
+  "planId": "sample-real-migration-fault-injection-plan",
+  "environmentName": "dev",
+  "migrationProfileName": "sample-real-migration-profile",
+  "scenarios": [
+    {
+      "scenarioId": "worker-stop-during-processing",
+      "name": "Worker stop during processing",
+      "description": "Validates that an interrupted worker can be detected and the work item can be recovered safely.",
+      "targetStage": "Execution",
+      "faultType": "WorkerInterruption",
+      "expectedRecoveryBehavior": "Lease expiration, heartbeat loss detection, and safe requeue/resume behavior are observed.",
+      "requiresOperatorApproval": true,
+      "enabledByDefault": false
+    },
+    {
+      "scenarioId": "transient-target-api-failure",
+      "name": "Transient target API failure",
+      "description": "Validates retry, backoff, and eventual success/failure classification for target API instability.",
+      "targetStage": "Transfer",
+      "faultType": "TransientDependencyFailure",
+      "expectedRecoveryBehavior": "Retry policy is applied without duplicate durable side effects.",
+      "requiresOperatorApproval": false,
+      "enabledByDefault": false
+    }
+  ]
+}
