@@ -1,0 +1,11 @@
+{
+  "name": "P6.1 Runtime Composition Handoff",
+  "version": "p6.1",
+  "summary": "Runtime composition contracts are ready for concrete host and worker implementation wiring.",
+  "nextImplementationAreas": [
+    "P6.2 Azure infrastructure integration",
+    "P6.3 worker execution runtime",
+    "P6.4 queue and dispatcher mechanics"
+  ],
+  "programCsRequiredNow": false
+}
