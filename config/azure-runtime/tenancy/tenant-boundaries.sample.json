@@ -1,0 +1,24 @@
+{
+  "azureOperationalTenantBoundaries": [
+    {
+      "name": "dev-primary",
+      "tenantId": "00000000-0000-0000-0000-000000000000",
+      "subscriptionId": "00000000-0000-0000-0000-000000000000",
+      "managementGroupId": null,
+      "environmentName": "Development",
+      "deploymentRing": "dev",
+      "allowsProductionWorkloads": false,
+      "allowsReplayWorkloads": true,
+      "requiresManagedIdentity": true,
+      "allowedResourceGroups": [
+        "rg-migrationbase-dev-core",
+        "rg-migrationbase-dev-runtime"
+      ],
+      "requiredTags": {
+        "system": "MigrationBaseSolution",
+        "environment": "dev",
+        "owner": "migration-operations"
+      }
+    }
+  ]
+}
