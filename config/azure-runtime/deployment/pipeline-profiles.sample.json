@@ -1,0 +1,34 @@
+{
+  "azureDeploymentPipelines": [
+    {
+      "name": "standard-cloud-runtime",
+      "workloadName": "MigrationBaseSolution",
+      "stages": [
+        {
+          "name": "validate",
+          "environmentName": "dev",
+          "deploymentRing": "inner",
+          "requiresApproval": false,
+          "requiresReadinessEvidence": true,
+          "allowsAutomaticPromotion": true
+        },
+        {
+          "name": "stage",
+          "environmentName": "test",
+          "deploymentRing": "middle",
+          "requiresApproval": true,
+          "requiresReadinessEvidence": true,
+          "allowsAutomaticPromotion": false
+        },
+        {
+          "name": "promote",
+          "environmentName": "prod",
+          "deploymentRing": "outer",
+          "requiresApproval": true,
+          "requiresReadinessEvidence": true,
+          "allowsAutomaticPromotion": false
+        }
+      ]
+    }
+  ]
+}
