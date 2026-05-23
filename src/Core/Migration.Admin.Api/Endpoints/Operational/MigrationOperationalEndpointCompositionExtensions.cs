@@ -24,6 +24,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
         endpoints.MapOperationalEventQueryEndpoints();
         endpoints.MapOperationalEventRetentionEndpoints();
         endpoints.MapExecutionWorkerTelemetryEndpoints();
+        endpoints.MapExecutionReplayMaterializationEndpoints();
         endpoints.MapExecutionReplayPreparationEndpoints();
         endpoints.MapExecutionReplayAnalysisEndpoints();
         endpoints.MapExecutionDiagnosticExportEndpoints();
@@ -47,6 +48,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
         return endpoints;
     }
 }
+
 
 
 

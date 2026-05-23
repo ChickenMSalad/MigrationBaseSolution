@@ -9,6 +9,8 @@ import {
 import { buildExecutionDiagnosticBundleUrl } from './executionDiagnosticExportApi';
 import { analyzeExecutionReplayReadiness } from './executionReplayApi';
 import { prepareExecutionReplayManifest } from './executionReplayPreparationApi';
+import { materializeExecutionReplay } from './executionReplayMaterializationApi';
+import type { ExecutionReplayMaterializationResult } from './executionReplayMaterializationTypes';
 import type { ExecutionReplayPreparationResult } from './executionReplayPreparationTypes';
 import type { ExecutionReplayAnalysisResult } from './executionReplayTypes';
 import {
@@ -53,6 +55,8 @@ export function ExecutionSessionWorkspace() {
   const [queueSummary, setQueueSummary] = useState<ExecutionWorkItemQueueSummary | null>(null);
   const [replayAnalysis, setReplayAnalysis] = useState<ExecutionReplayAnalysisResult | null>(null);
   const [replayPreparation, setReplayPreparation] = useState<ExecutionReplayPreparationResult | null>(null);
+  const [replayMaterialization, setReplayMaterialization] = useState<ExecutionReplayMaterializationResult | null>(null);
+  const [replayApprovalNote, setReplayApprovalNote] = useState('');
   const [replayScope, setReplayScope] = useState('failed-only');
   const [phases, setPhases] = useState<string[]>([]);
   const [selectedPhase, setSelectedPhase] = useState('validating');
@@ -169,7 +173,27 @@ export function ExecutionSessionWorkspace() {
       setError(err instanceof Error ? err.message : 'Failed to analyze replay readiness.');
     }
   }
-  async function prepareSelectedReplayManifest() {
+    async function materializeSelectedReplay() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const result = await materializeExecutionReplay({
+        sourceExecutionSessionId: selectedSession.executionSessionId,
+        scope: replayScope,
+        approvalNote: replayApprovalNote,
+      });
+
+      setReplayMaterialization(result);
+      setReplayApprovalNote('');
+      setStatusMessage(`Replay session materialized: ${result.replayExecutionSessionId}`);
+      await loadSessions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to materialize replay session.');
+    }
+  }
+async function prepareSelectedReplayManifest() {
     if (!selectedSession) {
       return;
     }
@@ -458,10 +482,23 @@ async function pauseSelectedSession() {
               </select>
             </label>
             <button type="button" onClick={prepareSelectedReplayManifest}>Prepare replay manifest</button>
+            <label>Replay approval<input value={replayApprovalNote} onChange={(event) => setReplayApprovalNote(event.target.value)} placeholder="Required approval note" /></label>
+            <button type="button" onClick={materializeSelectedReplay} disabled={!replayApprovalNote.trim()}>Materialize replay</button>
             <span className="status-pill">Selected: {selectedSession.status}</span>
           </div>
 
-                              {replayPreparation ? (
+                                        {replayMaterialization ? (
+            <div className="table-shell">
+              <h3>Replay materialized</h3>
+              <div className="metric-grid">
+                <article><span>Replay session</span><strong>{replayMaterialization.replayExecutionSessionId}</strong></article>
+                <article><span>Scope</span><strong>{replayMaterialization.scope}</strong></article>
+                <article><span>Depth</span><strong>{replayMaterialization.replayDepth}</strong></article>
+                <article><span>Work items</span><strong>{replayMaterialization.workItemCount}</strong></article>
+              </div>
+            </div>
+          ) : null}
+{replayPreparation ? (
             <div className="table-shell">
               <h3>Replay preparation manifest</h3>
               <div className="metric-grid">
@@ -619,5 +656,6 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
