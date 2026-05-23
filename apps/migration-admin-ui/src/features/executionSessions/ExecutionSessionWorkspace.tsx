@@ -8,6 +8,8 @@ import {
 } from './executionControlApi';
 import { buildExecutionDiagnosticBundleUrl } from './executionDiagnosticExportApi';
 import { analyzeExecutionReplayReadiness } from './executionReplayApi';
+import { prepareExecutionReplayManifest } from './executionReplayPreparationApi';
+import type { ExecutionReplayPreparationResult } from './executionReplayPreparationTypes';
 import type { ExecutionReplayAnalysisResult } from './executionReplayTypes';
 import {
   fetchExecutionPhaseHistory,
@@ -50,6 +52,8 @@ export function ExecutionSessionWorkspace() {
   const [workItems, setWorkItems] = useState<ExecutionWorkItemRecord[]>([]);
   const [queueSummary, setQueueSummary] = useState<ExecutionWorkItemQueueSummary | null>(null);
   const [replayAnalysis, setReplayAnalysis] = useState<ExecutionReplayAnalysisResult | null>(null);
+  const [replayPreparation, setReplayPreparation] = useState<ExecutionReplayPreparationResult | null>(null);
+  const [replayScope, setReplayScope] = useState('failed-only');
   const [phases, setPhases] = useState<string[]>([]);
   const [selectedPhase, setSelectedPhase] = useState('validating');
   const [transitionReason, setTransitionReason] = useState('');
@@ -163,6 +167,24 @@ export function ExecutionSessionWorkspace() {
       setStatusMessage(`Replay analysis complete. Risk score: ${result.riskScore}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze replay readiness.');
+    }
+  }
+  async function prepareSelectedReplayManifest() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const result = await prepareExecutionReplayManifest({
+        executionSessionId: selectedSession.executionSessionId,
+        scope: replayScope,
+        reason: controlReason || null,
+      });
+
+      setReplayPreparation(result);
+      setStatusMessage(`Replay manifest prepared with ${result.items.length} item(s).`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to prepare replay manifest.');
     }
   }
 async function pauseSelectedSession() {
@@ -426,10 +448,49 @@ async function pauseSelectedSession() {
             <button type="button" onClick={resumeSelectedSession} disabled={selectedSession.status !== 'paused'}>Resume session</button>
             <button type="button" onClick={cancelSelectedSession} disabled={selectedIsTerminal}>Cancel session</button>
             <button type="button" onClick={exportSelectedDiagnostics}>Export diagnostics</button>`r`n            <button type="button" onClick={analyzeSelectedReplayReadiness}>Analyze replay</button>
+            <label>
+              Replay scope
+              <select value={replayScope} onChange={(event) => setReplayScope(event.target.value)}>
+                <option value="failed-only">failed-only</option>
+                <option value="dead-letter-only">dead-letter-only</option>
+                <option value="incomplete-only">incomplete-only</option>
+                <option value="all">all</option>
+              </select>
+            </label>
+            <button type="button" onClick={prepareSelectedReplayManifest}>Prepare replay manifest</button>
             <span className="status-pill">Selected: {selectedSession.status}</span>
           </div>
 
-                    {replayAnalysis ? (
+                              {replayPreparation ? (
+            <div className="table-shell">
+              <h3>Replay preparation manifest</h3>
+              <div className="metric-grid">
+                <article><span>Scope</span><strong>{replayPreparation.scope}</strong></article>
+                <article><span>Can prepare</span><strong>{replayPreparation.canPrepareReplay ? 'Yes' : 'No'}</strong></article>
+                <article><span>Approval</span><strong>{replayPreparation.requiresApproval ? 'Required' : 'Not required'}</strong></article>
+                <article><span>Items</span><strong>{replayPreparation.items.length}</strong></article>
+              </div>
+              <p>{replayPreparation.recommendation}</p>
+              <table>
+                <thead><tr><th>Order</th><th>Type</th><th>Name</th><th>Source status</th></tr></thead>
+                <tbody>
+                  {replayPreparation.items.length === 0 ? (
+                    <tr><td colSpan={4}>No replay items matched the selected scope.</td></tr>
+                  ) : (
+                    replayPreparation.items.map((item) => (
+                      <tr key={`${item.replayOrder}-${item.sourceExecutionWorkItemId ?? item.replayName}`}>
+                        <td>{item.replayOrder}</td>
+                        <td>{item.replayType}</td>
+                        <td>{item.replayName}</td>
+                        <td>{item.sourceStatus}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+{replayAnalysis ? (
             <div className="table-shell">
               <h3>Replay readiness</h3>
               <div className="metric-grid">
@@ -558,4 +619,5 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
