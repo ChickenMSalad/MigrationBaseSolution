@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "ManifestExecutionCheckpoint": {
+      "Enabled": true,
+      "RecordEveryItemCount": 100,
+      "RecordAtBatchCompletion": true,
+      "RecordAtStepCompletion": true,
+      "UseInMemoryCheckpointStore": true
+    }
+  }
+}
