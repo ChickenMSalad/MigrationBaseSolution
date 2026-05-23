@@ -1,0 +1,54 @@
+{
+  "capacityProfiles": [
+    {
+      "environmentName": "dev",
+      "deploymentRing": "inner-loop",
+      "workloadTier": "small",
+      "maximumConcurrentRuns": 1,
+      "maximumActiveWorkers": 1,
+      "maximumQueueReadersPerWorker": 1,
+      "maximumManifestRowsPerRun": 10000,
+      "targetBatchSize": 100,
+      "maximumBatchSize": 500,
+      "expectedHeartbeatInterval": "00:00:30",
+      "workerDrainTimeout": "00:05:00",
+      "metadata": {
+        "purpose": "local or shared development validation"
+      }
+    },
+    {
+      "environmentName": "prod",
+      "deploymentRing": "production",
+      "workloadTier": "large",
+      "maximumConcurrentRuns": 2,
+      "maximumActiveWorkers": 8,
+      "maximumQueueReadersPerWorker": 2,
+      "maximumManifestRowsPerRun": 1500000,
+      "targetBatchSize": 500,
+      "maximumBatchSize": 2000,
+      "expectedHeartbeatInterval": "00:00:30",
+      "workerDrainTimeout": "00:10:00",
+      "metadata": {
+        "purpose": "real migration execution baseline"
+      }
+    }
+  ],
+  "requirements": [
+    {
+      "name": "sql-capacity-reviewed",
+      "description": "SQL tier and connection limits have been reviewed against expected manifest and queue throughput.",
+      "severity": "Error",
+      "appliesToRole": "worker",
+      "expectedValue": "approved",
+      "evidenceKey": "sql.capacity.review"
+    },
+    {
+      "name": "worker-drain-tested",
+      "description": "Worker drain and graceful shutdown behavior has been tested for the selected capacity profile.",
+      "severity": "Warning",
+      "appliesToRole": "worker",
+      "expectedValue": "tested",
+      "evidenceKey": "worker.drain.validation"
+    }
+  ]
+}
