@@ -1,0 +1,16 @@
+{
+  "deploymentReadiness": {
+    "environmentName": "dev",
+    "deploymentRing": "inner-loop",
+    "requiredChecks": [
+      "azure.environment.topology.resolved",
+      "azure.sql.operational.store.configured",
+      "azure.identity.managed.identity.enabled",
+      "azure.telemetry.application.insights.configured",
+      "azure.queue.boundaries.configured"
+    ],
+    "warningChecks": [
+      "azure.operator.access.reviewed"
+    ]
+  }
+}
