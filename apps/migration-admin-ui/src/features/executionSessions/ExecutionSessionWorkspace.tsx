@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { queryOperationalEvents } from '../events/operationalEventTimelineApi';
 import type { OperationalEventRecord } from '../events/operationalEventTimelineTypes';
 import {
+  pauseExecutionSession,
+  resumeExecutionSession,
+} from './executionControlApi';
+import {
   fetchExecutionPhaseHistory,
   fetchExecutionPhases,
   transitionExecutionPhase,
@@ -42,6 +46,7 @@ export function ExecutionSessionWorkspace() {
   const [phases, setPhases] = useState<string[]>([]);
   const [selectedPhase, setSelectedPhase] = useState('validating');
   const [transitionReason, setTransitionReason] = useState('');
+  const [controlReason, setControlReason] = useState('');
   const [workerId, setWorkerId] = useState('local-ui-worker');
   const [leaseTake, setLeaseTake] = useState(5);
   const [leaseSeconds, setLeaseSeconds] = useState(300);
@@ -126,6 +131,42 @@ export function ExecutionSessionWorkspace() {
       await loadSessionDetails(session);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create execution session.');
+    }
+  }
+
+  async function pauseSelectedSession() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      await pauseExecutionSession(selectedSession.executionSessionId, controlReason || undefined);
+      const updatedSession = { ...selectedSession, status: 'paused' };
+      setSelectedSession(updatedSession);
+      setControlReason('');
+      setStatusMessage(`Paused ${selectedSession.name}.`);
+      await loadSessions();
+      await loadSessionDetails(updatedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to pause execution session.');
+    }
+  }
+
+  async function resumeSelectedSession() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      await resumeExecutionSession(selectedSession.executionSessionId, controlReason || undefined);
+      const updatedSession = { ...selectedSession, status: 'queued' };
+      setSelectedSession(updatedSession);
+      setControlReason('');
+      setStatusMessage(`Resumed ${selectedSession.name}.`);
+      await loadSessions();
+      await loadSessionDetails(updatedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resume execution session.');
     }
   }
 
@@ -332,6 +373,16 @@ export function ExecutionSessionWorkspace() {
         <>
           <div className="filter-row">
             <label>
+              Control reason
+              <input value={controlReason} onChange={(event) => setControlReason(event.target.value)} placeholder="Pause/resume reason" />
+            </label>
+            <button type="button" onClick={pauseSelectedSession} disabled={selectedSession.status === 'paused'}>Pause session</button>
+            <button type="button" onClick={resumeSelectedSession} disabled={selectedSession.status !== 'paused'}>Resume session</button>
+            <span className="status-pill">Selected: {selectedSession.status}</span>
+          </div>
+
+          <div className="filter-row">
+            <label>
               Next phase
               <select value={selectedPhase} onChange={(event) => setSelectedPhase(event.target.value)}>
                 {phases.map((phase) => (
@@ -349,30 +400,12 @@ export function ExecutionSessionWorkspace() {
           </div>
 
           <div className="metric-grid">
-            <article>
-              <span>Total work</span>
-              <strong>{queueSummary?.total ?? 0}</strong>
-            </article>
-            <article>
-              <span>Pending</span>
-              <strong>{queueSummary?.pending ?? 0}</strong>
-            </article>
-            <article>
-              <span>Leased</span>
-              <strong>{queueSummary?.leased ?? 0}</strong>
-            </article>
-            <article>
-              <span>Completed</span>
-              <strong>{queueSummary?.completed ?? 0}</strong>
-            </article>
-            <article>
-              <span>Failed</span>
-              <strong>{queueSummary?.failed ?? 0}</strong>
-            </article>
-            <article>
-              <span>Dead-lettered</span>
-              <strong>{queueSummary?.deadLettered ?? 0}</strong>
-            </article>
+            <article><span>Total work</span><strong>{queueSummary?.total ?? 0}</strong></article>
+            <article><span>Pending</span><strong>{queueSummary?.pending ?? 0}</strong></article>
+            <article><span>Leased</span><strong>{queueSummary?.leased ?? 0}</strong></article>
+            <article><span>Completed</span><strong>{queueSummary?.completed ?? 0}</strong></article>
+            <article><span>Failed</span><strong>{queueSummary?.failed ?? 0}</strong></article>
+            <article><span>Dead-lettered</span><strong>{queueSummary?.deadLettered ?? 0}</strong></article>
           </div>
 
           <div className="filter-row">
@@ -388,7 +421,7 @@ export function ExecutionSessionWorkspace() {
               Lease seconds
               <input type="number" min="30" max="3600" value={leaseSeconds} onChange={(event) => setLeaseSeconds(Number(event.target.value))} />
             </label>
-            <button type="button" onClick={leaseSelectedWorkItems}>Lease work</button>
+            <button type="button" onClick={leaseSelectedWorkItems} disabled={selectedSession.status === 'paused'}>Lease work</button>
           </div>
 
           <div className="filter-row">
@@ -442,40 +475,6 @@ export function ExecutionSessionWorkspace() {
                           Renew lease
                         </button>
                       </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="table-shell">
-            <h3>Execution plan for {selectedSession.name}</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Type</th>
-                  <th>Name</th>
-                  <th>Status</th>
-                  <th>Source</th>
-                  <th>Target</th>
-                </tr>
-              </thead>
-              <tbody>
-                {planSteps.length === 0 ? (
-                  <tr>
-                    <td colSpan={6}>No execution plan has been seeded yet.</td>
-                  </tr>
-                ) : (
-                  planSteps.map((step) => (
-                    <tr key={step.executionPlanStepId}>
-                      <td>{step.stepOrder}</td>
-                      <td>{step.stepType}</td>
-                      <td>{step.stepName}</td>
-                      <td>{step.status}</td>
-                      <td>{step.sourceConnector ?? '—'}</td>
-                      <td>{step.targetConnector ?? '—'}</td>
                     </tr>
                   ))
                 )}
