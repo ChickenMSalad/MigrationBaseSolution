@@ -1,0 +1,52 @@
+{
+  "environments": [
+    {
+      "environmentName": "dev",
+      "deploymentRing": "development",
+      "azureTenantBoundary": "primary",
+      "subscriptionAlias": "migration-dev",
+      "resourceGroupName": "rg-migration-dev-eastus",
+      "region": "eastus",
+      "sqlOperationalStoreProfile": "sql-dev-operational",
+      "storageProfile": "storage-dev-artifacts",
+      "queueProfile": "queue-dev-runtime",
+      "telemetryProfile": "appinsights-dev-runtime",
+      "hosts": [
+        {
+          "hostName": "operator-api",
+          "hostRole": "OperatorApi",
+          "deploymentTargetProfile": "app-service-api",
+          "capacityProfile": "small-api",
+          "executionIsolationProfile": "shared-dev",
+          "requiresManagedIdentity": true,
+          "requiresSqlOperationalStore": true,
+          "requiresArtifactStorage": true,
+          "requiredAppSettings": [
+            "AzureRuntime:EnvironmentName",
+            "ConnectionStrings:OperationalSql"
+          ],
+          "requiredSecretReferences": []
+        },
+        {
+          "hostName": "queue-worker",
+          "hostRole": "QueueWorker",
+          "deploymentTargetProfile": "container-app-worker",
+          "capacityProfile": "small-worker",
+          "executionIsolationProfile": "shared-dev",
+          "requiresManagedIdentity": true,
+          "requiresSqlOperationalStore": true,
+          "requiresArtifactStorage": true,
+          "requiredAppSettings": [
+            "AzureRuntime:EnvironmentName",
+            "WorkerRuntime:HeartbeatIntervalSeconds"
+          ],
+          "requiredSecretReferences": []
+        }
+      ],
+      "tags": {
+        "workload": "migration-base-solution",
+        "phase": "p5-cloud-operationalization"
+      }
+    }
+  ]
+}
