@@ -13,6 +13,8 @@ import { evaluateExecutionReplayPolicy, fetchExecutionReplayPolicyHistory } from
 import type { ExecutionReplayPolicyEvaluationRecord, ExecutionReplayPolicyEvaluationResult } from './executionReplayPolicyTypes';
 import { approveExecutionReplay, fetchExecutionReplayApprovalHistory } from './executionReplayApprovalApi';
 import type { ExecutionReplayApprovalRecord, ExecutionReplayApprovalResult } from './executionReplayApprovalTypes';
+import { fetchExecutionReplayAdmissionBackgroundStatus } from './executionReplayAdmissionBackgroundApi';
+import type { ExecutionReplayAdmissionBackgroundStatus } from './executionReplayAdmissionBackgroundTypes';
 import { evaluateExecutionReplayAdmission, fetchExecutionReplayAdmissionHistory } from './executionReplayAdmissionApi';
 import type { ExecutionReplayAdmissionDecisionRecord, ExecutionReplayAdmissionEvaluationResult } from './executionReplayAdmissionTypes';
 import { materializeExecutionReplay } from './executionReplayMaterializationApi';
@@ -67,6 +69,7 @@ export function ExecutionSessionWorkspace() {
   const [replayPolicyHistory, setReplayPolicyHistory] = useState<ExecutionReplayPolicyEvaluationRecord[]>([]);
   const [replayMaterialization, setReplayMaterialization] = useState<ExecutionReplayMaterializationResult | null>(null);
   const [replayAdmission, setReplayAdmission] = useState<ExecutionReplayAdmissionEvaluationResult | null>(null);
+  const [replayAdmissionBackgroundStatus, setReplayAdmissionBackgroundStatus] = useState<ExecutionReplayAdmissionBackgroundStatus | null>(null);
   const [replayAdmissionHistory, setReplayAdmissionHistory] = useState<ExecutionReplayAdmissionDecisionRecord[]>([]);
   const [replayAdmissionTake, setReplayAdmissionTake] = useState(25);
   const [replayApproval, setReplayApproval] = useState<ExecutionReplayApprovalResult | null>(null);
@@ -142,6 +145,12 @@ export function ExecutionSessionWorkspace() {
     async function loadInitialState() {
       await loadSessions();
 
+      try {
+        const backgroundStatus = await fetchExecutionReplayAdmissionBackgroundStatus();
+        setReplayAdmissionBackgroundStatus(backgroundStatus);
+      } catch {
+        setReplayAdmissionBackgroundStatus(null);
+      }
       try {
         const response = await fetchExecutionPhases();
         setPhases(response.phases);
@@ -659,6 +668,21 @@ async function pauseSelectedSession() {
               </tbody>
             </table>
           </div>
+          {replayAdmissionBackgroundStatus ? (
+            <div className="table-shell">
+              <h3>Replay admission automation</h3>
+              <div className="metric-grid">
+                <article><span>Background</span><strong>{replayAdmissionBackgroundStatus.enabled ? 'Enabled' : 'Disabled'}</strong></article>
+                <article><span>Admission</span><strong>{replayAdmissionBackgroundStatus.admissionEnabled ? 'Enabled' : 'Disabled'}</strong></article>
+                <article><span>Interval</span><strong>{replayAdmissionBackgroundStatus.intervalSeconds}s</strong></article>
+                <article><span>Max concurrent</span><strong>{replayAdmissionBackgroundStatus.maxConcurrentReplays}</strong></article>
+              </div>
+              <p>
+                UTC window: {replayAdmissionBackgroundStatus.allowedStartHourUtc}:00â€“{replayAdmissionBackgroundStatus.allowedEndHourUtc}:00.
+                Take: {replayAdmissionBackgroundStatus.take}.
+              </p>
+            </div>
+          ) : null}
 {replayAdmission ? (
             <div className="table-shell">
               <h3>Replay admission</h3>
@@ -904,6 +928,7 @@ async function pauseSelectedSession() {
     </section>
   );
 }
+
 
 
 
