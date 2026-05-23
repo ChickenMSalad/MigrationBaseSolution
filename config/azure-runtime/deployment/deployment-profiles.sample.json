@@ -1,0 +1,64 @@
+{
+  "profiles": [
+    {
+      "name": "local-dev",
+      "environmentName": "Development",
+      "subscriptionName": "local-or-dev-subscription",
+      "tenantName": "development-tenant",
+      "defaultRegion": "eastus",
+      "targets": [
+        {
+          "name": "operator-ui",
+          "environmentName": "Development",
+          "hostRole": "OperatorUi",
+          "kind": "AppService",
+          "resourceGroupName": "rg-migrationbase-dev",
+          "resourceName": "app-migrationbase-operator-dev",
+          "region": "eastus",
+          "sku": "B1",
+          "requiresManagedIdentity": true,
+          "requiresPrivateNetworkAccess": false,
+          "tags": {
+            "application": "MigrationBaseSolution",
+            "component": "operator-ui",
+            "environment": "Development"
+          }
+        },
+        {
+          "name": "queue-worker",
+          "environmentName": "Development",
+          "hostRole": "QueueExecutor",
+          "kind": "ContainerApp",
+          "resourceGroupName": "rg-migrationbase-dev",
+          "resourceName": "ca-migrationbase-worker-dev",
+          "region": "eastus",
+          "sku": "consumption",
+          "requiresManagedIdentity": true,
+          "requiresPrivateNetworkAccess": true,
+          "tags": {
+            "application": "MigrationBaseSolution",
+            "component": "queue-worker",
+            "environment": "Development"
+          }
+        },
+        {
+          "name": "operational-sql",
+          "environmentName": "Development",
+          "hostRole": "OperationalStore",
+          "kind": "SqlDatabase",
+          "resourceGroupName": "rg-migrationbase-dev",
+          "resourceName": "sqldb-migrationbase-ops-dev",
+          "region": "eastus",
+          "sku": "S1",
+          "requiresManagedIdentity": true,
+          "requiresPrivateNetworkAccess": true,
+          "tags": {
+            "application": "MigrationBaseSolution",
+            "component": "operational-sql",
+            "environment": "Development"
+          }
+        }
+      ]
+    }
+  ]
+}
