@@ -1,0 +1,22 @@
+{
+  "sqlOperationalStores": [
+    {
+      "name": "operations",
+      "configurationKey": "ConnectionStrings:MigrationOperationsSql",
+      "purpose": "Primary durable operational store for runs, work items, approvals, history, replay governance, and runtime state.",
+      "requiresManagedIdentity": true
+    },
+    {
+      "name": "manifests",
+      "configurationKey": "ConnectionStrings:MigrationManifestSql",
+      "purpose": "Large manifest and source/target mapping store used during real migration execution.",
+      "requiresManagedIdentity": true
+    },
+    {
+      "name": "audit",
+      "configurationKey": "ConnectionStrings:MigrationAuditSql",
+      "purpose": "Execution audit, validation evidence, and operational readiness evidence store.",
+      "requiresManagedIdentity": true
+    }
+  ]
+}
