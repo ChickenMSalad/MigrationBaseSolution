@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ConnectorManifestItemHandler": {
+      "Enabled": true,
+      "DefaultDirection": "SourceRead",
+      "FailOnMissingSourceIdentifier": true,
+      "UseNoOpConnectorExecutor": true
+    }
+  }
+}
