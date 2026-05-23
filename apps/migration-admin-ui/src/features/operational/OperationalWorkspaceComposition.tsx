@@ -1,4 +1,5 @@
 ﻿import { OperationalSqlHealthWorkspace } from '../sqlHealth/OperationalSqlHealthWorkspace';
+import { ExecutionWorkerTelemetryWorkspace } from '../executionWorkers/ExecutionWorkerTelemetryWorkspace';
 import { ExecutionSessionWorkspace } from '../executionSessions/ExecutionSessionWorkspace';
 import { CommandCenterSummaryWorkspace } from '../commandCenter/CommandCenterSummaryWorkspace';
 import { OperationalRuntimeDashboard } from '../../components/OperationalRuntimeDashboard';
@@ -20,6 +21,7 @@ export function OperationalWorkspaceComposition() {
   return (
     <>
       <OperationalSqlHealthWorkspace />
+      <ExecutionWorkerTelemetryWorkspace />
       <ExecutionSessionWorkspace />
       <CommandCenterSummaryWorkspace />
       <OperationalRuntimeDashboard />
@@ -39,6 +41,8 @@ export function OperationalWorkspaceComposition() {
     </>
   );
 }
+
+
 
 
 
