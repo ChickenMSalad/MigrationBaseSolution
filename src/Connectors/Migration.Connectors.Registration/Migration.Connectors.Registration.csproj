@@ -9,7 +9,7 @@
  </PropertyGroup>
 
  <ItemGroup>
-  <ProjectReference Include="..\..\Migration.Application\Migration.Application.csproj" />
+  <ProjectReference Include="..\..\Core\Migration.Application\Migration.Application.csproj" />
   <ProjectReference Include="..\Sources\Migration.Connectors.Sources.WebDam\Migration.Connectors.Sources.WebDam.csproj" />
   <ProjectReference Include="..\Sources\Migration.Connectors.Sources.Aem\Migration.Connectors.Sources.Aem.csproj" />
   <ProjectReference Include="..\Sources\Migration.Connectors.Sources.SharePoint\Migration.Connectors.Sources.SharePoint.csproj" />
