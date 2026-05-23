@@ -1,0 +1,20 @@
+{
+  "emergencyStop": {
+    "name": "prod-soft-stop-template",
+    "mode": "SoftStop",
+    "reason": "Operator initiated production safety stop.",
+    "requestedBy": "operator@example.com",
+    "blocksNewWorkAdmission": true,
+    "allowsActiveWorkToDrain": true,
+    "requiresOperatorAcknowledgement": true
+  },
+  "drainRequest": {
+    "name": "prod-worker-drain-template",
+    "environmentName": "prod",
+    "targetRole": "QueueWorker",
+    "requestedBy": "operator@example.com",
+    "maximumDrainDuration": "00:30:00",
+    "stopNewAssignments": true,
+    "waitForActiveLeases": true
+  }
+}
