@@ -23,6 +23,8 @@ import {
   fetchExecutionWorkItemQueueSummary,
   fetchRecentExecutionWorkItems,
   leaseExecutionWorkItems,
+  renewExecutionWorkItemLease,
+  requeueExecutionWorkItems,
 } from './executionWorkItemApi';
 import type {
   ExecutionWorkItemQueueSummary,
@@ -42,6 +44,9 @@ export function ExecutionSessionWorkspace() {
   const [transitionReason, setTransitionReason] = useState('');
   const [workerId, setWorkerId] = useState('local-ui-worker');
   const [leaseTake, setLeaseTake] = useState(5);
+  const [leaseSeconds, setLeaseSeconds] = useState(300);
+  const [includeFailed, setIncludeFailed] = useState(true);
+  const [includeExpiredLeases, setIncludeExpiredLeases] = useState(true);
   const [name, setName] = useState('');
   const [sourceConnector, setSourceConnector] = useState('');
   const [targetConnector, setTargetConnector] = useState('');
@@ -203,13 +208,52 @@ export function ExecutionSessionWorkspace() {
         executionSessionId: selectedSession.executionSessionId,
         workerId,
         take: leaseTake,
-        leaseSeconds: 300,
+        leaseSeconds,
       });
 
       setStatusMessage(`Leased ${response.items.length} work item(s) to ${workerId}.`);
       await loadSessionDetails(selectedSession);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to lease execution work items.');
+    }
+  }
+
+  async function requeueSelectedWorkItems() {
+    if (!selectedSession) {
+      return;
+    }
+
+    try {
+      const response = await requeueExecutionWorkItems({
+        executionSessionId: selectedSession.executionSessionId,
+        includeFailed,
+        includeExpiredLeases,
+      });
+
+      setStatusMessage(`Requeued ${response.requeued} work item(s).`);
+      await loadSessionDetails(selectedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to requeue execution work items.');
+    }
+  }
+
+  async function renewWorkItem(item: ExecutionWorkItemRecord) {
+    if (!selectedSession || !item.leaseId || !item.workerId) {
+      return;
+    }
+
+    try {
+      await renewExecutionWorkItemLease({
+        executionWorkItemId: item.executionWorkItemId,
+        leaseId: item.leaseId,
+        workerId: item.workerId,
+        leaseSeconds,
+      });
+
+      setStatusMessage(`Renewed lease for ${item.workItemName}.`);
+      await loadSessionDetails(selectedSession);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to renew work-item lease.');
     }
   }
 
@@ -340,7 +384,23 @@ export function ExecutionSessionWorkspace() {
               Lease count
               <input type="number" min="1" max="100" value={leaseTake} onChange={(event) => setLeaseTake(Number(event.target.value))} />
             </label>
+            <label>
+              Lease seconds
+              <input type="number" min="30" max="3600" value={leaseSeconds} onChange={(event) => setLeaseSeconds(Number(event.target.value))} />
+            </label>
             <button type="button" onClick={leaseSelectedWorkItems}>Lease work</button>
+          </div>
+
+          <div className="filter-row">
+            <label>
+              <input type="checkbox" checked={includeFailed} onChange={(event) => setIncludeFailed(event.target.checked)} />
+              Include failed
+            </label>
+            <label>
+              <input type="checkbox" checked={includeExpiredLeases} onChange={(event) => setIncludeExpiredLeases(event.target.checked)} />
+              Include expired leases
+            </label>
+            <button type="button" onClick={requeueSelectedWorkItems}>Requeue recoverable work</button>
           </div>
 
           <div className="table-shell">
@@ -355,12 +415,13 @@ export function ExecutionSessionWorkspace() {
                   <th>Worker</th>
                   <th>Retry</th>
                   <th>Lease expires</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {workItems.length === 0 ? (
                   <tr>
-                    <td colSpan={7}>No execution work items have been expanded yet.</td>
+                    <td colSpan={8}>No execution work items have been expanded yet.</td>
                   </tr>
                 ) : (
                   workItems.map((item) => (
@@ -372,6 +433,15 @@ export function ExecutionSessionWorkspace() {
                       <td>{item.workerId ?? '—'}</td>
                       <td>{item.retryCount}/{item.maxRetries}</td>
                       <td>{item.leaseExpiresUtc ? new Date(item.leaseExpiresUtc).toLocaleString() : '—'}</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => renewWorkItem(item)}
+                          disabled={!item.leaseId || !item.workerId || item.status !== 'leased'}
+                        >
+                          Renew lease
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -406,68 +476,6 @@ export function ExecutionSessionWorkspace() {
                       <td>{step.status}</td>
                       <td>{step.sourceConnector ?? '—'}</td>
                       <td>{step.targetConnector ?? '—'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="table-shell">
-            <h3>Phase history for {selectedSession.name}</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Created</th>
-                  <th>Previous</th>
-                  <th>New</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
-              <tbody>
-                {phaseHistory.length === 0 ? (
-                  <tr>
-                    <td colSpan={4}>No phase transitions have been recorded yet.</td>
-                  </tr>
-                ) : (
-                  phaseHistory.map((item) => (
-                    <tr key={item.executionPhaseHistoryId}>
-                      <td>{new Date(item.createdUtc).toLocaleString()}</td>
-                      <td>{item.previousPhase ?? '—'}</td>
-                      <td>{item.newPhase}</td>
-                      <td>{item.reason ?? '—'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="table-shell">
-            <h3>Events for {selectedSession.name}</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Created</th>
-                  <th>Severity</th>
-                  <th>Category</th>
-                  <th>Event type</th>
-                  <th>Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessionEvents.length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>No events are correlated to this execution session yet.</td>
-                  </tr>
-                ) : (
-                  sessionEvents.map((event) => (
-                    <tr key={event.operationalEventId}>
-                      <td>{new Date(event.createdUtc).toLocaleString()}</td>
-                      <td>{event.severity}</td>
-                      <td>{event.category}</td>
-                      <td>{event.eventType}</td>
-                      <td>{event.message}</td>
                     </tr>
                   ))
                 )}

@@ -2,8 +2,11 @@ import { adminApiBaseUrl } from '../../lib/adminApi';
 import type {
   ExecutionWorkItemListResponse,
   ExecutionWorkItemQueueSummary,
+  ExecutionWorkItemRequeueResponse,
   ExpandExecutionPlanToWorkItemsRequest,
   LeaseExecutionWorkItemsRequest,
+  RenewExecutionWorkItemLeaseRequest,
+  RequeueExecutionWorkItemsRequest,
 } from './executionWorkItemTypes';
 
 export async function expandExecutionPlanToWorkItems(
@@ -40,6 +43,40 @@ export async function leaseExecutionWorkItems(
   }
 
   return response.json() as Promise<ExecutionWorkItemListResponse>;
+}
+
+export async function renewExecutionWorkItemLease(
+  request: RenewExecutionWorkItemLeaseRequest,
+): Promise<void> {
+  const response = await fetch(`${adminApiBaseUrl}/api/operational/execution-work-items/renew`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+}
+
+export async function requeueExecutionWorkItems(
+  request: RequeueExecutionWorkItemsRequest,
+): Promise<ExecutionWorkItemRequeueResponse> {
+  const response = await fetch(`${adminApiBaseUrl}/api/operational/execution-work-items/requeue`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  return response.json() as Promise<ExecutionWorkItemRequeueResponse>;
 }
 
 export async function fetchExecutionWorkItemQueueSummary(

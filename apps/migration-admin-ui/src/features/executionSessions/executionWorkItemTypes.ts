@@ -45,3 +45,21 @@ export type LeaseExecutionWorkItemsRequest = {
   take: number;
   leaseSeconds: number;
 };
+
+export type RenewExecutionWorkItemLeaseRequest = {
+  executionWorkItemId: string;
+  leaseId: string;
+  workerId: string;
+  leaseSeconds: number;
+};
+
+export type RequeueExecutionWorkItemsRequest = {
+  executionSessionId: string;
+  includeFailed: boolean;
+  includeExpiredLeases: boolean;
+};
+
+export type ExecutionWorkItemRequeueResponse = {
+  executionSessionId: string;
+  requeued: number;
+};
