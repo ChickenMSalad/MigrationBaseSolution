@@ -1,0 +1,18 @@
+{
+  "runtimeCompositionValidation": {
+    "requiredFindings": [
+      {
+        "code": "runtime-composition.plan.required",
+        "severity": "Error",
+        "target": "AzureRuntimeCompositionPlan",
+        "recommendedAction": "Build and validate a runtime composition plan before enabling executable host wiring."
+      },
+      {
+        "code": "runtime-composition.environment.required",
+        "severity": "Warning",
+        "target": "EnvironmentName",
+        "recommendedAction": "Attach environment context to runtime composition validation before deployment."
+      }
+    ]
+  }
+}
