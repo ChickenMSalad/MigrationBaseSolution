@@ -1,0 +1,40 @@
+{
+  "AzureRuntimeTopology": {
+    "Environments": [
+      {
+        "EnvironmentName": "local",
+        "DeploymentRing": "local",
+        "Region": "local",
+        "ResourceGroupName": "local-migration-runtime-rg",
+        "SqlOperationalStoreName": "local-migration-ops-sql",
+        "ArtifactStorageAccountName": "localmigrationartifacts",
+        "QueueNamespaceName": "local-migration-queues",
+        "TelemetryResourceName": "local-migration-appinsights",
+        "AllowsRealMigrationExecution": false,
+        "AllowsReplayExecution": true,
+        "RequiresManagedIdentity": false,
+        "Tags": {
+          "system": "MigrationBaseSolution",
+          "phase": "P5"
+        }
+      },
+      {
+        "EnvironmentName": "dev",
+        "DeploymentRing": "nonprod",
+        "Region": "eastus",
+        "ResourceGroupName": "dev-migration-runtime-rg",
+        "SqlOperationalStoreName": "dev-migration-ops-sql",
+        "ArtifactStorageAccountName": "devmigrationartifacts",
+        "QueueNamespaceName": "dev-migration-queues",
+        "TelemetryResourceName": "dev-migration-appinsights",
+        "AllowsRealMigrationExecution": true,
+        "AllowsReplayExecution": true,
+        "RequiresManagedIdentity": true,
+        "Tags": {
+          "system": "MigrationBaseSolution",
+          "phase": "P5"
+        }
+      }
+    ]
+  }
+}
