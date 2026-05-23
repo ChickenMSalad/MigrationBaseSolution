@@ -1,0 +1,47 @@
+{
+  "realMigrationValidationCloseout": {
+    "validationRunId": "sample-real-run-001",
+    "migrationProfileKey": "sample-migration-profile",
+    "environmentKey": "dev",
+    "status": "ReadyForOperationalRun",
+    "criteria": [
+      {
+        "key": "execution-completed",
+        "name": "Execution completed",
+        "description": "The real migration validation run completed without unresolved terminal failures.",
+        "isRequired": true,
+        "evidenceKeys": [ "execution-summary", "failure-summary" ]
+      },
+      {
+        "key": "resumability-verified",
+        "name": "Resumability verified",
+        "description": "The validation run proved restart/resume behavior from durable SQL state.",
+        "isRequired": true,
+        "evidenceKeys": [ "resumability-report" ]
+      },
+      {
+        "key": "audit-verified",
+        "name": "Audit verified",
+        "description": "Source-to-target audit evidence exists for the validation scope.",
+        "isRequired": true,
+        "evidenceKeys": [ "audit-verification-report" ]
+      }
+    ],
+    "blockingReasons": []
+  },
+  "realMigrationValidationHandoff": {
+    "handoffKey": "sample-real-run-001-to-operational-pilot",
+    "sourceValidationRunId": "sample-real-run-001",
+    "targetOperationalPhase": "operational-pilot",
+    "owner": "migration-operations",
+    "requiredArtifacts": [
+      "execution-summary",
+      "resumability-report",
+      "throughput-report",
+      "audit-verification-report",
+      "large-manifest-validation-report"
+    ],
+    "openRisks": [],
+    "isApprovedForNextPhase": false
+  }
+}
