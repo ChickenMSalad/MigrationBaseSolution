@@ -1,0 +1,25 @@
+{
+  "environmentName": "dev",
+  "deploymentRing": "inner-loop",
+  "overallStatus": "InProgress",
+  "gates": [
+    {
+      "gateId": "P5.1-CLOUD-TOPOLOGY",
+      "status": "Ready",
+      "requiredForP52": true,
+      "evidenceKeys": [ "topology", "deployment-targets", "host-roles" ]
+    },
+    {
+      "gateId": "P5.1-CONFIG-BOUNDARIES",
+      "status": "Ready",
+      "requiredForP52": true,
+      "evidenceKeys": [ "app-settings", "identity", "tenant-boundaries" ]
+    },
+    {
+      "gateId": "P5.1-READINESS-EVIDENCE",
+      "status": "Ready",
+      "requiredForP52": true,
+      "evidenceKeys": [ "readiness", "promotion", "drift", "capacity", "isolation" ]
+    }
+  ]
+}
