@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "ManifestExecution": {
+      "Enabled": true,
+      "DefaultMode": "ValidateOnly",
+      "RequireManifestValidation": true,
+      "RequireResultVerification": true,
+      "MaxPlanSteps": 16
+    }
+  }
+}
