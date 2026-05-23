@@ -1,0 +1,52 @@
+{
+  "releaseKey": "sample-dev-release",
+  "buildId": "build-0000",
+  "sourceCommit": "0000000000000000000000000000000000000000",
+  "createdAtUtc": "2026-05-23T00:00:00+00:00",
+  "artifacts": [
+    {
+      "artifactKey": "operator-ui-package",
+      "displayName": "Operator UI package",
+      "kind": "OperatorUiPackage",
+      "producer": "web-build",
+      "relativePath": "artifacts/operator-ui",
+      "required": true,
+      "metadata": {
+        "roles": "operator-ui"
+      }
+    },
+    {
+      "artifactKey": "queue-worker-package",
+      "displayName": "Queue worker package",
+      "kind": "WorkerPackage",
+      "producer": "worker-build",
+      "relativePath": "artifacts/workers/queue-executor",
+      "required": true,
+      "metadata": {
+        "roles": "queue-worker,dispatcher"
+      }
+    },
+    {
+      "artifactKey": "sql-migration-bundle",
+      "displayName": "SQL migration bundle",
+      "kind": "SqlMigrationBundle",
+      "producer": "database-build",
+      "relativePath": "artifacts/sql/migrations",
+      "required": true,
+      "metadata": {
+        "store": "sql-first-operational"
+      }
+    },
+    {
+      "artifactKey": "deployment-evidence",
+      "displayName": "Deployment evidence manifest",
+      "kind": "ValidationEvidence",
+      "producer": "release-validation",
+      "relativePath": "artifacts/evidence",
+      "required": false,
+      "metadata": {
+        "phase": "p5.3"
+      }
+    }
+  ]
+}
