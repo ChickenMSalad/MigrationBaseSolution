@@ -1,0 +1,30 @@
+{
+  "AzureRuntime": {
+    "HostRoles": [
+      {
+        "HostName": "admin-api",
+        "RoleKind": "AdminApi",
+        "DeploymentUnit": "Migration.Admin.Api",
+        "RequiresManagedIdentity": true
+      },
+      {
+        "HostName": "queue-executor",
+        "RoleKind": "QueueExecutor",
+        "DeploymentUnit": "Migration.Workers.QueueExecutor",
+        "RequiresManagedIdentity": true
+      },
+      {
+        "HostName": "service-bus-dispatcher",
+        "RoleKind": "ServiceBusDispatcher",
+        "DeploymentUnit": "Migration.Workers.ServiceBusDispatcher",
+        "RequiresManagedIdentity": true
+      },
+      {
+        "HostName": "service-bus-executor",
+        "RoleKind": "ServiceBusExecutor",
+        "DeploymentUnit": "Migration.Workers.ServiceBusExecutor",
+        "RequiresManagedIdentity": true
+      }
+    ]
+  }
+}
