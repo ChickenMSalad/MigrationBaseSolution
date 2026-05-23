@@ -1,0 +1,56 @@
+{
+  "azureRuntime": {
+    "observability": {
+      "alertRules": [
+        {
+          "name": "worker-heartbeat-stale",
+          "displayName": "Worker heartbeat stale",
+          "description": "Flags workers that have not reported heartbeat within the expected interval.",
+          "signalName": "migration.worker.heartbeat.age.seconds",
+          "severity": "Error",
+          "evaluationWindow": {
+            "lookback": "00:05:00",
+            "frequency": "00:01:00",
+            "minimumEvaluationPeriods": 2
+          },
+          "threshold": {
+            "operator": "GreaterThan",
+            "value": 300,
+            "unit": "seconds",
+            "aggregation": "Maximum"
+          },
+          "appliesToHostRoles": [ "queue-worker", "dispatcher" ],
+          "dimensions": {
+            "environment": "required",
+            "hostRole": "required"
+          },
+          "enabledByDefault": true
+        },
+        {
+          "name": "poison-work-item-rate",
+          "displayName": "Poison work item rate elevated",
+          "description": "Flags elevated poison work counts for real migration execution queues.",
+          "signalName": "migration.worker.poison_work.count",
+          "severity": "Warning",
+          "evaluationWindow": {
+            "lookback": "00:15:00",
+            "frequency": "00:05:00",
+            "minimumEvaluationPeriods": 1
+          },
+          "threshold": {
+            "operator": "GreaterThanOrEqual",
+            "value": 1,
+            "unit": "count",
+            "aggregation": "Total"
+          },
+          "appliesToHostRoles": [ "queue-worker" ],
+          "dimensions": {
+            "environment": "required",
+            "queueName": "required"
+          },
+          "enabledByDefault": true
+        }
+      ]
+    }
+  }
+}
