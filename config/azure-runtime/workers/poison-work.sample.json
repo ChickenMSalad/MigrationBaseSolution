@@ -1,0 +1,12 @@
+{
+  "AzureRuntime": {
+    "Workers": {
+      "PoisonWork": {
+        "MaxAttemptsBeforeDeadLetter": 5,
+        "AbandonDelaySeconds": 30,
+        "RequireOperatorActionForDeadLetter": true,
+        "AllowReplayForDeadLetteredWork": true
+      }
+    }
+  }
+}
