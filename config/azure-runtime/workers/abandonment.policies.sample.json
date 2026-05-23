@@ -1,0 +1,32 @@
+{
+  "azureRuntime": {
+    "workers": {
+      "abandonmentPolicies": [
+        {
+          "policyName": "queue-worker-default",
+          "hostRole": "queue-worker",
+          "requeueOnGracefulShutdown": true,
+          "requeueOnLeaseLoss": true,
+          "requeueOnHeartbeatStale": true,
+          "markPoisonWhenRetryBudgetExceeded": true,
+          "maxAbandonmentsBeforePoison": 5,
+          "minimumRequeueDelay": "00:00:30",
+          "maximumRequeueDelay": "00:15:00",
+          "evidenceRequirement": "abandonment-reason-and-worker-snapshot"
+        },
+        {
+          "policyName": "dispatcher-default",
+          "hostRole": "dispatcher",
+          "requeueOnGracefulShutdown": true,
+          "requeueOnLeaseLoss": true,
+          "requeueOnHeartbeatStale": true,
+          "markPoisonWhenRetryBudgetExceeded": false,
+          "maxAbandonmentsBeforePoison": 10,
+          "minimumRequeueDelay": "00:00:15",
+          "maximumRequeueDelay": "00:05:00",
+          "evidenceRequirement": "dispatcher-abandonment-reason"
+        }
+      ]
+    }
+  }
+}
