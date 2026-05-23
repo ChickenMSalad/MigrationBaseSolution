@@ -1,0 +1,14 @@
+{
+  "AzureRuntime": {
+    "Worker": {
+      "HeartbeatCheckpoint": {
+        "Enabled": true,
+        "Interval": "00:00:30",
+        "StaleAfter": "00:02:00",
+        "FaultedAfter": "00:05:00",
+        "MaxProperties": 32,
+        "RequireExecutionRunIdWhenRunningWork": true
+      }
+    }
+  }
+}
