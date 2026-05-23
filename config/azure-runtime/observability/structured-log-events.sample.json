@@ -1,0 +1,35 @@
+{
+  "azureRuntime": {
+    "observability": {
+      "structuredLogEvents": [
+        {
+          "eventName": "migration.worker.heartbeat.observed",
+          "eventCategory": "worker.lifecycle",
+          "defaultSeverity": "Information",
+          "requiresCorrelationId": true,
+          "requiresMigrationRunId": false,
+          "requiresWorkItemId": false,
+          "description": "Emitted when a worker heartbeat is observed by the runtime."
+        },
+        {
+          "eventName": "migration.workitem.execution.started",
+          "eventCategory": "workitem.execution",
+          "defaultSeverity": "Information",
+          "requiresCorrelationId": true,
+          "requiresMigrationRunId": true,
+          "requiresWorkItemId": true,
+          "description": "Emitted when a worker begins executing a durable work item."
+        },
+        {
+          "eventName": "migration.workitem.execution.failed",
+          "eventCategory": "workitem.execution",
+          "defaultSeverity": "Error",
+          "requiresCorrelationId": true,
+          "requiresMigrationRunId": true,
+          "requiresWorkItemId": true,
+          "description": "Emitted when a durable work item fails after execution."
+        }
+      ]
+    }
+  }
+}
