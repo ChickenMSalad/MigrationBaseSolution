@@ -171,6 +171,103 @@ ORDER BY Priority ASC, CreatedUtc ASC;
         return leased;
     }
 
+    public async Task RenewLeaseAsync(
+        RenewExecutionWorkItemLeaseRequest request,
+        CancellationToken cancellationToken)
+    {
+        var safeLeaseSeconds = Math.Clamp(request.LeaseSeconds, 30, 3600);
+        var connectionString = GetConnectionString();
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var executionSessionId = await ReadExecutionSessionIdAsync(
+            connection,
+            request.ExecutionWorkItemId,
+            cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+UPDATE dbo.MigrationExecutionWorkItems
+SET LeaseExpiresUtc = DATEADD(SECOND, @LeaseSeconds, SYSUTCDATETIME())
+WHERE ExecutionWorkItemId = @ExecutionWorkItemId
+  AND LeaseId = @LeaseId
+  AND WorkerId = @WorkerId
+  AND Status = 'leased';
+";
+        command.Parameters.AddWithValue("@ExecutionWorkItemId", request.ExecutionWorkItemId);
+        command.Parameters.AddWithValue("@LeaseId", request.LeaseId);
+        command.Parameters.AddWithValue("@WorkerId", request.WorkerId);
+        command.Parameters.AddWithValue("@LeaseSeconds", safeLeaseSeconds);
+
+        var updated = await command.ExecuteNonQueryAsync(cancellationToken);
+        if (updated != 1)
+        {
+            throw new InvalidOperationException("Work item lease could not be renewed because the lease did not match.");
+        }
+
+        await _eventStore.WriteAsync(
+            eventType: "ExecutionWorkItemLeaseRenewed",
+            severity: "info",
+            category: "execution",
+            source: "Migration.Admin.Api",
+            message: $"Execution work item lease renewed by {request.WorkerId}.",
+            payloadJson: null,
+            executionSessionId: executionSessionId,
+            migrationRunId: null,
+            cancellationToken: cancellationToken);
+    }
+
+    public async Task<int> RequeueAsync(
+        RequeueExecutionWorkItemsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var connectionString = GetConnectionString();
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+UPDATE dbo.MigrationExecutionWorkItems
+SET
+    Status = 'pending',
+    WorkerId = NULL,
+    LeaseId = NULL,
+    LeaseExpiresUtc = NULL,
+    CompletedUtc = NULL,
+    ErrorMessage = NULL
+WHERE ExecutionSessionId = @ExecutionSessionId
+  AND
+  (
+      (@IncludeFailed = 1 AND Status = 'failed' AND RetryCount < MaxRetries)
+      OR
+      (@IncludeExpiredLeases = 1 AND Status = 'leased' AND LeaseExpiresUtc < SYSUTCDATETIME())
+  );
+";
+        command.Parameters.AddWithValue("@ExecutionSessionId", request.ExecutionSessionId);
+        command.Parameters.AddWithValue("@IncludeFailed", request.IncludeFailed ? 1 : 0);
+        command.Parameters.AddWithValue("@IncludeExpiredLeases", request.IncludeExpiredLeases ? 1 : 0);
+
+        var updated = await command.ExecuteNonQueryAsync(cancellationToken);
+
+        if (updated > 0)
+        {
+            await _eventStore.WriteAsync(
+                eventType: "ExecutionWorkItemsRequeued",
+                severity: "info",
+                category: "execution",
+                source: "Migration.Admin.Api",
+                message: $"{updated} execution work item(s) requeued.",
+                payloadJson: null,
+                executionSessionId: request.ExecutionSessionId,
+                migrationRunId: null,
+                cancellationToken: cancellationToken);
+        }
+
+        return updated;
+    }
+
     public async Task CompleteAsync(
         CompleteExecutionWorkItemRequest request,
         CancellationToken cancellationToken)

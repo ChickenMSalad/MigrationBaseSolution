@@ -8,6 +8,7 @@ param(
     [int]$LeaseSeconds = 300,
     [int]$PollSeconds = 5,
     [int]$MaxIterations = 1,
+    [switch]$RenewLeaseBeforeCompletion,
     [switch]$FailLeasedItems,
     [switch]$AllowUntrustedCertificate
 )
@@ -105,6 +106,19 @@ while ($iteration -lt $MaxIterations) {
     else {
         foreach ($item in $items) {
             Write-Step ("Processing {0} {1}" -f $item.executionWorkItemId, $item.workItemName)
+
+            if ($RenewLeaseBeforeCompletion) {
+                Invoke-JsonPost `
+                    -Url ($trimmedBaseUrl + "/api/operational/execution-work-items/renew") `
+                    -Body @{
+                        executionWorkItemId = $item.executionWorkItemId
+                        leaseId = $item.leaseId
+                        workerId = $WorkerId
+                        leaseSeconds = $LeaseSeconds
+                    } | Out-Null
+
+                Write-Step ("Renewed lease for {0}" -f $item.executionWorkItemId)
+            }
 
             if ($FailLeasedItems) {
                 Invoke-JsonPost `

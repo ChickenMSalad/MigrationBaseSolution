@@ -33,6 +33,26 @@ public static class ExecutionWorkItemQueueEndpointExtensions
         })
         .WithName("LeaseExecutionWorkItems");
 
+        group.MapPost("/renew", async (
+            IExecutionWorkItemQueueStore store,
+            RenewExecutionWorkItemLeaseRequest request,
+            CancellationToken cancellationToken) =>
+        {
+            await store.RenewLeaseAsync(request, cancellationToken);
+            return Results.Ok();
+        })
+        .WithName("RenewExecutionWorkItemLease");
+
+        group.MapPost("/requeue", async (
+            IExecutionWorkItemQueueStore store,
+            RequeueExecutionWorkItemsRequest request,
+            CancellationToken cancellationToken) =>
+        {
+            var count = await store.RequeueAsync(request, cancellationToken);
+            return Results.Ok(new ExecutionWorkItemRequeueResponse(request.ExecutionSessionId, count));
+        })
+        .WithName("RequeueExecutionWorkItems");
+
         group.MapPost("/complete", async (
             IExecutionWorkItemQueueStore store,
             CompleteExecutionWorkItemRequest request,
@@ -82,3 +102,7 @@ public static class ExecutionWorkItemQueueEndpointExtensions
 public sealed record ExecutionWorkItemListResponse(
     Guid ExecutionSessionId,
     IReadOnlyList<ExecutionWorkItemRecord> Items);
+
+public sealed record ExecutionWorkItemRequeueResponse(
+    Guid ExecutionSessionId,
+    int Requeued);

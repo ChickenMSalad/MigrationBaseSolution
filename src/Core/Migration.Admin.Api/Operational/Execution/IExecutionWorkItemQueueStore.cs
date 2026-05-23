@@ -10,6 +10,14 @@ public interface IExecutionWorkItemQueueStore
         LeaseExecutionWorkItemsRequest request,
         CancellationToken cancellationToken);
 
+    Task RenewLeaseAsync(
+        RenewExecutionWorkItemLeaseRequest request,
+        CancellationToken cancellationToken);
+
+    Task<int> RequeueAsync(
+        RequeueExecutionWorkItemsRequest request,
+        CancellationToken cancellationToken);
+
     Task CompleteAsync(
         CompleteExecutionWorkItemRequest request,
         CancellationToken cancellationToken);

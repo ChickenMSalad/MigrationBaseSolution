@@ -9,6 +9,17 @@ public sealed record LeaseExecutionWorkItemsRequest(
     int Take,
     int LeaseSeconds);
 
+public sealed record RenewExecutionWorkItemLeaseRequest(
+    Guid ExecutionWorkItemId,
+    Guid LeaseId,
+    string WorkerId,
+    int LeaseSeconds);
+
+public sealed record RequeueExecutionWorkItemsRequest(
+    Guid ExecutionSessionId,
+    bool IncludeFailed,
+    bool IncludeExpiredLeases);
+
 public sealed record CompleteExecutionWorkItemRequest(
     Guid ExecutionWorkItemId,
     Guid LeaseId,
