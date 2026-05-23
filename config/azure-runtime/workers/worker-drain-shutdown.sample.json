@@ -1,0 +1,19 @@
+{
+  "azureWorkerShutdownPolicy": {
+    "shutdownTimeout": "00:10:00",
+    "drainGracePeriod": "00:05:00",
+    "heartbeatFinalizationTimeout": "00:00:30",
+    "stopPollingBeforeDrain": true,
+    "markWorkerUnavailableDuringDrain": true,
+    "allowAbandonAfterTimeout": false
+  },
+  "workerDrainStates": [
+    "Running",
+    "DrainRequested",
+    "Draining",
+    "Drained",
+    "ShutdownFinalizing",
+    "Stopped",
+    "EmergencyStopped"
+  ]
+}
