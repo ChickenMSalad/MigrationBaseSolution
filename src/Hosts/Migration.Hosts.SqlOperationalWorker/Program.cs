@@ -1,54 +1,53 @@
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Migration.Application.Operational.Readiness;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Configuration.Sources.Clear();
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.local.json", optional: true, reloadOnChange: true)
+    .AddUserSecrets<Program>(optional: true)
+    .AddEnvironmentVariables(prefix: "MIGRATION_");
+
+builder.Services.AddSqlOperationalRuntimeReadiness(builder.Configuration);
+builder.Services.AddSqlOperationalQueueExecutor(builder.Configuration);
 builder.Services.AddHostedService<SqlOperationalWorkerStartupProbe>();
 
-await builder.Build().RunAsync();
+await builder.Build().RunAsync().ConfigureAwait(false);
 
 internal sealed class SqlOperationalWorkerStartupProbe : BackgroundService
 {
-    private readonly IConfiguration _configuration;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<SqlOperationalWorkerStartupProbe> _logger;
 
     public SqlOperationalWorkerStartupProbe(
-        IConfiguration configuration,
+        IServiceProvider serviceProvider,
         ILogger<SqlOperationalWorkerStartupProbe> logger)
     {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var connectionString = _configuration.GetConnectionString("MigrationOperationalStore");
+        using var scope = _serviceProvider.CreateScope();
+        var readiness = scope.ServiceProvider.GetRequiredService<IOperationalRuntimeReadinessService>();
+        var report = await readiness.GetReadinessAsync(stoppingToken).ConfigureAwait(false);
 
-        if (string.IsNullOrWhiteSpace(connectionString))
+        if (!report.IsReady)
         {
-            throw new InvalidOperationException(
-                "Connection string 'MigrationOperationalStore' is required for the SQL operational worker host.");
+            var issues = string.Join("; ", report.BlockingIssues);
+            throw new InvalidOperationException($"SQL operational runtime readiness check failed: {issues}");
         }
 
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(stoppingToken).ConfigureAwait(false);
-
-        await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT 1";
-        command.CommandTimeout = 30;
-
-        var result = await command.ExecuteScalarAsync(stoppingToken).ConfigureAwait(false);
-
-        if (!Equals(result, 1))
-        {
-            throw new InvalidOperationException("SQL readiness probe failed.");
-        }
-
-        _logger.LogInformation("SQL operational worker host startup probe passed.");
-
-        await Task.CompletedTask.ConfigureAwait(false);
+        _logger.LogInformation(
+            "SQL operational worker host readiness check passed. Status={Status}; EvaluatedUtc={EvaluatedUtc}",
+            report.Status,
+            report.EvaluatedUtc);
     }
 }
