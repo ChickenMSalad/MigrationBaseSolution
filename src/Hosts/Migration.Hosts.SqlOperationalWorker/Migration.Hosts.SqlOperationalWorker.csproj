@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>85cfa3c0-995c-4f7e-b200-dbd9970229b8</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\Core\Migration.Domain\Migration.Domain.csproj" />
+    <ProjectReference Include="..\..\Core\Migration.Infrastructure\Migration.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Core\Migration.Infrastructure.Sql\Migration.Infrastructure.Sql.csproj" />
+    <ProjectReference Include="..\..\Core\Migration.Shared\Migration.Shared.csproj" />
+  </ItemGroup>
+</Project>
