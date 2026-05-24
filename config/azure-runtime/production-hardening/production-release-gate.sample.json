@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ProductionReleaseGate": {
+      "Enabled": true,
+      "RequirePassedEvidenceReport": true,
+      "AllowWarnings": false,
+      "AllowOperatorOverride": true
+    }
+  }
+}
