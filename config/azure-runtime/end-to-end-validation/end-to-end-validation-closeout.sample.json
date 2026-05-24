@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "EndToEndValidationCloseout": {
+      "Enabled": true,
+      "RequireReadinessEvaluation": true,
+      "RequireDryRunHarness": true,
+      "RequireEvidenceReport": true
+    }
+  }
+}
