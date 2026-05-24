@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "ProductionHardeningCloseout": {
+      "Enabled": true,
+      "RequireReleaseGate": true,
+      "RequireRollbackGate": true,
+      "RequireReadinessChecklist": true,
+      "RequireDeploymentDecision": true
+    }
+  }
+}
