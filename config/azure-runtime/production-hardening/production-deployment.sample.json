@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "ProductionDeployment": {
+      "Enabled": true,
+      "RequireReadinessChecklist": true,
+      "RequireRollbackDecision": true,
+      "AllowOperatorOverride": true,
+      "RequireDeploymentEvidenceRecord": true
+    }
+  }
+}
