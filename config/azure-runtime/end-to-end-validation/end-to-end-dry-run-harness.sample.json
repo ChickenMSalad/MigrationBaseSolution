@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "EndToEndDryRunHarness": {
+      "Enabled": true,
+      "SyntheticItemCount": 1,
+      "IncludeFailureRuntimeProbe": true,
+      "RequireAllStepsPassed": true
+    }
+  }
+}
