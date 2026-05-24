@@ -6,6 +6,7 @@ using Migration.Application.Operational.ExecutionHistory;
 using Migration.Application.Operational.Runs;
 using Migration.Application.Operational.WorkItems;
 using Migration.Workers.QueueExecutor.Options;
+using Migration.Application.Operational.Telemetry;
 
 namespace Migration.Workers.QueueExecutor.Services;
 
@@ -168,6 +169,16 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
     {
         var startedAtUtc = DateTimeOffset.UtcNow;
         var executionAttemptId = await TryRecordStartedAsync(item, options, startedAtUtc, cancellationToken).ConfigureAwait(false);
+
+        using var telemetryScope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            [OperationalExecutionTelemetryFields.RunId] = item.RunId,
+            [OperationalExecutionTelemetryFields.WorkItemId] = item.WorkItemId,
+            [OperationalExecutionTelemetryFields.ManifestRowId] = item.ManifestRowId,
+            [OperationalExecutionTelemetryFields.WorkItemType] = item.WorkItemType,
+            [OperationalExecutionTelemetryFields.AttemptCount] = item.AttemptCount,
+            [OperationalExecutionTelemetryFields.PartitionKey] = item.PartitionKey
+        });
 
         try
         {
