@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Migration.Application.Operational.Readiness;
+using Migration.Workers.QueueExecutor.Registration;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -16,6 +17,7 @@ builder.Configuration
 
 builder.Services.AddSqlOperationalRuntimeReadiness(builder.Configuration);
 builder.Services.AddSqlOperationalQueueExecutor(builder.Configuration);
+builder.Services.AddSqlOperationalMigrationJobWorkItemExecutor(builder.Configuration);
 builder.Services.AddHostedService<SqlOperationalWorkerStartupProbe>();
 
 await builder.Build().RunAsync().ConfigureAwait(false);

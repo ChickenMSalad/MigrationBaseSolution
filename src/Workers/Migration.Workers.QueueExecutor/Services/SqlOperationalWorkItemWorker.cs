@@ -65,7 +65,7 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
                 options.PayloadTemplateJson), stoppingToken).ConfigureAwait(false);
 
             _logger.LogInformation(
-                "SQL operational run start evaluated. RunId={RunId}; Status={Status}; Enqueued={Enqueued}; Selected={Selected}",
+                "SQL operational run start evaluated. RunId={RunId}; Status={Status}; Enqueued={Enqueued}",
                 startResult.RunId,
                 startResult.Status,
                 startResult.EnqueuedWorkItemCount);
