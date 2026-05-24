@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ProductionRollback": {
+      "Enabled": true,
+      "RequireRollbackOnBlockedGate": true,
+      "AllowOperatorRollback": true,
+      "RequireAbortConfirmation": true
+    }
+  }
+}
