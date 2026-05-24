@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "EndToEndValidation": {
+      "Enabled": true,
+      "RequireQueueDispatchValidation": true,
+      "RequireManifestExecutionValidation": true,
+      "RequireConnectorExecutionValidation": true,
+      "TreatWarningsAsFailures": false
+    }
+  }
+}
