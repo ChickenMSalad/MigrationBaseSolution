@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "EndToEndEvidenceReport": {
+      "Enabled": true,
+      "RequireDryRunResult": true,
+      "IncludeDryRunStepEvidence": true,
+      "TreatMissingEvidenceAsFailure": true
+    }
+  }
+}
