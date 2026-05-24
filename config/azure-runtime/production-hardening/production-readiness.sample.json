@@ -1,0 +1,11 @@
+{
+  "AzureRuntime": {
+    "ProductionReadiness": {
+      "Enabled": true,
+      "RequireReleaseGate": true,
+      "RequireRollbackDecision": true,
+      "RequireOperatorSignoff": true,
+      "AllowWaivers": false
+    }
+  }
+}
