@@ -1,9 +1,10 @@
-using Migration.Infrastructure.Sql.Operational.WorkItems;
+﻿using Migration.Infrastructure.Sql.Operational.WorkItems;
 using Migration.Workers.ServiceBusExecutor.Options;
 using Migration.Workers.ServiceBusExecutor.Processing;
 using Migration.Workers.ServiceBusExecutor.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Migration.Workers.QueueExecutor.Registration;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -14,7 +15,10 @@ builder.Services
     .ValidateOnStart();
 
 builder.Services.AddSqlOperationalWorkItemQueue();
-builder.Services.AddSingleton<IServiceBusWorkItemExecutor, PlaceholderServiceBusWorkItemExecutor>();
+builder.Services.AddSqlOperationalMigrationJobWorkItemExecutor(builder.Configuration);
+builder.Services.AddSingleton<IServiceBusWorkItemExecutor, SqlOperationalServiceBusWorkItemExecutor>();
 builder.Services.AddHostedService<SqlServiceBusExecutorWorker>();
 
 await builder.Build().RunAsync();
+
+
