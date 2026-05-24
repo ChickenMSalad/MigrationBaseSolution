@@ -6,6 +6,7 @@ using Migration.Workers.ServiceBusExecutor.Processing;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Migration.Application.Operational.Telemetry;
 
 namespace Migration.Workers.ServiceBusExecutor.Runtime;
 
@@ -105,6 +106,19 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
                 await args.DeadLetterMessageAsync(args.Message, "WORK_ITEM_NOT_FOUND", $"Work item '{message.WorkItemId}' was not found in SQL.", args.CancellationToken);
                 return;
             }
+
+            using var telemetryScope = _logger.BeginScope(new Dictionary<string, object?>
+            {
+                [OperationalExecutionTelemetryFields.RunId] = workItem.RunId,
+                [OperationalExecutionTelemetryFields.WorkItemId] = workItem.WorkItemId,
+                [OperationalExecutionTelemetryFields.ManifestRowId] = workItem.ManifestRowId,
+                [OperationalExecutionTelemetryFields.WorkItemType] = workItem.WorkItemType,
+                [OperationalExecutionTelemetryFields.AttemptCount] = workItem.AttemptCount,
+                [OperationalExecutionTelemetryFields.PartitionKey] = workItem.PartitionKey,
+                [OperationalExecutionTelemetryFields.ServiceBusCorrelationId] = args.Message.CorrelationId,
+                ["ServiceBusMessageId"] = args.Message.MessageId,
+                ["ServiceBusDeliveryCount"] = args.Message.DeliveryCount
+            });
 
             var result = await _executor.ExecuteAsync(workItem, args.CancellationToken);
             if (result.Succeeded)
