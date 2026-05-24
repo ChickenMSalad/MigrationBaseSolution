@@ -17,14 +17,72 @@ public interface IOperationalWorkItemQueue
     Task ReleaseAsync(ReleaseOperationalWorkItemRequest request, CancellationToken cancellationToken = default);
 }
 
+
 public sealed record EnqueueOperationalWorkItemRequest(
     Guid RunId,
-    Guid? ManifestRowId,
+    long? ManifestRowId,
     string WorkItemType,
     string? PartitionKey,
     int Priority,
     string? PayloadJson,
     DateTimeOffset? NotBeforeUtc);
+
+public sealed record CompleteOperationalWorkItemRequest(
+    long WorkItemId,
+    string WorkerId,
+    string? ResultJson);
+
+public sealed record FailOperationalWorkItemRequest(
+    long WorkItemId,
+    string WorkerId,
+    string ErrorCode,
+    string ErrorMessage,
+    bool IsRetryable,
+    DateTimeOffset? NextAttemptUtc);
+
+public sealed record ReleaseOperationalWorkItemRequest(
+    long WorkItemId,
+    string WorkerId,
+    DateTimeOffset? NextAttemptUtc);
+
+public sealed class OperationalWorkItemRecord
+{
+    public long WorkItemId { get; set; }
+
+    public Guid RunId { get; set; }
+
+    public long? ManifestRowId { get; set; }
+
+    public string WorkItemType { get; set; } = string.Empty;
+
+    public string Status { get; set; } = string.Empty;
+
+    public string? PartitionKey { get; set; }
+
+    public int Priority { get; set; }
+
+    public int AttemptCount { get; set; }
+
+    public int MaxAttempts { get; set; }
+
+    public string? LeaseOwner { get; set; }
+
+    public DateTimeOffset? LeaseExpiresUtc { get; set; }
+
+    public DateTimeOffset? NotBeforeUtc { get; set; }
+
+    public string? PayloadJson { get; set; }
+
+    public string? ResultJson { get; set; }
+
+    public string? LastErrorCode { get; set; }
+
+    public string? LastErrorMessage { get; set; }
+
+    public DateTimeOffset CreatedUtc { get; set; }
+
+    public DateTimeOffset UpdatedUtc { get; set; }
+}
 
 public sealed record ClaimOperationalWorkItemsRequest(
     Guid RunId,
@@ -33,51 +91,24 @@ public sealed record ClaimOperationalWorkItemsRequest(
     int LeaseSeconds,
     string? PartitionKey);
 
-public sealed record CompleteOperationalWorkItemRequest(
-    Guid WorkItemId,
-    string WorkerId,
-    string? ResultJson);
 
-public sealed record FailOperationalWorkItemRequest(
-    Guid WorkItemId,
-    string WorkerId,
-    string ErrorCode,
-    string ErrorMessage,
-    bool IsRetryable,
-    DateTimeOffset? NextAttemptUtc);
+public sealed class OperationalWorkItemRunSummary
+{
+    public Guid RunId { get; set; }
 
-public sealed record ReleaseOperationalWorkItemRequest(
-    Guid WorkItemId,
-    string WorkerId,
-    DateTimeOffset? NextAttemptUtc);
+    public int PendingCount { get; set; }
 
-public sealed record OperationalWorkItemRecord(
-    Guid WorkItemId,
-    Guid RunId,
-    Guid? ManifestRowId,
-    string WorkItemType,
-    string Status,
-    string? PartitionKey,
-    int Priority,
-    int AttemptCount,
-    int MaxAttempts,
-    string? LeaseOwner,
-    DateTimeOffset? LeaseExpiresUtc,
-    DateTimeOffset? NotBeforeUtc,
-    string? PayloadJson,
-    string? ResultJson,
-    string? LastErrorCode,
-    string? LastErrorMessage,
-    DateTimeOffset CreatedUtc,
-    DateTimeOffset UpdatedUtc);
+    public int LeasedCount { get; set; }
 
-public sealed record OperationalWorkItemRunSummary(
-    Guid RunId,
-    int PendingCount,
-    int LeasedCount,
-    int CompletedCount,
-    int FailedCount,
-    int RetryableFailedCount,
-    int TotalCount,
-    DateTimeOffset? OldestPendingUtc,
-    DateTimeOffset? NewestUpdateUtc);
+    public int CompletedCount { get; set; }
+
+    public int FailedCount { get; set; }
+
+    public int RetryableFailedCount { get; set; }
+
+    public int TotalCount { get; set; }
+
+    public DateTimeOffset? OldestPendingUtc { get; set; }
+
+    public DateTimeOffset? NewestUpdateUtc { get; set; }
+}

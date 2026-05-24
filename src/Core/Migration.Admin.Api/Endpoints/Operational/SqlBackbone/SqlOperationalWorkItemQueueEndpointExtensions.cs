@@ -59,7 +59,7 @@ public static class SqlOperationalWorkItemQueueEndpointExtensions
     }
 
     private static async Task<NoContent> CompleteAsync(
-        Guid workItemId,
+        long workItemId,
         CompleteSqlOperationalWorkItemRequest request,
         IOperationalWorkItemQueue queue,
         CancellationToken cancellationToken)
@@ -69,7 +69,7 @@ public static class SqlOperationalWorkItemQueueEndpointExtensions
     }
 
     private static async Task<NoContent> FailAsync(
-        Guid workItemId,
+        long workItemId,
         FailSqlOperationalWorkItemRequest request,
         IOperationalWorkItemQueue queue,
         CancellationToken cancellationToken)
@@ -86,7 +86,7 @@ public static class SqlOperationalWorkItemQueueEndpointExtensions
     }
 
     private static async Task<NoContent> ReleaseAsync(
-        Guid workItemId,
+        long workItemId,
         ReleaseSqlOperationalWorkItemRequest request,
         IOperationalWorkItemQueue queue,
         CancellationToken cancellationToken)

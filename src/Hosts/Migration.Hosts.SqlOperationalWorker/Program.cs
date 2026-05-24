@@ -3,6 +3,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Migration.Application.Operational.Readiness;
 using Migration.Workers.QueueExecutor.Registration;
+using Migration.GenericRuntime.Registration;
+using Migration.Connectors.Registration;
+using Migration.ControlPlane.Registration;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -15,8 +18,16 @@ builder.Configuration
     .AddUserSecrets<Program>(optional: true)
     .AddEnvironmentVariables(prefix: "MIGRATION_");
 
+Migration.Connectors.Registration.ConnectorModuleRegistrationExtensions
+    .AddMigrationConnectorModules(builder.Services, builder.Configuration);
+builder.Services.AddMigrationRuntime(builder.Configuration);
+builder.Services.AddMigrationControlPlane(builder.Configuration);
+
+builder.Services.AddSingleton<Migration.Workers.QueueExecutor.Services.ProjectCredentialJobSettingsHydrator>();
+
 builder.Services.AddSqlOperationalRuntimeReadiness(builder.Configuration);
 builder.Services.AddSqlOperationalQueueExecutor(builder.Configuration);
+
 builder.Services.AddSqlOperationalMigrationJobWorkItemExecutor(builder.Configuration);
 builder.Services.AddHostedService<SqlOperationalWorkerStartupProbe>();
 

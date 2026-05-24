@@ -289,5 +289,5 @@ where RunId = @RunId;", new
 
     private string ManifestRowsTableName => $"[{_options.Value.SchemaName}].[{_options.Value.ManifestRowsTableName}]";
 
-    private sealed record ManifestRowFanOutRow(Guid ManifestRowId, string? PayloadJson);
+    private sealed record ManifestRowFanOutRow(long ManifestRowId, string? PayloadJson);
 }

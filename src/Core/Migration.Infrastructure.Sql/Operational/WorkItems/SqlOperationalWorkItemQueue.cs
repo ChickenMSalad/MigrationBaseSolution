@@ -66,7 +66,7 @@ values (
 
         var maxItems = Math.Clamp(request.MaxItems, 1, 500);
         var leaseSeconds = Math.Clamp(request.LeaseSeconds, 30, 3600);
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTime.UtcNow;
         var leaseExpiresUtc = now.AddSeconds(leaseSeconds);
 
         var sql = $@"
