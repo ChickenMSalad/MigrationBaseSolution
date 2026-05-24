@@ -1,0 +1,10 @@
+{
+  "AzureRuntime": {
+    "ConnectorExecutionCloseout": {
+      "Enabled": true,
+      "RequireReadinessEvaluation": true,
+      "RequireEvidenceCapture": true,
+      "RequireManifestAdapter": true
+    }
+  }
+}
