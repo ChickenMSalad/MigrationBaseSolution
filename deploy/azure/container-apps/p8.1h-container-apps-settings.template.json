@@ -1,4 +1,4 @@
-{
+﻿{
   "adminApi": {
     "containerPort": 8080,
     "livenessPath": "/health/live",
@@ -19,7 +19,6 @@
       "MIGRATION_SqlOperationalMigrationJobExecutor__Enabled": "false"
     },
     "debugOnlyDoNotSet": [
-      "MIGRATION_SqlOperationalQueueExecutor__RunId"
     ]
   }
 }
