@@ -6,8 +6,8 @@ public static class OperationalExecutionActivity
 {
     public static Activity? StartSqlQueueWorkItemExecution(
         Guid runId,
-        Guid workItemId,
-        Guid? manifestRowId = null,
+        long workItemId,
+        long? manifestRowId = null,
         string? workItemType = null,
         int? attemptCount = null,
         string? partitionKey = null)
@@ -22,8 +22,8 @@ public static class OperationalExecutionActivity
 
     public static Activity? StartServiceBusWorkItemExecution(
         Guid runId,
-        Guid workItemId,
-        Guid? manifestRowId = null,
+        long workItemId,
+        long? manifestRowId = null,
         string? workItemType = null,
         int? attemptCount = null,
         string? partitionKey = null,
@@ -48,9 +48,7 @@ public static class OperationalExecutionActivity
 
     public static Activity? StartServiceBusDispatch(
         Guid runId,
-        Guid workItemId,
-        Guid? manifestRowId = null,
-        string? workItemType = null,
+        long workItemId,
         string? serviceBusCorrelationId = null,
         string? serviceBusMessageId = null)
     {
@@ -58,7 +56,7 @@ public static class OperationalExecutionActivity
             OperationalExecutionActivitySources.ServiceBusDispatch,
             ActivityKind.Producer);
 
-        AddCommonTags(activity, runId, workItemId, manifestRowId, workItemType, null, null);
+        AddCommonTags(activity, runId, workItemId, null, null, null, null);
         AddIfPresent(activity, OperationalExecutionActivityTags.ServiceBusCorrelationId, serviceBusCorrelationId);
         AddIfPresent(activity, OperationalExecutionActivityTags.ServiceBusMessageId, serviceBusMessageId);
         return activity;
@@ -82,8 +80,8 @@ public static class OperationalExecutionActivity
     private static void AddCommonTags(
         Activity? activity,
         Guid runId,
-        Guid workItemId,
-        Guid? manifestRowId,
+        long workItemId,
+        long? manifestRowId,
         string? workItemType,
         int? attemptCount,
         string? partitionKey)

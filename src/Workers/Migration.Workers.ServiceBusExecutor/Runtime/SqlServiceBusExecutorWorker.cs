@@ -120,12 +120,28 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
                 ["ServiceBusDeliveryCount"] = args.Message.DeliveryCount
             });
 
+            var activityStartedAtUtc = DateTimeOffset.UtcNow;
+            using var activity = OperationalExecutionActivity.StartServiceBusWorkItemExecution(
+                workItem.RunId,
+                workItem.WorkItemId,
+                workItem.ManifestRowId,
+                workItem.WorkItemType,
+                workItem.AttemptCount,
+                workItem.PartitionKey,
+                args.Message.CorrelationId,
+                args.Message.MessageId,
+                args.Message.DeliveryCount);
+
             var result = await _executor.ExecuteAsync(workItem, args.CancellationToken);
             if (result.Succeeded)
             {
+
                 await _workItemQueue.CompleteAsync(
                     new CompleteOperationalWorkItemRequest(workItem.WorkItemId, _options.Value.WorkerId, result.ResultJson),
                     args.CancellationToken);
+
+                OperationalExecutionActivity.SetExecutionDuration(activity, DateTimeOffset.UtcNow - activityStartedAtUtc);
+                OperationalExecutionActivity.SetExecutionResult(activity, result.Succeeded, result.ErrorCode);
 
                 await args.CompleteMessageAsync(args.Message, args.CancellationToken);
                 return;
@@ -134,6 +150,9 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
             var nextAttemptUtc = result.IsRetryable
                 ? DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(_options.Value.RetryDelaySeconds, 1, 3600))
                 : (DateTimeOffset?)null;
+
+            OperationalExecutionActivity.SetExecutionDuration(activity, DateTimeOffset.UtcNow - activityStartedAtUtc);
+            OperationalExecutionActivity.SetExecutionResult(activity, result.Succeeded, result.ErrorCode);
 
             await _workItemQueue.FailAsync(
                 new FailOperationalWorkItemRequest(

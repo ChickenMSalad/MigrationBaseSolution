@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Migration.Workers.ServiceBusDispatcher.Options;
+using Migration.Application.Operational.Telemetry;
 
 namespace Migration.Workers.ServiceBusDispatcher.Dispatching;
 
@@ -72,8 +73,19 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
             message.ApplicationProperties["sequenceNumber"] = item.SequenceNumber;
             message.ApplicationProperties["dispatcherId"] = _options.WorkerId;
 
+
+            var activityStartedAtUtc = DateTimeOffset.UtcNow;
+            using var activity = OperationalExecutionActivity.StartServiceBusDispatch(
+                item.RunId,
+                item.WorkItemId,
+                serviceBusCorrelationId: message.CorrelationId,
+                serviceBusMessageId: message.MessageId);
+
             await _sender!.SendMessageAsync(message, cancellationToken).ConfigureAwait(false);
             await MarkDispatchedAsync(item.WorkItemId, cancellationToken).ConfigureAwait(false);
+
+            OperationalExecutionActivity.SetExecutionDuration(activity, DateTimeOffset.UtcNow - activityStartedAtUtc);
+            OperationalExecutionActivity.SetExecutionResult(activity, succeeded: true, errorCode: null);
         }
 
         _logger.LogInformation("Dispatched {Count} SQL work items to Service Bus queue {QueueName}.", workItems.Count, _options.QueueName);
@@ -148,7 +160,7 @@ OUTPUT
         return records.ToList();
     }
 
-    private async Task MarkDispatchedAsync(Guid workItemId, CancellationToken cancellationToken)
+    private async Task MarkDispatchedAsync(long workItemId, CancellationToken cancellationToken)
     {
         const string sql = """
 UPDATE dbo.MigrationWorkItems

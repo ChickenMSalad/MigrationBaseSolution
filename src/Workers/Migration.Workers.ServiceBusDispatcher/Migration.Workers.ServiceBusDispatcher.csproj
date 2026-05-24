@@ -13,4 +13,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Core\Migration.Application\Migration.Application.csproj" />
+	</ItemGroup>
 </Project>

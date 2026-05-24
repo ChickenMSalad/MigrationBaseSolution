@@ -179,7 +179,13 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
             [OperationalExecutionTelemetryFields.AttemptCount] = item.AttemptCount,
             [OperationalExecutionTelemetryFields.PartitionKey] = item.PartitionKey
         });
-
+        using var activity = OperationalExecutionActivity.StartSqlQueueWorkItemExecution(
+            item.RunId,
+            item.WorkItemId,
+            item.ManifestRowId,
+            item.WorkItemType,
+            item.AttemptCount,
+            item.PartitionKey);
         try
         {
             var result = await _executor.ExecuteAsync(item, cancellationToken).ConfigureAwait(false);
@@ -199,6 +205,10 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
                     DateTimeOffset.UtcNow,
                     cancellationToken).ConfigureAwait(false);
 
+
+                OperationalExecutionActivity.SetExecutionDuration(activity, DateTimeOffset.UtcNow - startedAtUtc);
+                OperationalExecutionActivity.SetExecutionResult(activity, result.Succeeded, result.ErrorCode);
+
                 _logger.LogInformation("Completed SQL operational work item {WorkItemId}.", item.WorkItemId);
                 return;
             }
@@ -209,6 +219,9 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
             var errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
                 ? "SQL operational work item execution failed."
                 : result.ErrorMessage;
+
+            OperationalExecutionActivity.SetExecutionDuration(activity, DateTimeOffset.UtcNow - startedAtUtc);
+            OperationalExecutionActivity.SetExecutionResult(activity, result.Succeeded, result.ErrorCode);
 
             await _workItemQueue.FailAsync(new FailOperationalWorkItemRequest(
                 item.WorkItemId,

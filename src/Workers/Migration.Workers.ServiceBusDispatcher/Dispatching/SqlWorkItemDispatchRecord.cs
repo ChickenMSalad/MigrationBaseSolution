@@ -1,7 +1,7 @@
 namespace Migration.Workers.ServiceBusDispatcher.Dispatching;
 
 internal sealed record SqlWorkItemDispatchRecord(
-    Guid WorkItemId,
+    long WorkItemId,
     Guid RunId,
     long SequenceNumber,
     string Status,
