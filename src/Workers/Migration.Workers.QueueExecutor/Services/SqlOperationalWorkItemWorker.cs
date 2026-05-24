@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Migration.Application.Operational.ExecutionHistory;
 using Migration.Application.Operational.Runs;
 using Migration.Application.Operational.WorkItems;
 using Migration.Workers.QueueExecutor.Options;
@@ -12,6 +14,7 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
     private readonly IOperationalRunCoordinator _runCoordinator;
     private readonly IOperationalWorkItemQueue _workItemQueue;
     private readonly ISqlOperationalWorkItemExecutor _executor;
+    private readonly IOperationalExecutionHistoryWriter _executionHistoryWriter;
     private readonly IOptions<SqlOperationalQueueExecutorOptions> _options;
     private readonly ILogger<SqlOperationalWorkItemWorker> _logger;
 
@@ -19,12 +22,14 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
         IOperationalRunCoordinator runCoordinator,
         IOperationalWorkItemQueue workItemQueue,
         ISqlOperationalWorkItemExecutor executor,
+        IOperationalExecutionHistoryWriter executionHistoryWriter,
         IOptions<SqlOperationalQueueExecutorOptions> options,
         ILogger<SqlOperationalWorkItemWorker> logger)
     {
         _runCoordinator = runCoordinator ?? throw new ArgumentNullException(nameof(runCoordinator));
         _workItemQueue = workItemQueue ?? throw new ArgumentNullException(nameof(workItemQueue));
         _executor = executor ?? throw new ArgumentNullException(nameof(executor));
+        _executionHistoryWriter = executionHistoryWriter ?? throw new ArgumentNullException(nameof(executionHistoryWriter));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -161,6 +166,9 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
         SqlOperationalQueueExecutorOptions options,
         CancellationToken cancellationToken)
     {
+        var startedAtUtc = DateTimeOffset.UtcNow;
+        var executionAttemptId = await TryRecordStartedAsync(item, options, startedAtUtc, cancellationToken).ConfigureAwait(false);
+
         try
         {
             var result = await _executor.ExecuteAsync(item, cancellationToken).ConfigureAwait(false);
@@ -172,17 +180,44 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
                     options.WorkerId,
                     result.ResultJson), cancellationToken).ConfigureAwait(false);
 
+                await TryRecordCompletedAsync(
+                    executionAttemptId,
+                    item,
+                    options,
+                    result.ResultJson,
+                    DateTimeOffset.UtcNow,
+                    cancellationToken).ConfigureAwait(false);
+
                 _logger.LogInformation("Completed SQL operational work item {WorkItemId}.", item.WorkItemId);
                 return;
             }
 
+            var errorCode = string.IsNullOrWhiteSpace(result.ErrorCode)
+                ? "SQL_OPERATIONAL_WORK_ITEM_FAILED"
+                : result.ErrorCode;
+            var errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                ? "SQL operational work item execution failed."
+                : result.ErrorMessage;
+
             await _workItemQueue.FailAsync(new FailOperationalWorkItemRequest(
                 item.WorkItemId,
                 options.WorkerId,
-                string.IsNullOrWhiteSpace(result.ErrorCode) ? "SQL_OPERATIONAL_WORK_ITEM_FAILED" : result.ErrorCode,
-                string.IsNullOrWhiteSpace(result.ErrorMessage) ? "SQL operational work item execution failed." : result.ErrorMessage,
+                errorCode,
+                errorMessage,
                 result.IsRetryable,
                 result.NextAttemptUtc), cancellationToken).ConfigureAwait(false);
+
+            await TryRecordFailedAsync(
+                executionAttemptId,
+                item,
+                options,
+                errorCode,
+                errorMessage,
+                result.IsRetryable,
+                result.ResultJson,
+                DateTimeOffset.UtcNow,
+                result.NextAttemptUtc,
+                cancellationToken).ConfigureAwait(false);
 
             _logger.LogWarning(
                 "Failed SQL operational work item {WorkItemId}. Retryable={Retryable}; ErrorCode={ErrorCode}",
@@ -198,13 +233,130 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
         {
             _logger.LogError(ex, "Unhandled SQL operational work item execution failure. WorkItemId={WorkItemId}", item.WorkItemId);
 
+            var failedAtUtc = DateTimeOffset.UtcNow;
+            var nextAttemptUtc = failedAtUtc.AddSeconds(Math.Max(30, options.RetryDelaySeconds));
+
             await _workItemQueue.FailAsync(new FailOperationalWorkItemRequest(
                 item.WorkItemId,
                 options.WorkerId,
                 ex.GetType().Name,
                 ex.Message,
                 true,
-                DateTimeOffset.UtcNow.AddSeconds(Math.Max(30, options.RetryDelaySeconds))), CancellationToken.None).ConfigureAwait(false);
+                nextAttemptUtc), CancellationToken.None).ConfigureAwait(false);
+
+            await TryRecordFailedAsync(
+                executionAttemptId,
+                item,
+                options,
+                ex.GetType().Name,
+                ex.Message,
+                true,
+                BuildFailureJson(ex),
+                failedAtUtc,
+                nextAttemptUtc,
+                CancellationToken.None).ConfigureAwait(false);
         }
+    }
+
+    private async Task<long?> TryRecordStartedAsync(
+        OperationalWorkItemRecord item,
+        SqlOperationalQueueExecutorOptions options,
+        DateTimeOffset startedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _executionHistoryWriter.RecordStartedAsync(new OperationalExecutionAttemptStarted(
+                item.RunId,
+                item.WorkItemId,
+                item.ManifestRowId,
+                item.WorkItemType,
+                options.WorkerId,
+                item.AttemptCount,
+                item.PartitionKey,
+                item.PayloadJson,
+                startedAtUtc), cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Unable to record SQL operational execution-history start. WorkItemId={WorkItemId}; RunId={RunId}", item.WorkItemId, item.RunId);
+            return null;
+        }
+    }
+
+    private async Task TryRecordCompletedAsync(
+        long? executionAttemptId,
+        OperationalWorkItemRecord item,
+        SqlOperationalQueueExecutorOptions options,
+        string? resultJson,
+        DateTimeOffset completedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        if (executionAttemptId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _executionHistoryWriter.RecordCompletedAsync(new OperationalExecutionAttemptCompleted(
+                executionAttemptId.Value,
+                item.RunId,
+                item.WorkItemId,
+                options.WorkerId,
+                resultJson,
+                completedAtUtc), cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Unable to record SQL operational execution-history completion. WorkItemId={WorkItemId}; RunId={RunId}", item.WorkItemId, item.RunId);
+        }
+    }
+
+    private async Task TryRecordFailedAsync(
+        long? executionAttemptId,
+        OperationalWorkItemRecord item,
+        SqlOperationalQueueExecutorOptions options,
+        string errorCode,
+        string errorMessage,
+        bool isRetryable,
+        string? failureJson,
+        DateTimeOffset failedAtUtc,
+        DateTimeOffset? nextAttemptUtc,
+        CancellationToken cancellationToken)
+    {
+        if (executionAttemptId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _executionHistoryWriter.RecordFailedAsync(new OperationalExecutionAttemptFailed(
+                executionAttemptId.Value,
+                item.RunId,
+                item.WorkItemId,
+                options.WorkerId,
+                errorCode,
+                errorMessage,
+                isRetryable,
+                failureJson,
+                failedAtUtc,
+                nextAttemptUtc), cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Unable to record SQL operational execution-history failure. WorkItemId={WorkItemId}; RunId={RunId}", item.WorkItemId, item.RunId);
+        }
+    }
+
+    private static string BuildFailureJson(Exception exception)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            exceptionType = exception.GetType().FullName,
+            exception.Message,
+            exception.StackTrace
+        });
     }
 }

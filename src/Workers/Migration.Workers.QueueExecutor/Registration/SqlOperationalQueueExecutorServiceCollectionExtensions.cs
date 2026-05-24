@@ -1,9 +1,16 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Migration.Application.Operational.ExecutionHistory;
+using Migration.Application.Operational.Runs;
+using Migration.Application.Operational.WorkItems;
+using Migration.Infrastructure.Sql.Operational.ExecutionHistory;
+using Migration.Infrastructure.Sql.Operational.Runs;
+using Migration.Infrastructure.Sql.Operational.WorkItems;
 using Migration.Workers.QueueExecutor.Options;
 using Migration.Workers.QueueExecutor.Services;
 
-namespace Microsoft.Extensions.DependencyInjection;
+namespace Migration.Workers.QueueExecutor.Registration;
 
 public static class SqlOperationalQueueExecutorServiceCollectionExtensions
 {
@@ -17,8 +24,18 @@ public static class SqlOperationalQueueExecutorServiceCollectionExtensions
         services.AddOptions<SqlOperationalQueueExecutorOptions>()
             .Bind(configuration.GetSection(SqlOperationalQueueExecutorOptions.SectionName));
 
-        services.AddSqlOperationalRunCoordinator(configuration);
+        services.AddOptions<SqlOperationalRunCoordinatorOptions>()
+            .Bind(configuration.GetSection("SqlOperationalRunCoordinator"));
+
+        services.AddOptions<SqlOperationalWorkItemQueueOptions>()
+            .Bind(configuration.GetSection("SqlOperationalWorkItemQueue"));
+
+        services.AddSqlOperationalExecutionHistory(configuration);
+
+        services.TryAddSingleton<IOperationalWorkItemQueue, SqlOperationalWorkItemQueue>();
+        services.TryAddSingleton<IOperationalRunCoordinator, SqlOperationalRunCoordinator>();
         services.TryAddSingleton<ISqlOperationalWorkItemExecutor, LoggingSqlOperationalWorkItemExecutor>();
+
         services.AddHostedService<SqlOperationalWorkItemWorker>();
 
         return services;
