@@ -1,0 +1,25 @@
+{
+  "adminApi": {
+    "containerPort": 8080,
+    "livenessPath": "/health/live",
+    "readinessPath": "/health/ready",
+    "environmentVariables": {
+      "MIGRATION_ConnectionStrings__MigrationOperationalStore": "<from-key-vault-or-managed-identity-backed-setting>"
+    }
+  },
+  "sqlOperationalWorker": {
+    "environmentVariables": {
+      "MIGRATION_ConnectionStrings__MigrationOperationalStore": "<from-key-vault-or-managed-identity-backed-setting>",
+      "MIGRATION_SqlOperationalQueueExecutor__Enabled": "true",
+      "MIGRATION_SqlOperationalQueueExecutor__WorkerId": "sql-operational-worker-01",
+      "MIGRATION_SqlOperationalQueueExecutor__BatchSize": "10",
+      "MIGRATION_SqlOperationalQueueExecutor__LeaseSeconds": "300",
+      "MIGRATION_SqlOperationalQueueExecutor__PollDelaySeconds": "5",
+      "MIGRATION_SqlOperationalQueueExecutor__RunUntilIdleAndStop": "false",
+      "MIGRATION_SqlOperationalMigrationJobExecutor__Enabled": "false"
+    },
+    "debugOnlyDoNotSet": [
+      "MIGRATION_SqlOperationalQueueExecutor__RunId"
+    ]
+  }
+}

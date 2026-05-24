@@ -1,0 +1,12 @@
+# P8.1H template: Service Bus executor worker container image
+# Build from repository root.
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet publish ./src/Workers/Migration.Workers.ServiceBusExecutor/Migration.Workers.ServiceBusExecutor.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/runtime:9.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "Migration.Workers.ServiceBusExecutor.dll"]
