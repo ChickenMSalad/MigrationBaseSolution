@@ -23,6 +23,26 @@ public sealed class SqlOperationalRunCoordinator : IOperationalRunCoordinator
         _workItemQueue = workItemQueue ?? throw new ArgumentNullException(nameof(workItemQueue));
     }
 
+    public async Task<IReadOnlyList<Guid>> GetRunnableRunIdsAsync(
+        int maxRuns,
+        CancellationToken cancellationToken = default)
+    {
+        var sql = $@"
+select top (@MaxRuns) RunId
+from {RunsTableName}
+where Status in ('Queued', 'Running', 'Pending')
+order by RequestedAtUtc asc, CreatedAtUtc asc;";
+
+        await using var connection = OpenConnection();
+
+        var rows = await connection.QueryAsync<Guid>(new CommandDefinition(
+            sql,
+            new { MaxRuns = Math.Clamp(maxRuns, 1, 100) },
+            cancellationToken: cancellationToken));
+
+        return rows.AsList();
+    }
+
     public async Task<OperationalRunCoordinatorRunSnapshot?> GetRunAsync(
         Guid runId,
         CancellationToken cancellationToken = default)

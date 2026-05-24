@@ -11,6 +11,10 @@ public interface IOperationalRunCoordinator
     Task<OperationalRunCancellationResult> RequestCancellationAsync(RequestOperationalRunCancellation request, CancellationToken cancellationToken = default);
 
     Task<OperationalRunCompletionEvaluationResult> EvaluateCompletionAsync(Guid runId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Guid>> GetRunnableRunIdsAsync(
+    int maxRuns,
+    CancellationToken cancellationToken = default);
 }
 
 public sealed record StartOperationalRunRequest(

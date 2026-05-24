@@ -39,14 +39,56 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
             return;
         }
 
-        if (options.RunId is null || options.RunId == Guid.Empty)
+        _logger.LogInformation(
+            "SQL operational QueueExecutor worker starting. WorkerId={WorkerId}; BatchSize={BatchSize}; LeaseSeconds={LeaseSeconds}; AutoStartRun={AutoStartRun}; RunIdOverride={RunIdOverride}",
+            options.WorkerId,
+            options.BatchSize,
+            options.LeaseSeconds,
+            options.AutoStartRun,
+            options.RunId);
+
+        if (options.RunId is { } configuredRunId && configuredRunId != Guid.Empty)
         {
-            throw new InvalidOperationException("SqlOperationalQueueExecutor:RunId must be configured when SqlOperationalQueueExecutor:Enabled is true.");
+            await ExecuteRunAsync(configuredRunId, options, stoppingToken).ConfigureAwait(false);
+            return;
         }
 
-        var runId = options.RunId.Value;
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var runnableRunIds = await _runCoordinator
+                .GetRunnableRunIdsAsync(Math.Max(1, options.BatchSize), stoppingToken)
+                .ConfigureAwait(false);
+
+            if (runnableRunIds.Count == 0)
+            {
+                _logger.LogInformation("SQL operational queue idle. No runnable migration runs found.");
+
+                if (options.RunUntilIdleAndStop)
+                {
+                    return;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, options.PollDelaySeconds)), stoppingToken)
+                    .ConfigureAwait(false);
+
+                continue;
+            }
+
+            foreach (var runId in runnableRunIds)
+            {
+                stoppingToken.ThrowIfCancellationRequested();
+                await ExecuteRunAsync(runId, options, stoppingToken).ConfigureAwait(false);
+            }
+        }
+    }
+
+    private async Task ExecuteRunAsync(
+        Guid runId,
+        SqlOperationalQueueExecutorOptions options,
+        CancellationToken stoppingToken)
+    {
         _logger.LogInformation(
-            "SQL operational QueueExecutor worker starting. RunId={RunId}; WorkerId={WorkerId}; BatchSize={BatchSize}; LeaseSeconds={LeaseSeconds}; AutoStartRun={AutoStartRun}",
+            "SQL operational QueueExecutor worker processing run. RunId={RunId}; WorkerId={WorkerId}; BatchSize={BatchSize}; LeaseSeconds={LeaseSeconds}; AutoStartRun={AutoStartRun}",
             runId,
             options.WorkerId,
             options.BatchSize,
@@ -96,7 +138,9 @@ public sealed class SqlOperationalWorkItemWorker : BackgroundService
                     return;
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, options.PollDelaySeconds)), stoppingToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, options.PollDelaySeconds)), stoppingToken)
+                    .ConfigureAwait(false);
+
                 continue;
             }
 
