@@ -1,0 +1,8 @@
+{
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableAzureMonitorExporter": false,
+    "AzureMonitorConnectionString": "",
+    "TraceSamplingRatio": 1.0
+  }
+}
