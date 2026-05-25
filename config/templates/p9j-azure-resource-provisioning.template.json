@@ -1,0 +1,31 @@
+{
+  "environmentName": "dev",
+  "resourceGroupName": "rg-migration-dev",
+  "location": "eastus",
+  "sql": {
+    "serverName": "sql-migration-dev",
+    "databaseName": "MigrationOperationalStore",
+    "connectionSettingName": "MIGRATION_ConnectionStrings__MigrationOperationalStore"
+  },
+  "serviceBus": {
+    "namespaceName": "sb-migration-dev",
+    "queueName": "migration-operational-work-items",
+    "dispatcherEnabledSetting": "MIGRATION_ServiceBusDispatcher__Enabled",
+    "executorEnabledSetting": "MIGRATION_ServiceBusExecutor__Enabled"
+  },
+  "observability": {
+    "applicationInsightsName": "appi-migration-dev",
+    "enableTracingSetting": "MIGRATION_OpenTelemetry__EnableTracing",
+    "enableAzureMonitorExporterSetting": "MIGRATION_OpenTelemetry__EnableAzureMonitorExporter",
+    "connectionStringSetting": "MIGRATION_OpenTelemetry__AzureMonitorConnectionString"
+  },
+  "runtimeApps": {
+    "adminApi": "app-migration-admin-dev",
+    "sqlOperationalWorker": "app-migration-sql-worker-dev",
+    "serviceBusDispatcher": "app-migration-sb-dispatcher-dev",
+    "serviceBusExecutor": "app-migration-sb-executor-dev"
+  },
+  "policy": {
+    "productionRunIdOverrideAllowed": false
+  }
+}
