@@ -1,0 +1,26 @@
+{
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableAzureMonitorExporter": false,
+    "AzureMonitorConnectionString": "",
+    "TraceSamplingRatio": 1.0
+  },
+  "SqlOperationalWorker": {
+    "Enabled": true,
+    "PollingIntervalSeconds": 5,
+    "BatchSize": 10,
+    "LeaseSeconds": 300,
+    "PartitionKey": "default",
+    "CompleteNoOpWorkItems": true
+  },
+  "SqlServiceBusDispatcher": {
+    "BatchSize": 10,
+    "PollIntervalSeconds": 5,
+    "QueueName": "migration-work-items"
+  },
+  "SqlServiceBusExecutor": {
+    "QueueName": "migration-work-items",
+    "WorkerId": "local-servicebus-executor",
+    "RetryDelaySeconds": 30
+  }
+}
