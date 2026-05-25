@@ -1,0 +1,32 @@
+{
+  "ConnectionStrings": {
+    "MigrationOperationalStore": "Server=tcp:<server>.database.windows.net,1433;Initial Catalog=<database>;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False"
+  },
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableAzureMonitorExporter": true,
+    "AzureMonitorConnectionString": "InstrumentationKey=<key>;IngestionEndpoint=https://<region>.in.applicationinsights.azure.com/;LiveEndpoint=https://<region>.livediagnostics.monitor.azure.com/",
+    "TraceSamplingRatio": 1.0
+  },
+  "SqlOperationalWorker": {
+    "Enabled": true,
+    "PollingIntervalSeconds": 5,
+    "BatchSize": 10,
+    "LeaseSeconds": 300,
+    "PartitionKey": "default",
+    "CompleteNoOpWorkItems": true
+  },
+  "ServiceBusDispatcher": {
+    "Enabled": false,
+    "QueueName": "migration-work-items",
+    "WorkerId": "cloud-servicebus-dispatcher-01",
+    "BatchSize": 10,
+    "PollingIntervalSeconds": 5
+  },
+  "ServiceBusExecutor": {
+    "Enabled": false,
+    "QueueName": "migration-work-items",
+    "WorkerId": "cloud-servicebus-executor-01",
+    "RetryDelaySeconds": 30
+  }
+}
