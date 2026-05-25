@@ -1,0 +1,25 @@
+{
+  "Environment": {
+    "Name": "dev",
+    "Region": "eastus"
+  },
+  "Azure": {
+    "ResourceGroupName": "",
+    "SqlServerName": "",
+    "SqlDatabaseName": "MigrationOperationalStore",
+    "ServiceBusNamespace": "",
+    "ServiceBusWorkItemQueueName": "",
+    "ApplicationInsightsName": "",
+    "KeyVaultName": "",
+    "ContainerRegistryName": ""
+  },
+  "ConnectionStrings": {
+    "MigrationOperationalStore": ""
+  },
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableAzureMonitorExporter": true,
+    "AzureMonitorConnectionString": "",
+    "TraceSamplingRatio": 1.0
+  }
+}
