@@ -1,0 +1,20 @@
+{
+  "ConnectionStrings": {
+    "MigrationOperationalStore": "<azure-sql-operational-store-connection-string>"
+  },
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableAzureMonitorExporter": true,
+    "AzureMonitorConnectionString": "<application-insights-or-azure-monitor-connection-string>",
+    "TraceSamplingRatio": 1.0
+  },
+  "HealthProbes": {
+    "LivenessPath": "/health/live",
+    "ReadinessPath": "/health/ready"
+  },
+  "OperationalControlPlane": {
+    "RequireSqlOperationalStore": true,
+    "RequireTelemetryCorrelation": true,
+    "RequireReadinessEndpoints": true
+  }
+}
