@@ -1,0 +1,14 @@
+{
+  "OpenTelemetry": {
+    "Enabled": true,
+    "ServiceName": "MigrationBaseSolution",
+    "ServiceVersion": "p8.3",
+    "Exporter": "AzureMonitor"
+  },
+  "AzureMonitor": {
+    "ConnectionString": ""
+  },
+  "ApplicationInsights": {
+    "ConnectionString": ""
+  }
+}
