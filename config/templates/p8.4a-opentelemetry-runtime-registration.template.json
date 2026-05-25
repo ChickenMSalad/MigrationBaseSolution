@@ -1,0 +1,20 @@
+{
+  "OpenTelemetry": {
+    "Enabled": false,
+    "ServiceName": "MigrationBaseSolution",
+    "ServiceVersion": "8.4.0",
+    "EnableTracing": true,
+    "EnableMetrics": false,
+    "SamplingRatio": 1.0,
+    "ActivitySourceNames": [
+      "Migration.Operational.Execution"
+    ]
+  },
+  "AzureMonitor": {
+    "Enabled": false,
+    "ConnectionString": ""
+  },
+  "ApplicationInsights": {
+    "ConnectionString": ""
+  }
+}
