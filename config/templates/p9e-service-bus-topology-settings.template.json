@@ -1,0 +1,27 @@
+{
+  "ConnectionStrings": {
+    "MigrationOperationalStore": "Server=tcp:<server>.database.windows.net,1433;Database=<database>;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False"
+  },
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableAzureMonitorExporter": true,
+    "AzureMonitorConnectionString": "<application-insights-connection-string>",
+    "TraceSamplingRatio": 1.0
+  },
+  "ServiceBusDispatcher": {
+    "Enabled": true,
+    "QueueName": "migration-work-items",
+    "BatchSize": 25,
+    "PollingIntervalSeconds": 5,
+    "WorkerId": "cloud-servicebus-dispatcher-01"
+  },
+  "ServiceBusExecutor": {
+    "Enabled": true,
+    "QueueName": "migration-work-items",
+    "MaxConcurrentCalls": 8,
+    "WorkerId": "cloud-servicebus-executor-01"
+  },
+  "ServiceBus": {
+    "ConnectionString": "<local-development-only-service-bus-connection-string>"
+  }
+}
