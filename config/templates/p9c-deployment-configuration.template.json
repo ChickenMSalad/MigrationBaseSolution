@@ -1,0 +1,31 @@
+{
+  "ConnectionStrings": {
+    "MigrationOperationalStore": "<azure-sql-or-sql-managed-instance-connection-string>"
+  },
+  "SqlOperationalWorker": {
+    "Enabled": true,
+    "PollingIntervalSeconds": 5,
+    "BatchSize": 10,
+    "LeaseSeconds": 300,
+    "PartitionKey": "default",
+    "CompleteNoOpWorkItems": true
+  },
+  "ServiceBusDispatcher": {
+    "Enabled": true,
+    "QueueName": "<queue-name>",
+    "BatchSize": 10,
+    "PollingIntervalSeconds": 5
+  },
+  "ServiceBusExecutor": {
+    "Enabled": true,
+    "QueueName": "<queue-name>",
+    "MaxConcurrentCalls": 4,
+    "RetryDelaySeconds": 30
+  },
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableAzureMonitorExporter": true,
+    "AzureMonitorConnectionString": "<application-insights-connection-string>",
+    "TraceSamplingRatio": 1.0
+  }
+}
