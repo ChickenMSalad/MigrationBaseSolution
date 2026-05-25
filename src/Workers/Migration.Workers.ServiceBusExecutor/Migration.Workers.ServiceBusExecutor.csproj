@@ -18,5 +18,24 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Migration.Workers.QueueExecutor\Migration.Workers.QueueExecutor.csproj" />
-  </ItemGroup></Project>
+  </ItemGroup>
+
+	<ItemGroup>
+		<Content Update="appsettings.json" CopyToPublishDirectory="Never" />
+		<Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Remove="Runtime\**" />
+		<Content Remove="migration-state\**" />
+		<Content Remove="Rules\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="Runtime\**" />
+		<None Remove="migration-state\**" />
+		<None Remove="Rules\**" />
+	</ItemGroup>
+
+</Project>
 

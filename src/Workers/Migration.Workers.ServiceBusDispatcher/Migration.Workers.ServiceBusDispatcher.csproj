@@ -17,4 +17,16 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\Core\Migration.Application\Migration.Application.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<Content Remove="Runtime\**" />
+		<Content Remove="migration-state\**" />
+		<Content Remove="Rules\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="Runtime\**" />
+		<None Remove="migration-state\**" />
+		<None Remove="Rules\**" />
+	</ItemGroup>
 </Project>
