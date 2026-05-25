@@ -1,0 +1,14 @@
+{
+  "OpenTelemetry": {
+    "Enabled": false,
+    "ServiceName": "MigrationBaseSolution",
+    "ServiceNamespace": "Migration",
+    "ServiceInstanceId": "",
+    "EnableTracing": true,
+    "EnableMetrics": false,
+    "EnableConsoleExporter": false,
+    "EnableAzureMonitorExporter": false,
+    "AzureMonitorConnectionString": "",
+    "TraceSamplingRatio": 1.0
+  }
+}
