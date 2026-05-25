@@ -1,0 +1,46 @@
+// P9I Operational Trace Inspection
+// Run these queries in the Application Insights / Log Analytics workspace connected to the target cloud runtime.
+
+// 1. Find operational execution spans by operation/activity name.
+union isfuzzy=true traces, dependencies
+| where timestamp > ago(24h)
+| where tostring(customDimensions["ActivitySource"]) == "Migration.Operational.Execution"
+   or name has "SqlQueueWorkItemExecution"
+   or name has "ServiceBusDispatch"
+   or name has "ServiceBusWorkItemExecution"
+| project timestamp, itemType, name, message, operation_Id, operation_ParentId, customDimensions
+| order by timestamp desc
+
+// 2. Summarize operational Activity names.
+union isfuzzy=true traces, dependencies
+| where timestamp > ago(24h)
+| where name has "SqlQueueWorkItemExecution"
+   or name has "ServiceBusDispatch"
+   or name has "ServiceBusWorkItemExecution"
+| summarize Count=count(), FirstSeen=min(timestamp), LastSeen=max(timestamp) by name
+| order by name asc
+
+// 3. Inspect dimensions for recent operational execution spans.
+union isfuzzy=true traces, dependencies
+| where timestamp > ago(24h)
+| where name has "SqlQueueWorkItemExecution"
+   or name has "ServiceBusDispatch"
+   or name has "ServiceBusWorkItemExecution"
+| extend RunId=tostring(customDimensions["migration.run.id"])
+| extend WorkItemId=tostring(customDimensions["migration.work_item.id"])
+| extend Result=tostring(customDimensions["migration.execution.result"])
+| extend DurationMs=tostring(customDimensions["migration.execution.duration_ms"])
+| extend ServiceBusCorrelationId=tostring(customDimensions["messaging.servicebus.correlation_id"])
+| project timestamp, name, RunId, WorkItemId, Result, DurationMs, ServiceBusCorrelationId, operation_Id, operation_ParentId
+| order by timestamp desc
+
+// 4. Look for failed operational spans.
+union isfuzzy=true traces, dependencies
+| where timestamp > ago(24h)
+| where name has "SqlQueueWorkItemExecution"
+   or name has "ServiceBusDispatch"
+   or name has "ServiceBusWorkItemExecution"
+| extend Result=tostring(customDimensions["migration.execution.result"])
+| where Result =~ "false" or severityLevel >= 3
+| project timestamp, name, message, Result, operation_Id, operation_ParentId, customDimensions
+| order by timestamp desc
