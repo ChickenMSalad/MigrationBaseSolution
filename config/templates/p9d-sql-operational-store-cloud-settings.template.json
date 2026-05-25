@@ -1,0 +1,28 @@
+{
+  "ConnectionStrings": {
+    "MigrationOperationalStore": "Server=tcp:<server>.database.windows.net,1433;Initial Catalog=<database>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default"
+  },
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableAzureMonitorExporter": true,
+    "AzureMonitorConnectionString": "<application-insights-connection-string>",
+    "TraceSamplingRatio": 1.0
+  },
+  "SqlOperationalWorker": {
+    "Enabled": true,
+    "PollingIntervalSeconds": 5,
+    "BatchSize": 10,
+    "LeaseSeconds": 300,
+    "PartitionKey": "default",
+    "CompleteNoOpWorkItems": true
+  },
+  "SqlOperationalQueueExecutor": {
+    "Enabled": true,
+    "BatchSize": 10,
+    "LeaseSeconds": 300,
+    "RunUntilIdleAndStop": false
+  },
+  "SqlOperationalMigrationJobExecutor": {
+    "Enabled": false
+  }
+}
