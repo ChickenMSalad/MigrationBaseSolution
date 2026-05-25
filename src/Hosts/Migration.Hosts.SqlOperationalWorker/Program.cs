@@ -6,6 +6,7 @@ using Migration.Workers.QueueExecutor.Registration;
 using Migration.GenericRuntime.Registration;
 using Migration.Connectors.Registration;
 using Migration.ControlPlane.Registration;
+using Migration.Application.Operational.Telemetry;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -30,6 +31,7 @@ builder.Services.AddSqlOperationalQueueExecutor(builder.Configuration);
 
 builder.Services.AddSqlOperationalMigrationJobWorkItemExecutor(builder.Configuration);
 builder.Services.AddHostedService<SqlOperationalWorkerStartupProbe>();
+builder.Services.AddOperationalOpenTelemetry(builder.Configuration);
 
 await builder.Build().RunAsync().ConfigureAwait(false);
 

@@ -1,0 +1,14 @@
+{
+  "OpenTelemetry": {
+    "EnableTracing": true,
+    "EnableConsoleExporter": false,
+    "EnableAzureMonitorExporter": true,
+    "TraceSamplingRatio": 1.0,
+    "ServiceName": "migration-operational-runtime",
+    "ServiceVersion": "p8.4",
+    "AzureMonitorConnectionString": ""
+  },
+  "ApplicationInsights": {
+    "ConnectionString": ""
+  }
+}

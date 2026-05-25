@@ -5,6 +5,7 @@ using Migration.Workers.ServiceBusExecutor.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Migration.Workers.QueueExecutor.Registration;
+using Migration.Application.Operational.Telemetry;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -18,6 +19,7 @@ builder.Services.AddSqlOperationalWorkItemQueue();
 builder.Services.AddSqlOperationalMigrationJobWorkItemExecutor(builder.Configuration);
 builder.Services.AddSingleton<IServiceBusWorkItemExecutor, SqlOperationalServiceBusWorkItemExecutor>();
 builder.Services.AddHostedService<SqlServiceBusExecutorWorker>();
+builder.Services.AddOperationalOpenTelemetry(builder.Configuration);
 
 await builder.Build().RunAsync();
 

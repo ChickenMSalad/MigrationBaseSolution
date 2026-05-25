@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Migration.Workers.ServiceBusDispatcher.Dispatching;
 using Migration.Workers.ServiceBusDispatcher.Options;
 using Migration.Workers.ServiceBusDispatcher.Runtime;
+using Migration.Application.Operational.Telemetry;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
@@ -14,5 +15,6 @@ builder.Services
 
 builder.Services.AddSingleton<SqlWorkItemDispatcher>();
 builder.Services.AddHostedService<SqlServiceBusDispatcherWorker>();
+builder.Services.AddOperationalOpenTelemetry(builder.Configuration);
 
 await builder.Build().RunAsync().ConfigureAwait(false);
