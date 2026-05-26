@@ -1,0 +1,19 @@
+{
+  "description": "Allowlist for intentional legacy GUID-era runtime references. Keep this narrow. Active runtime hosts should not need entries here.",
+  "legacyTerms": [
+    "dbo.MigrationWorkItems",
+    "migration.MigrationWorkItems",
+    "dbo.MigrationManifestRows",
+    "migration.MigrationManifestRows",
+    "migration.MigrationManifestRecords"
+  ],
+  "allowedPathFragments": [
+    "database/sql/operational/",
+    "docs/",
+    "docs\\",
+    "database/sql/p7/004_smoke_seed_operational_run.sql",
+    "database/sql/p7/005_sql_operational_schema_compatibility_repair.sql",
+    "database/sql/p7/011_legacy_runtime_object_inventory.sql",
+    "config-samples/runtime-legacy-reference-allowlist.sample.json"
+  ]
+}
