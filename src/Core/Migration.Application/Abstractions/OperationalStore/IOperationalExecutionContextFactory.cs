@@ -5,6 +5,6 @@ namespace Migration.Application.Abstractions.OperationalStore;
 public interface IOperationalExecutionContextFactory
 {
     Task<OperationalExecutionContext?> CreateAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default);
 }

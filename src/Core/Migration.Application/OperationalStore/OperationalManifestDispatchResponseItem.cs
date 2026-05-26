@@ -2,9 +2,9 @@ namespace Migration.Application.OperationalStore;
 
 public sealed class OperationalManifestDispatchResponseItem
 {
-    public Guid ManifestRecordId { get; init; }
+    public long ManifestRecordId { get; init; }
 
-    public Guid? WorkItemId { get; init; }
+    public long? WorkItemId { get; init; }
 
     public string SourceId { get; init; } = string.Empty;
 

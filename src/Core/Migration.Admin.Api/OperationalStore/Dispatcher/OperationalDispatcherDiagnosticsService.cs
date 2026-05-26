@@ -157,9 +157,9 @@ public sealed class OperationalDispatcherDiagnosticsService
         {
             results.Add(new OperationalDispatcherEligibleWorkItemPreview
             {
-                WorkItemId = reader.GetGuid(reader.GetOrdinal("WorkItemId")),
+                WorkItemId = GetLong(reader, "WorkItemId"),
                 RunId = reader.GetGuid(reader.GetOrdinal("RunId")),
-                ManifestRecordId = reader.GetGuid(reader.GetOrdinal("ManifestRecordId")),
+                ManifestRecordId = GetLong(reader, "ManifestRecordId"),
                 RunStatus = reader.GetString(reader.GetOrdinal("RunStatus")),
                 AttemptCount = ReadInt32(reader, "AttemptCount"),
                 CreatedAt = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("CreatedAt")),
@@ -169,6 +169,12 @@ public sealed class OperationalDispatcherDiagnosticsService
         }
 
         return results;
+    }
+
+    private static long GetLong(SqlDataReader reader, string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+        return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt64(reader.GetValue(ordinal));
     }
 
     private string GetSchemaName()

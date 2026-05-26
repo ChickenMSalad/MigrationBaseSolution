@@ -112,19 +112,11 @@ public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirro
                 cancellationToken);
         }
 
-        var manifestRecordId = OperationalMirrorIdFactory.CreateGuid(
-            $"legacy-run:{run.RunId}:manifest");
 
-        var existingManifestRecord = await _operationalStore.ManifestRecords.GetAsync(
-            manifestRecordId,
-            cancellationToken);
 
-        if (existingManifestRecord is null)
-        {
             await _operationalStore.ManifestRecords.AddAsync(
                 new MigrationManifestRecord
                 {
-                    ManifestRecordId = manifestRecordId,
                     RunId = operationalRunId,
                     SequenceNumber = 1,
                     SourceId = run.Job.ManifestPath,
@@ -135,29 +127,20 @@ public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirro
                     UpdatedAt = now
                 },
                 cancellationToken);
-        }
+        
 
-        var workItemId = OperationalMirrorIdFactory.CreateGuid(
-            $"legacy-run:{run.RunId}:work-item");
 
-        var existingWorkItem = await _operationalStore.WorkItems.GetAsync(
-            workItemId,
-            cancellationToken);
 
-        if (existingWorkItem is null)
-        {
             await _operationalStore.WorkItems.AddAsync(
                 new MigrationWorkItemRecord
                 {
-                    WorkItemId = workItemId,
                     RunId = operationalRunId,
-                    ManifestRecordId = manifestRecordId,
                     Status = MigrationWorkItemStatuses.Created,
                     AttemptCount = 0,
                     CreatedAt = now
                 },
                 cancellationToken);
-        }
+        
 
         await _operationalStore.Checkpoints.UpsertAsync(
             new MigrationCheckpointRecord

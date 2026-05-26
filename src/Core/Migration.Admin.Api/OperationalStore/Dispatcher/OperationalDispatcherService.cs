@@ -42,7 +42,7 @@ public sealed class OperationalDispatcherService : IOperationalDispatcherService
 
         var completed = 0;
         var failed = 0;
-        var workItemIds = new List<Guid>();
+        var workItemIds = new List<long>();
 
         foreach (var item in lease.WorkItems)
         {

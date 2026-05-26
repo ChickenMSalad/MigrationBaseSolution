@@ -158,7 +158,7 @@ public sealed class OperationalMirrorReadService : IOperationalMirrorReadService
         {
             results.Add(new OperationalMirrorManifestRecordItem
             {
-                ManifestRecordId = reader.GetGuid(reader.GetOrdinal("ManifestRecordId")),
+                ManifestRecordId = reader.GetInt64(reader.GetOrdinal("ManifestRecordId")),
                 RunId = reader.GetGuid(reader.GetOrdinal("RunId")),
                 SequenceNumber = reader.GetInt64(reader.GetOrdinal("SequenceNumber")),
                 SourceId = reader.GetString(reader.GetOrdinal("SourceId")),
@@ -204,9 +204,9 @@ public sealed class OperationalMirrorReadService : IOperationalMirrorReadService
         {
             results.Add(new OperationalMirrorWorkItemItem
             {
-                WorkItemId = reader.GetGuid(reader.GetOrdinal("WorkItemId")),
+                WorkItemId = reader.GetInt64(reader.GetOrdinal("WorkItemId")),
                 RunId = reader.GetGuid(reader.GetOrdinal("RunId")),
-                ManifestRecordId = reader.GetGuid(reader.GetOrdinal("ManifestRecordId")),
+                ManifestRecordId = reader.GetInt64(reader.GetOrdinal("ManifestRecordId")),
                 Status = reader.GetString(reader.GetOrdinal("Status")),
                 AttemptCount = reader.GetInt32(reader.GetOrdinal("AttemptCount")),
                 LockedBy = ReadNullableString(reader, "LockedBy"),

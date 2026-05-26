@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Migration.Application\Migration.Application.csproj" />
+	<ProjectReference Include="..\..\Core\Migration.GenericRuntime\Migration.GenericRuntime.csproj" />
     <ProjectReference Include="..\..\Core\Migration.Infrastructure.Sql\Migration.Infrastructure.Sql.csproj" />
   </ItemGroup>
   <ItemGroup>

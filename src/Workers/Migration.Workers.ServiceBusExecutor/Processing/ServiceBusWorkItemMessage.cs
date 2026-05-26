@@ -1,7 +1,7 @@
 namespace Migration.Workers.ServiceBusExecutor.Processing;
 
 internal sealed record ServiceBusWorkItemMessage(
-    Guid WorkItemId,
+    long WorkItemId,
     Guid RunId,
     long SequenceNumber,
     string? PayloadJson,

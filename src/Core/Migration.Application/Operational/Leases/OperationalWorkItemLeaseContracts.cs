@@ -16,7 +16,7 @@ public interface IOperationalWorkItemLeaseCoordinator
 }
 
 public sealed record RenewOperationalWorkItemLeaseRequest(
-    Guid WorkItemId,
+    long WorkItemId,
     string WorkerId,
     int LeaseSeconds);
 
@@ -26,7 +26,7 @@ public sealed record ReleaseExpiredOperationalWorkItemLeasesRequest(
     int MaxItemsToRelease);
 
 public sealed record OperationalWorkItemLeaseRenewalResult(
-    Guid WorkItemId,
+    long WorkItemId,
     string WorkerId,
     bool Renewed,
     DateTimeOffset? LeaseExpiresUtc,

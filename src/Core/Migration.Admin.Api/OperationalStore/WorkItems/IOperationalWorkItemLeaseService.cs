@@ -7,17 +7,17 @@ public interface IOperationalWorkItemLeaseService
         CancellationToken cancellationToken = default);
 
     Task<OperationalWorkItemStateTransitionResponse> HeartbeatAsync(
-        Guid workItemId,
+        long workItemId,
         OperationalWorkItemHeartbeatRequest request,
         CancellationToken cancellationToken = default);
 
     Task<OperationalWorkItemStateTransitionResponse> CompleteAsync(
-        Guid workItemId,
+        long workItemId,
         OperationalWorkItemCompleteRequest request,
         CancellationToken cancellationToken = default);
 
     Task<OperationalWorkItemStateTransitionResponse> FailAsync(
-        Guid workItemId,
+        long workItemId,
         OperationalWorkItemFailRequest request,
         CancellationToken cancellationToken = default);
 }

@@ -12,7 +12,7 @@ internal static class MigrationIdentifierMapRecordMapper
         {
             IdentifierMapId = reader.GetGuid(reader.GetOrdinal("IdentifierMapId")),
             RunId = reader.GetGuid(reader.GetOrdinal("RunId")),
-            ManifestRecordId = reader.GetGuid(reader.GetOrdinal("ManifestRecordId")),
+            ManifestRecordId = GetLong(reader, "ManifestRecordId"),
             SourceId = reader.GetString(reader.GetOrdinal("SourceId")),
             TargetId = reader.GetString(reader.GetOrdinal("TargetId")),
             TargetPath = GetNullableString(reader, "TargetPath"),
@@ -29,5 +29,13 @@ internal static class MigrationIdentifierMapRecordMapper
         return reader.IsDBNull(ordinal)
             ? null
             : reader.GetString(ordinal);
+    }
+
+    private static long GetLong(
+        SqlDataReader reader,
+        string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+        return reader.GetInt64(ordinal);
     }
 }

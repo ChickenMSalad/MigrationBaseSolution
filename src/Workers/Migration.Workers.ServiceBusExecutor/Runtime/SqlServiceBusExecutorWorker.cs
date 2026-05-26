@@ -94,7 +94,7 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
         try
         {
             message = JsonSerializer.Deserialize<ServiceBusWorkItemMessage>(args.Message.Body, JsonOptions);
-            if (message is null || message.WorkItemId == Guid.Empty)
+            if (message is null)
             {
                 await args.DeadLetterMessageAsync(args.Message, "INVALID_MESSAGE", "Message did not contain a valid WorkItemId.", args.CancellationToken);
                 return;

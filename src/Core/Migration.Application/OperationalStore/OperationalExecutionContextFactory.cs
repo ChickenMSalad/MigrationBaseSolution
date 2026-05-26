@@ -13,7 +13,7 @@ public sealed class OperationalExecutionContextFactory : IOperationalExecutionCo
     }
 
     public async Task<OperationalExecutionContext?> CreateAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default)
     {
         var workItem = await _operationalStore.WorkItems.GetAsync(

@@ -79,13 +79,13 @@ public sealed class OperationalQueueMessageSerializer : IOperationalQueueMessage
                 "Operational queue message is missing RunId.");
         }
 
-        if (message.ManifestRecordId == Guid.Empty)
+        if (message.ManifestRecordId < 0)
         {
             throw new InvalidOperationException(
                 "Operational queue message is missing ManifestRecordId.");
         }
 
-        if (message.WorkItemId == Guid.Empty)
+        if (message.WorkItemId < 0)
         {
             throw new InvalidOperationException(
                 "Operational queue message is missing WorkItemId.");

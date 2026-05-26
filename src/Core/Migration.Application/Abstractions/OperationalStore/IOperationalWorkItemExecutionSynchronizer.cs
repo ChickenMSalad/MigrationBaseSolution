@@ -5,7 +5,7 @@ namespace Migration.Application.Abstractions.OperationalStore;
 public interface IOperationalWorkItemExecutionSynchronizer
 {
     Task<OperationalExecutionContext?> BeginAsync(
-        Guid workItemId,
+        long workItemId,
         string lockedBy,
         CancellationToken cancellationToken = default);
 

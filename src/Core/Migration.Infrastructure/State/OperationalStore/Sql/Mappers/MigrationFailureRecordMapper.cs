@@ -12,8 +12,8 @@ internal static class MigrationFailureRecordMapper
         {
             FailureId = reader.GetGuid(reader.GetOrdinal("FailureId")),
             RunId = reader.GetGuid(reader.GetOrdinal("RunId")),
-            ManifestRecordId = GetNullableGuid(reader, "ManifestRecordId"),
-            WorkItemId = GetNullableGuid(reader, "WorkItemId"),
+            ManifestRecordId = GetNullableLong(reader, "ManifestRecordId"),
+            WorkItemId = GetNullableLong(reader, "WorkItemId"),
             FailureType = reader.GetString(reader.GetOrdinal("FailureType")),
             Message = reader.GetString(reader.GetOrdinal("Message")),
             Details = GetNullableString(reader, "Details"),
@@ -31,6 +31,17 @@ internal static class MigrationFailureRecordMapper
         return reader.IsDBNull(ordinal)
             ? null
             : reader.GetGuid(ordinal);
+    }
+
+    private static long? GetNullableLong(
+    SqlDataReader reader,
+    string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+
+        return reader.IsDBNull(ordinal)
+            ? null
+            : reader.GetInt64(ordinal);
     }
 
     private static string? GetNullableString(

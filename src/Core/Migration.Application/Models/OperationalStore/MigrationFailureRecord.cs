@@ -6,9 +6,9 @@ public sealed class MigrationFailureRecord
 
     public Guid RunId { get; init; }
 
-    public Guid? ManifestRecordId { get; init; }
+    public long? ManifestRecordId { get; init; }
 
-    public Guid? WorkItemId { get; init; }
+    public long? WorkItemId { get; init; }
 
     public string FailureType { get; init; } = string.Empty;
 

@@ -10,7 +10,7 @@ internal static class MigrationManifestRecordMapper
     {
         return new MigrationManifestRecord
         {
-            ManifestRecordId = reader.GetGuid(reader.GetOrdinal("ManifestRecordId")),
+            ManifestRecordId = GetLong(reader,"ManifestRecordId"),
             RunId = reader.GetGuid(reader.GetOrdinal("RunId")),
             SequenceNumber = reader.GetInt64(reader.GetOrdinal("SequenceNumber")),
             SourceId = reader.GetString(reader.GetOrdinal("SourceId")),
@@ -22,6 +22,16 @@ internal static class MigrationManifestRecordMapper
             CreatedAt = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("CreatedAt")),
             UpdatedAt = GetNullableDateTimeOffset(reader, "UpdatedAt")
         };
+    }
+
+    private static long GetLong(
+        SqlDataReader reader,
+        string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+
+        return reader.GetInt64(ordinal);
+
     }
 
     private static string? GetNullableString(

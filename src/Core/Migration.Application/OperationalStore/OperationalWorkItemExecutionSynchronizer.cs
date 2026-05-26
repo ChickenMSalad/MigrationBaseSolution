@@ -19,7 +19,7 @@ public sealed class OperationalWorkItemExecutionSynchronizer : IOperationalWorkI
     }
 
     public async Task<OperationalExecutionContext?> BeginAsync(
-        Guid workItemId,
+        long workItemId,
         string lockedBy,
         CancellationToken cancellationToken = default)
     {

@@ -24,10 +24,10 @@ public interface ISqlOperationalBackboneStore
         int maxItems,
         CancellationToken cancellationToken = default);
 
-    Task CompleteWorkItemAsync(Guid workItemId, CancellationToken cancellationToken = default);
+    Task CompleteWorkItemAsync(long workItemId, CancellationToken cancellationToken = default);
 
     Task FailWorkItemAsync(
-        Guid workItemId,
+        long workItemId,
         SqlMigrationFailureRecord failure,
         CancellationToken cancellationToken = default);
 

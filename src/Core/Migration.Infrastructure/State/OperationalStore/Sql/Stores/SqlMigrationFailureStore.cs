@@ -59,7 +59,7 @@ public sealed class SqlMigrationFailureStore : IMigrationFailureStore
     }
 
     public async Task<IReadOnlyList<MigrationFailureRecord>> GetByManifestRecordAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -71,7 +71,7 @@ public sealed class SqlMigrationFailureStore : IMigrationFailureStore
     }
 
     public async Task<IReadOnlyList<MigrationFailureRecord>> GetByWorkItemAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

@@ -2,11 +2,11 @@ namespace Migration.Admin.Api.OperationalStore;
 
 public sealed class OperationalWorkItemLeaseItem
 {
-    public Guid WorkItemId { get; init; }
+    public long WorkItemId { get; init; }
 
     public Guid RunId { get; init; }
 
-    public Guid ManifestRecordId { get; init; }
+    public long ManifestRecordId { get; init; }
 
     public string Status { get; init; } = string.Empty;
 

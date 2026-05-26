@@ -6,27 +6,27 @@ public interface IOperationalWorkItemLifecycleService
 {
     Task<MigrationWorkItemRecord> CreateWorkItemAsync(
         Guid runId,
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<MigrationWorkItemRecord>> CreateWorkItemBatchAsync(
         Guid runId,
-        IReadOnlyCollection<Guid> manifestRecordIds,
+        IReadOnlyCollection<long> manifestRecordIds,
         CancellationToken cancellationToken = default);
 
     Task MarkWorkItemLockedAsync(
-        Guid workItemId,
+        long workItemId,
         string lockedBy,
         CancellationToken cancellationToken = default);
 
     Task MarkWorkItemCompletedAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default);
 
     Task MarkWorkItemFailedAsync(
         Guid runId,
-        Guid workItemId,
-        Guid manifestRecordId,
+        long workItemId,
+        long manifestRecordId,
         string failureReason,
         bool isRetriable,
         CancellationToken cancellationToken = default);

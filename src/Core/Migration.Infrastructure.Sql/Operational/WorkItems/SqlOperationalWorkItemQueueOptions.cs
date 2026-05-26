@@ -8,9 +8,9 @@ public sealed class SqlOperationalWorkItemQueueOptions
 
     public string? ConnectionStringName { get; set; } = "MigrationOperationalStore";
 
-    public string SchemaName { get; set; } = "dbo";
+    public string SchemaName { get; set; } = "migration";
 
-    public string WorkItemsTableName { get; set; } = "MigrationWorkItems";
+    public string WorkItemsTableName { get; set; } = "WorkItems";
 
     public int DefaultMaxAttempts { get; set; } = 5;
 }

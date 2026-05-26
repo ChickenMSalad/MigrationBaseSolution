@@ -20,7 +20,7 @@ public sealed class OperationalManifestRecordBuilder : IOperationalManifestRecor
 
         return new MigrationManifestRecord
         {
-            ManifestRecordId = Guid.NewGuid(),
+            // ManifestRecordId intentionally not assigned; SQL identity owns it.
             SequenceNumber = input.SequenceNumber,
             SourceId = input.SourceId,
             SourcePath = input.SourcePath,

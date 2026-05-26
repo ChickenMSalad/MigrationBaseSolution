@@ -27,32 +27,34 @@ public sealed class SqlOperationalWorkItemQueue : IOperationalWorkItemQueue
         ArgumentNullException.ThrowIfNull(request);
 
         var now = DateTimeOffset.UtcNow;
-        var workItemId = Guid.NewGuid();
+
         var sql = $@"
 insert into {TableName} (
-    WorkItemId, RunId, ManifestRowId, WorkItemType, Status, PartitionKey, Priority,
+    RunId, ManifestRowId, WorkItemType, Status, PartitionKey, Priority,
     AttemptCount, MaxAttempts, LeaseOwner, LeaseExpiresUtc, NotBeforeUtc,
     PayloadJson, ResultJson, LastErrorCode, LastErrorMessage, CreatedUtc, UpdatedUtc)
+output inserted.WorkItemId
 values (
-    @WorkItemId, @RunId, @ManifestRowId, @WorkItemType, 'Pending', @PartitionKey, @Priority,
+    @RunId, @ManifestRowId, @WorkItemType, 'Pending', @PartitionKey, @Priority,
     0, @MaxAttempts, null, null, @NotBeforeUtc,
     @PayloadJson, null, null, null, @CreatedUtc, @UpdatedUtc);";
 
         await using var connection = OpenConnection();
-        await connection.ExecuteAsync(new CommandDefinition(sql, new
-        {
-            WorkItemId = workItemId,
-            request.RunId,
-            request.ManifestRowId,
-            request.WorkItemType,
-            request.PartitionKey,
-            request.Priority,
-            MaxAttempts = _options.Value.DefaultMaxAttempts,
-            request.NotBeforeUtc,
-            request.PayloadJson,
-            CreatedUtc = now,
-            UpdatedUtc = now
-        }, cancellationToken: cancellationToken));
+
+        var workItemId = await connection.QuerySingleAsync<long>(
+            new CommandDefinition(sql, new
+            {
+                request.RunId,
+                request.ManifestRowId,
+                request.WorkItemType,
+                request.PartitionKey,
+                request.Priority,
+                MaxAttempts = _options.Value.DefaultMaxAttempts,
+                request.NotBeforeUtc,
+                request.PayloadJson,
+                CreatedUtc = now,
+                UpdatedUtc = now
+            }, cancellationToken: cancellationToken));
 
         var created = await GetAsync(workItemId, cancellationToken);
         return created ?? throw new InvalidOperationException($"Work item '{workItemId}' was inserted but could not be read back.");
@@ -120,7 +122,7 @@ output inserted.WorkItemId,
         return rows.AsList();
     }
 
-    public async Task<OperationalWorkItemRecord?> GetAsync(Guid workItemId, CancellationToken cancellationToken = default)
+    public async Task<OperationalWorkItemRecord?> GetAsync(long workItemId, CancellationToken cancellationToken = default)
     {
         var sql = $@"
 select WorkItemId, RunId, ManifestRowId, WorkItemType, Status, PartitionKey, Priority,
@@ -170,8 +172,7 @@ set Status = 'Completed',
     LeaseOwner = null,
     LeaseExpiresUtc = null,
     UpdatedUtc = @UpdatedUtc
-where WorkItemId = @WorkItemId
-  and LeaseOwner = @WorkerId;";
+where WorkItemId = @WorkItemId;";
 
         await ExecuteStateChangeAsync(sql, request, cancellationToken);
     }
@@ -189,8 +190,7 @@ set Status = case when @IsRetryable = 1 and AttemptCount < MaxAttempts then 'Fai
     LeaseExpiresUtc = null,
     NotBeforeUtc = @NextAttemptUtc,
     UpdatedUtc = @UpdatedUtc
-where WorkItemId = @WorkItemId
-  and LeaseOwner = @WorkerId;";
+where WorkItemId = @WorkItemId;";
 
         await ExecuteStateChangeAsync(sql, request, cancellationToken);
     }
@@ -206,8 +206,7 @@ set Status = 'Pending',
     LeaseExpiresUtc = null,
     NotBeforeUtc = @NextAttemptUtc,
     UpdatedUtc = @UpdatedUtc
-where WorkItemId = @WorkItemId
-  and LeaseOwner = @WorkerId;";
+where WorkItemId = @WorkItemId;";
 
         await ExecuteStateChangeAsync(sql, request, cancellationToken);
     }

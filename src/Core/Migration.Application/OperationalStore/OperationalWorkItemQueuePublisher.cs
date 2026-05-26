@@ -16,7 +16,7 @@ public sealed class OperationalWorkItemQueuePublisher : IOperationalWorkItemQueu
     }
 
     public async Task<OperationalQueueMessage?> PublishAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default)
     {
         var message = await _messageFactory.CreateAsync(

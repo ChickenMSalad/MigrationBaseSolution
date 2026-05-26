@@ -259,7 +259,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
         return rows.AsList();
     }
 
-    public async Task CompleteWorkItemAsync(Guid workItemId, CancellationToken cancellationToken = default)
+    public async Task CompleteWorkItemAsync(long workItemId, CancellationToken cancellationToken = default)
     {
         const string sql = """
             UPDATE dbo.MigrationWorkItems
@@ -275,7 +275,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
         await connection.ExecuteAsync(new CommandDefinition(sql, new { WorkItemId = workItemId }, commandTimeout: _options.CommandTimeoutSeconds, cancellationToken: cancellationToken)).ConfigureAwait(false);
     }
 
-    public async Task FailWorkItemAsync(Guid workItemId, SqlMigrationFailureRecord failure, CancellationToken cancellationToken = default)
+    public async Task FailWorkItemAsync(long workItemId, SqlMigrationFailureRecord failure, CancellationToken cancellationToken = default)
     {
         const string updateSql = """
             UPDATE dbo.MigrationWorkItems

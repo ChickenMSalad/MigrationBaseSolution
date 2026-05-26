@@ -2,7 +2,7 @@ namespace Migration.Admin.Api.OperationalStore;
 
 public sealed class OperationalMirrorManifestRecordItem
 {
-    public Guid ManifestRecordId { get; init; }
+    public long ManifestRecordId { get; init; }
 
     public Guid RunId { get; init; }
 

@@ -13,7 +13,7 @@ public sealed class OperationalQueueMessageFactory : IOperationalQueueMessageFac
     }
 
     public async Task<OperationalQueueMessage?> CreateAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default)
     {
         var context = await _executionContextFactory.CreateAsync(

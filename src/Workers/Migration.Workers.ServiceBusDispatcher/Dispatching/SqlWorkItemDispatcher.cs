@@ -118,52 +118,58 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
     private async Task<IReadOnlyList<SqlWorkItemDispatchRecord>> ClaimPendingWorkItemsAsync(CancellationToken cancellationToken)
     {
         const string sql = """
-;WITH next_items AS
-(
-    SELECT TOP (@BatchSize)
-        wi.WorkItemId,
-        wi.RunId,
-        wi.SequenceNumber,
-        wi.Status,
-        wi.PayloadJson
-    FROM dbo.MigrationWorkItems wi WITH (READPAST, UPDLOCK, ROWLOCK)
-    WHERE wi.Status IN ('Pending', 'Ready')
-      AND (wi.LeaseExpiresAtUtc IS NULL OR wi.LeaseExpiresAtUtc < SYSUTCDATETIME())
-    ORDER BY wi.Priority DESC, wi.SequenceNumber ASC, wi.CreatedAtUtc ASC
-)
-UPDATE next_items
-SET
-    Status = 'Dispatching',
-    LeaseOwner = @WorkerId,
-    LeaseExpiresAtUtc = DATEADD(second, @LeaseSeconds, SYSUTCDATETIME()),
-    UpdatedAtUtc = SYSUTCDATETIME()
-OUTPUT
-    inserted.WorkItemId,
-    inserted.RunId,
-    inserted.SequenceNumber,
-    inserted.Status,
-    inserted.PayloadJson;
+SELECT TOP (@BatchSize)
+    wi.WorkItemId,
+    wi.RunId,
+    CAST(wi.WorkItemId AS bigint) AS SequenceNumber,
+    wi.Status,
+    wi.PayloadJson
+FROM migration.WorkItems wi WITH (READPAST, ROWLOCK)
+WHERE wi.Status IN ('Pending', 'Ready', 'Queued')
+ORDER BY wi.Priority DESC, wi.WorkItemId ASC, wi.CreatedAtUtc ASC;
 """;
 
         await using SqlConnection connection = new(_options.SqlConnectionString);
-        IEnumerable<SqlWorkItemDispatchRecord> records = await connection.QueryAsync<SqlWorkItemDispatchRecord>(
-            new CommandDefinition(
-                sql,
-                new
-                {
-                    _options.BatchSize,
-                    _options.WorkerId,
-                    _options.LeaseSeconds
-                },
-                cancellationToken: cancellationToken)).ConfigureAwait(false);
 
-        return records.ToList();
+        List<SqlWorkItemDispatchRecord> records =
+            (
+                await connection.QueryAsync<SqlWorkItemDispatchRecord>(
+                    new CommandDefinition(
+                        sql,
+                        new
+                        {
+                            _options.BatchSize
+                        },
+                        cancellationToken: cancellationToken))
+            ).ToList();
+
+        foreach (SqlWorkItemDispatchRecord record in records)
+        {
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    """
+UPDATE migration.WorkItems
+SET
+    Status = 'Dispatching',
+    ClaimedBy = @WorkerId,
+    ClaimedAtUtc = SYSUTCDATETIME(),
+    UpdatedAtUtc = SYSUTCDATETIME()
+WHERE WorkItemId = @WorkItemId;
+""",
+                    new
+                    {
+                        WorkItemId = record.WorkItemId,
+                        _options.WorkerId
+                    },
+                    cancellationToken: cancellationToken));
+        }
+
+        return records;
     }
-
     private async Task MarkDispatchedAsync(long workItemId, CancellationToken cancellationToken)
     {
         const string sql = """
-UPDATE dbo.MigrationWorkItems
+UPDATE migration.WorkItems
 SET
     Status = 'Dispatched',
     DispatchedAtUtc = SYSUTCDATETIME(),

@@ -42,7 +42,7 @@ public sealed class SqlMigrationIdentifierMapStore : IMigrationIdentifierMapStor
     }
 
     public async Task<MigrationIdentifierMapRecord?> GetByManifestRecordIdAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

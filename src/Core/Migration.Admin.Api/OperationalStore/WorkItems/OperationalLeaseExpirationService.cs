@@ -179,9 +179,9 @@ public sealed class OperationalLeaseExpirationService : IOperationalLeaseExpirat
     {
         return new OperationalExpiredLeaseItem
         {
-            WorkItemId = reader.GetGuid(reader.GetOrdinal("WorkItemId")),
+            WorkItemId = reader.GetInt64(reader.GetOrdinal("WorkItemId")),
             RunId = reader.GetGuid(reader.GetOrdinal("RunId")),
-            ManifestRecordId = reader.GetGuid(reader.GetOrdinal("ManifestRecordId")),
+            ManifestRecordId = reader.GetInt64(reader.GetOrdinal("ManifestRecordId")),
             Status = reader.GetString(reader.GetOrdinal("Status")),
             AttemptCount = reader.GetInt32(reader.GetOrdinal("AttemptCount")),
             LockedBy = ReadNullableString(reader, "LockedBy"),

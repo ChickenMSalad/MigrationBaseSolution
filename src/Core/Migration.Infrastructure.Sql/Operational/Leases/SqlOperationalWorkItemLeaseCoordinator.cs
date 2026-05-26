@@ -198,7 +198,7 @@ where RunId = @RunId;";
     }
 
     private sealed record LeaseRenewalRow(
-        Guid WorkItemId,
+        long WorkItemId,
         string? WorkerId,
         DateTimeOffset? LeaseExpiresUtc,
         string? Status);

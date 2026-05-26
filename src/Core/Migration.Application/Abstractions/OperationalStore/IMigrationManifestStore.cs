@@ -5,7 +5,7 @@ namespace Migration.Application.Abstractions.OperationalStore;
 public interface IMigrationManifestStore
 {
     Task<MigrationManifestRecord?> GetAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<MigrationManifestRecord>> GetByRunAsync(
@@ -23,7 +23,7 @@ public interface IMigrationManifestStore
         CancellationToken cancellationToken = default);
 
     Task UpdateStatusAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         string status,
         DateTimeOffset updatedAt,
         CancellationToken cancellationToken = default);

@@ -40,7 +40,7 @@ public static class OperationalWorkItemLeaseEndpointExtensions
         api.MapPost(
                 "/operational/work-items/{workItemId:guid}/heartbeat",
                 async (
-                    Guid workItemId,
+                    long workItemId,
                     OperationalWorkItemHeartbeatRequest request,
                     IOperationalWorkItemLeaseService leaseService,
                     CancellationToken cancellationToken) =>
@@ -72,7 +72,7 @@ public static class OperationalWorkItemLeaseEndpointExtensions
         api.MapPost(
                 "/operational/work-items/{workItemId:guid}/complete",
                 async (
-                    Guid workItemId,
+                    long workItemId,
                     OperationalWorkItemCompleteRequest request,
                     IOperationalWorkItemLeaseService leaseService,
                     CancellationToken cancellationToken) =>
@@ -104,7 +104,7 @@ public static class OperationalWorkItemLeaseEndpointExtensions
         api.MapPost(
                 "/operational/work-items/{workItemId:guid}/fail",
                 async (
-                    Guid workItemId,
+                    long workItemId,
                     OperationalWorkItemFailRequest request,
                     IOperationalWorkItemLeaseService leaseService,
                     CancellationToken cancellationToken) =>
@@ -136,7 +136,7 @@ public static class OperationalWorkItemLeaseEndpointExtensions
         api.MapPost(
                 "/operational/work-items/{workItemId:guid}/release",
                 async (
-                    Guid workItemId,
+                    long workItemId,
                     OperationalWorkItemReleaseRequest request,
                     IOperationalWorkItemRecoveryService recoveryService,
                     CancellationToken cancellationToken) =>
@@ -168,7 +168,7 @@ public static class OperationalWorkItemLeaseEndpointExtensions
         api.MapPost(
                 "/operational/work-items/{workItemId:guid}/reset",
                 async (
-                    Guid workItemId,
+                    long workItemId,
                     OperationalWorkItemResetRequest request,
                     IOperationalWorkItemRecoveryService recoveryService,
                     CancellationToken cancellationToken) =>

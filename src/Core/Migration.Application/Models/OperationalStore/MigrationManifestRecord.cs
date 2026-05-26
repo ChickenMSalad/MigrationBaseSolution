@@ -2,7 +2,7 @@ namespace Migration.Application.Models.OperationalStore;
 
 public sealed class MigrationManifestRecord
 {
-    public Guid ManifestRecordId { get; init; }
+    public long ManifestRecordId { get; init; }
 
     public Guid RunId { get; init; }
 

@@ -17,7 +17,7 @@ public sealed class OperationalWorkItemDispatchService : IOperationalWorkItemDis
 
     public async Task<OperationalQueueMessage?> DispatchAsync(
         Guid runId,
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default)
     {
         var workItem = await _workItemLifecycleService.CreateWorkItemAsync(
@@ -32,7 +32,7 @@ public sealed class OperationalWorkItemDispatchService : IOperationalWorkItemDis
 
     public async Task<IReadOnlyList<OperationalQueueMessage>> DispatchBatchAsync(
         Guid runId,
-        IReadOnlyCollection<Guid> manifestRecordIds,
+        IReadOnlyCollection<long> manifestRecordIds,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(manifestRecordIds);

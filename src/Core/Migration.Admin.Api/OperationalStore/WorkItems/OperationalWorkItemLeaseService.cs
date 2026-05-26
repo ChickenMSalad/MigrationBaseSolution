@@ -125,7 +125,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
     }
 
     public Task<OperationalWorkItemStateTransitionResponse> HeartbeatAsync(
-        Guid workItemId,
+        long workItemId,
         OperationalWorkItemHeartbeatRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -142,7 +142,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
     }
 
     public Task<OperationalWorkItemStateTransitionResponse> CompleteAsync(
-        Guid workItemId,
+        long workItemId,
         OperationalWorkItemCompleteRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -159,7 +159,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
     }
 
     public async Task<OperationalWorkItemStateTransitionResponse> FailAsync(
-        Guid workItemId,
+        long workItemId,
         OperationalWorkItemFailRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -182,7 +182,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
     }
 
     private async Task<OperationalWorkItemStateTransitionResponse> UpdateOwnedWorkItemAsync(
-        Guid workItemId,
+        long workItemId,
         string workerId,
         string requiredStatus,
         string successStatus,
@@ -191,7 +191,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
         CancellationToken cancellationToken,
         string? failureReason = null)
     {
-        if (workItemId == Guid.Empty)
+        if (workItemId <= 0)
         {
             throw new ArgumentException("WorkItemId is required.", nameof(workItemId));
         }
@@ -243,7 +243,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
 
         return new OperationalWorkItemStateTransitionResponse
         {
-            WorkItemId = reader.GetGuid(reader.GetOrdinal("WorkItemId")),
+            WorkItemId = reader.GetInt64(reader.GetOrdinal("WorkItemId")),
             Success = true,
             Message = successMessage,
             Status = successStatus,
@@ -264,9 +264,9 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
     {
         return new OperationalWorkItemLeaseItem
         {
-            WorkItemId = reader.GetGuid(reader.GetOrdinal("WorkItemId")),
+            WorkItemId = reader.GetInt64(reader.GetOrdinal("WorkItemId")),
             RunId = reader.GetGuid(reader.GetOrdinal("RunId")),
-            ManifestRecordId = reader.GetGuid(reader.GetOrdinal("ManifestRecordId")),
+            ManifestRecordId = reader.GetInt64(reader.GetOrdinal("ManifestRecordId")),
             Status = reader.GetString(reader.GetOrdinal("Status")),
             AttemptCount = reader.GetInt32(reader.GetOrdinal("AttemptCount")),
             LockedBy = ReadNullableString(reader, "LockedBy"),

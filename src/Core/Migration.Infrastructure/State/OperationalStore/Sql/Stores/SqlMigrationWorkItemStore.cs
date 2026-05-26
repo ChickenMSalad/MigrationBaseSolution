@@ -22,7 +22,7 @@ public sealed class SqlMigrationWorkItemStore : IMigrationWorkItemStore
     }
 
     public async Task<MigrationWorkItemRecord?> GetAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -78,7 +78,7 @@ public sealed class SqlMigrationWorkItemStore : IMigrationWorkItemStore
     }
 
     public async Task MarkLockedAsync(
-        Guid workItemId,
+        long workItemId,
         string lockedBy,
         DateTimeOffset lockedAt,
         CancellationToken cancellationToken = default)
@@ -94,7 +94,7 @@ public sealed class SqlMigrationWorkItemStore : IMigrationWorkItemStore
     }
 
     public async Task MarkCompletedAsync(
-        Guid workItemId,
+        long workItemId,
         DateTimeOffset completedAt,
         CancellationToken cancellationToken = default)
     {
@@ -109,7 +109,7 @@ public sealed class SqlMigrationWorkItemStore : IMigrationWorkItemStore
     }
 
     public async Task MarkFailedAsync(
-        Guid workItemId,
+        long workItemId,
         string failureReason,
         DateTimeOffset failedAt,
         CancellationToken cancellationToken = default)

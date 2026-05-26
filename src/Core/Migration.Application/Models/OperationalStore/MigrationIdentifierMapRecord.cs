@@ -6,7 +6,7 @@ public sealed class MigrationIdentifierMapRecord
 
     public Guid RunId { get; init; }
 
-    public Guid ManifestRecordId { get; init; }
+    public long ManifestRecordId { get; init; }
 
     public string SourceId { get; init; } = string.Empty;
 

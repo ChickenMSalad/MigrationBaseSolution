@@ -14,6 +14,6 @@ public sealed class OperationalDispatcherRunOnceResponse
 
     public string Message { get; init; } = string.Empty;
 
-    public IReadOnlyCollection<Guid> WorkItemIds { get; init; } =
-        Array.Empty<Guid>();
+    public IReadOnlyCollection<long> WorkItemIds { get; init; } =
+        Array.Empty<long>();
 }

@@ -1,0 +1,40 @@
+PS C:\Workspace\MigrationBaseSolutionRepo> sqlcmd `
+>>   -S "$sqlServer.database.windows.net" `
+>>   -d $db `
+>>   -U $sqlAdmin `
+>>   -P $sqlPasswordPlain `
+>>   -Q "
+>> EXEC migration.usp_ClaimWorkItems
+>>     @WorkerId = N'cloud-smoke-test',
+>>     @BatchSize = 5,
+>>     @LeaseSeconds = 300,
+>>     @RunId = '11111111-1111-1111-1111-111111111111';
+>> "
+Msg 308, Level 16, State 1, Server mbsdeanruntime76848, Procedure migration.usp_ClaimWorkItems, Line 19
+Index 'IX_WorkItems_ClaimQueue' on table 'migration.WorkItems' (specified in the FROM clause) does not exist.
+PS C:\Workspace\MigrationBaseSolutionRepo> sqlcmd `
+>>   -S "$sqlServer.database.windows.net" `
+>>   -d $db `
+>>   -U $sqlAdmin `
+>>   -P $sqlPasswordPlain `
+>>   -Q "
+>> SELECT
+>>     WorkItemId,
+>>     RunId,
+>>     WorkType,
+>>     Status,
+>>     AttemptCount,
+>>     ClaimedBy,
+>>     ClaimedAtUtc,
+>>     LeaseExpiresAtUtc,
+>>     LeaseOwner,
+>>     LeaseExpiresUtc,
+>>     UpdatedUtc
+>> FROM migration.WorkItems
+>> ORDER BY WorkItemId DESC;
+>> "
+WorkItemId           RunId                                WorkType                                                                                                                         Status                                                           AttemptCount ClaimedBy                                                                                                                                                                                                                                                        ClaimedAtUtc                           LeaseExpiresAtUtc                      LeaseOwner                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       LeaseExpiresUtc                        UpdatedUtc
+-------------------- ------------------------------------ -------------------------------------------------------------------------------------------------------------------------------- ---------------------------------------------------------------- ------------ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- -------------------------------------- -------------------------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- -------------------------------------- --------------------------------------
+                   1 11111111-1111-1111-1111-111111111111 SmokeNoOp                                                                                                                        Queued                                                                      0 NULL                                                                                                                                                                                                                                                                                               NULL                                   NULL NULL                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               NULL                                   NULL
+
+(1 rows affected)

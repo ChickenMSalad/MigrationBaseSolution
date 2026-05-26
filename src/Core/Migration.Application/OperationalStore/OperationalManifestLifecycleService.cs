@@ -28,7 +28,7 @@ public sealed class OperationalManifestLifecycleService : IOperationalManifestLi
 
         var record = new MigrationManifestRecord
         {
-            ManifestRecordId = Guid.NewGuid(),
+            // ManifestRecordId intentionally not assigned; SQL identity owns it.
             RunId = runId,
             SequenceNumber = sequenceNumber,
             SourceId = sourceId,
@@ -65,9 +65,6 @@ public sealed class OperationalManifestLifecycleService : IOperationalManifestLi
         var preparedRecords = records
             .Select(record => new MigrationManifestRecord
             {
-                ManifestRecordId = record.ManifestRecordId == Guid.Empty
-                    ? Guid.NewGuid()
-                    : record.ManifestRecordId,
                 RunId = runId,
                 SequenceNumber = record.SequenceNumber,
                 SourceId = record.SourceId,
@@ -93,7 +90,7 @@ public sealed class OperationalManifestLifecycleService : IOperationalManifestLi
     }
 
     public Task MarkManifestProcessingAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default)
     {
         return _operationalStore.ManifestRecords.UpdateStatusAsync(
@@ -104,7 +101,7 @@ public sealed class OperationalManifestLifecycleService : IOperationalManifestLi
     }
 
     public Task MarkManifestCompletedAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default)
     {
         return _operationalStore.ManifestRecords.UpdateStatusAsync(
@@ -116,7 +113,7 @@ public sealed class OperationalManifestLifecycleService : IOperationalManifestLi
 
     public async Task MarkManifestFailedAsync(
         Guid runId,
-        Guid manifestRecordId,
+        long manifestRecordId,
         string failureReason,
         bool isRetriable,
         CancellationToken cancellationToken = default)

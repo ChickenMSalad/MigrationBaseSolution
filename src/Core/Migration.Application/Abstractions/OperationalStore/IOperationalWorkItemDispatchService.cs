@@ -6,11 +6,11 @@ public interface IOperationalWorkItemDispatchService
 {
     Task<OperationalQueueMessage?> DispatchAsync(
         Guid runId,
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<OperationalQueueMessage>> DispatchBatchAsync(
         Guid runId,
-        IReadOnlyCollection<Guid> manifestRecordIds,
+        IReadOnlyCollection<long> manifestRecordIds,
         CancellationToken cancellationToken = default);
 }

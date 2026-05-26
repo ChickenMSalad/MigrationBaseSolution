@@ -5,7 +5,7 @@ namespace Migration.Application.Abstractions.OperationalStore;
 public interface IMigrationWorkItemStore
 {
     Task<MigrationWorkItemRecord?> GetAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default);
 
     Task AddAsync(
@@ -17,18 +17,18 @@ public interface IMigrationWorkItemStore
         CancellationToken cancellationToken = default);
 
     Task MarkLockedAsync(
-        Guid workItemId,
+        long workItemId,
         string lockedBy,
         DateTimeOffset lockedAt,
         CancellationToken cancellationToken = default);
 
     Task MarkCompletedAsync(
-        Guid workItemId,
+        long workItemId,
         DateTimeOffset completedAt,
         CancellationToken cancellationToken = default);
 
     Task MarkFailedAsync(
-        Guid workItemId,
+        long workItemId,
         string failureReason,
         DateTimeOffset failedAt,
         CancellationToken cancellationToken = default);

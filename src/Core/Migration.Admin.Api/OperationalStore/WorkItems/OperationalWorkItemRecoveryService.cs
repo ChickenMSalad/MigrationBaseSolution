@@ -21,7 +21,7 @@ public sealed class OperationalWorkItemRecoveryService : IOperationalWorkItemRec
     }
 
     public Task<OperationalWorkItemStateTransitionResponse> ReleaseAsync(
-        Guid workItemId,
+        long workItemId,
         OperationalWorkItemReleaseRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -55,7 +55,7 @@ public sealed class OperationalWorkItemRecoveryService : IOperationalWorkItemRec
     }
 
     public Task<OperationalWorkItemStateTransitionResponse> ResetAsync(
-        Guid workItemId,
+        long workItemId,
         OperationalWorkItemResetRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -90,7 +90,7 @@ public sealed class OperationalWorkItemRecoveryService : IOperationalWorkItemRec
     }
 
     private async Task<OperationalWorkItemStateTransitionResponse> UpdateAsync(
-        Guid workItemId,
+        long workItemId,
         string setClause,
         string whereClause,
         Action<SqlCommand> configureCommand,
@@ -99,7 +99,7 @@ public sealed class OperationalWorkItemRecoveryService : IOperationalWorkItemRec
         string notUpdatedMessage,
         CancellationToken cancellationToken)
     {
-        if (workItemId == Guid.Empty)
+        if (workItemId < 0)
         {
             throw new ArgumentException("WorkItemId is required.", nameof(workItemId));
         }
@@ -139,7 +139,7 @@ public sealed class OperationalWorkItemRecoveryService : IOperationalWorkItemRec
 
         return new OperationalWorkItemStateTransitionResponse
         {
-            WorkItemId = reader.GetGuid(reader.GetOrdinal("WorkItemId")),
+            WorkItemId = reader.GetInt64(reader.GetOrdinal("WorkItemId")),
             Success = true,
             Message = successMessage,
             Status = successStatus,

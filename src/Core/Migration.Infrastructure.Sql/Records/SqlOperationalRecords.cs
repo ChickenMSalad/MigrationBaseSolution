@@ -19,7 +19,7 @@ public sealed record SqlMigrationRunRecord(
     DateTimeOffset? CompletedAtUtc);
 
 public sealed record SqlMigrationManifestRowRecord(
-    Guid ManifestRowId,
+    long ManifestRowId,
     Guid RunId,
     long RowNumber,
     string SourceIdentifier,
@@ -30,7 +30,7 @@ public sealed record SqlMigrationManifestRowRecord(
     DateTimeOffset UpdatedAtUtc);
 
 public sealed record SqlMigrationWorkItemRecord(
-    Guid WorkItemId,
+    long workItemId,
     Guid RunId,
     Guid? ManifestRowId,
     string WorkItemType,

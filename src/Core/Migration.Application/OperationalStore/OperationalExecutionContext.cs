@@ -4,8 +4,8 @@ public sealed class OperationalExecutionContext
 {
     public OperationalExecutionContext(
         Guid runId,
-        Guid manifestRecordId,
-        Guid workItemId,
+        long manifestRecordId,
+        long workItemId,
         string sourceId,
         string? sourcePath,
         string? sourceName)
@@ -20,9 +20,9 @@ public sealed class OperationalExecutionContext
 
     public Guid RunId { get; }
 
-    public Guid ManifestRecordId { get; }
+    public long ManifestRecordId { get; }
 
-    public Guid WorkItemId { get; }
+    public long WorkItemId { get; }
 
     public string SourceId { get; }
 

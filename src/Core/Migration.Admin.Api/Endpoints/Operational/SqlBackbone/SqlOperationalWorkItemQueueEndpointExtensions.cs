@@ -41,7 +41,7 @@ public static class SqlOperationalWorkItemQueueEndpointExtensions
     }
 
     private static async Task<Results<Ok<OperationalWorkItemRecord>, NotFound>> GetAsync(
-        Guid workItemId,
+        long workItemId,
         IOperationalWorkItemQueue queue,
         CancellationToken cancellationToken)
     {

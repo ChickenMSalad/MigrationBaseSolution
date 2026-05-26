@@ -6,7 +6,7 @@ public interface IOperationalWorkItemQueue
 
     Task<IReadOnlyList<OperationalWorkItemRecord>> ClaimAsync(ClaimOperationalWorkItemsRequest request, CancellationToken cancellationToken = default);
 
-    Task<OperationalWorkItemRecord?> GetAsync(Guid workItemId, CancellationToken cancellationToken = default);
+    Task<OperationalWorkItemRecord?> GetAsync(long workItemId, CancellationToken cancellationToken = default);
 
     Task<OperationalWorkItemRunSummary> GetRunSummaryAsync(Guid runId, CancellationToken cancellationToken = default);
 

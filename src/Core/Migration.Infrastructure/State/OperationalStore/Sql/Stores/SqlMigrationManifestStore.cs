@@ -21,7 +21,7 @@ public sealed class SqlMigrationManifestStore : IMigrationManifestStore
     }
 
     public async Task<MigrationManifestRecord?> GetAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -102,7 +102,7 @@ public sealed class SqlMigrationManifestStore : IMigrationManifestStore
     }
 
     public async Task UpdateStatusAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         string status,
         DateTimeOffset updatedAt,
         CancellationToken cancellationToken = default)

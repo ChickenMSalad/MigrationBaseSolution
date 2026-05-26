@@ -10,7 +10,7 @@ public interface IMigrationIdentifierMapStore
         CancellationToken cancellationToken = default);
 
     Task<MigrationIdentifierMapRecord?> GetByManifestRecordIdAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default);
 
     Task AddAsync(

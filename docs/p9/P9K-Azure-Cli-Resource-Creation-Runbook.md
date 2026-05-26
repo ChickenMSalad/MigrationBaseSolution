@@ -293,3 +293,41 @@ az webapp list `
   --resource-group $resourceGroup `
   --query "[].{Name:name, State:state, Host:defaultHostName}" `
   -o table
+
+
+
+az webapp log tail `
+  --resource-group $resourceGroup `
+  --name $adminApiApp
+
+https://app-migration-admin-api-dev.azurewebsites.net/health/live
+
+https://app-migration-admin-api-dev.azurewebsites.net/health/ready
+
+
+$adminReadinessSettings = @(
+  "MIGRATION_Credentials__Mode=Configuration",
+  "MIGRATION_Artifacts__Mode=Local"
+)
+
+az webapp config appsettings set `
+  --resource-group $resourceGroup `
+  --name $adminApiApp `
+  --settings $adminReadinessSettings
+
+az webapp restart `
+  --resource-group $resourceGroup `
+  --name $adminApiApp
+
+
+PS C:\Workspace\MigrationBaseSolutionRepo> $healthReadinessSettings = @(
+>>   "MIGRATION_Cloud__CredentialMode=keyVault",
+>>   "MIGRATION_Cloud__ArtifactMode=local",
+>>   "MIGRATION_Cloud__ArtifactContainerName=artifacts",
+>>   "MIGRATION_Artifacts__BlobContainerName=artifacts"
+>> )
+PS C:\Workspace\MigrationBaseSolutionRepo>
+PS C:\Workspace\MigrationBaseSolutionRepo> az webapp config appsettings set `
+>>   --resource-group $resourceGroup `
+>>   --name $adminApiApp `
+>>   --settings $healthReadinessSettings

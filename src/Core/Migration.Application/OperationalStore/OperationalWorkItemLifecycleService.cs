@@ -16,14 +16,14 @@ public sealed class OperationalWorkItemLifecycleService : IOperationalWorkItemLi
 
     public async Task<MigrationWorkItemRecord> CreateWorkItemAsync(
         Guid runId,
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
 
         var workItem = new MigrationWorkItemRecord
         {
-            WorkItemId = Guid.NewGuid(),
+            // WorkItemId intentionally not assigned; SQL identity owns it.
             RunId = runId,
             ManifestRecordId = manifestRecordId,
             Status = MigrationWorkItemStatuses.Created,
@@ -40,7 +40,7 @@ public sealed class OperationalWorkItemLifecycleService : IOperationalWorkItemLi
 
     public async Task<IReadOnlyList<MigrationWorkItemRecord>> CreateWorkItemBatchAsync(
         Guid runId,
-        IReadOnlyCollection<Guid> manifestRecordIds,
+        IReadOnlyCollection<long> manifestRecordIds,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(manifestRecordIds);
@@ -55,7 +55,7 @@ public sealed class OperationalWorkItemLifecycleService : IOperationalWorkItemLi
         var workItems = manifestRecordIds
             .Select(manifestRecordId => new MigrationWorkItemRecord
             {
-                WorkItemId = Guid.NewGuid(),
+                // WorkItemId intentionally not assigned; SQL identity owns it.
                 RunId = runId,
                 ManifestRecordId = manifestRecordId,
                 Status = MigrationWorkItemStatuses.Created,
@@ -72,7 +72,7 @@ public sealed class OperationalWorkItemLifecycleService : IOperationalWorkItemLi
     }
 
     public Task MarkWorkItemLockedAsync(
-        Guid workItemId,
+        long workItemId,
         string lockedBy,
         CancellationToken cancellationToken = default)
     {
@@ -84,7 +84,7 @@ public sealed class OperationalWorkItemLifecycleService : IOperationalWorkItemLi
     }
 
     public Task MarkWorkItemCompletedAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default)
     {
         return _operationalStore.WorkItems.MarkCompletedAsync(
@@ -95,8 +95,8 @@ public sealed class OperationalWorkItemLifecycleService : IOperationalWorkItemLi
 
     public async Task MarkWorkItemFailedAsync(
         Guid runId,
-        Guid workItemId,
-        Guid manifestRecordId,
+        long workItemId,
+        long manifestRecordId,
         string failureReason,
         bool isRetriable,
         CancellationToken cancellationToken = default)

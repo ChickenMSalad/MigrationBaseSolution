@@ -15,10 +15,10 @@ public interface IMigrationFailureStore
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<MigrationFailureRecord>> GetByManifestRecordAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<MigrationFailureRecord>> GetByWorkItemAsync(
-        Guid workItemId,
+        long workItemId,
         CancellationToken cancellationToken = default);
 }

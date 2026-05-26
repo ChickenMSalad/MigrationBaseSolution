@@ -20,16 +20,16 @@ public interface IOperationalManifestLifecycleService
         CancellationToken cancellationToken = default);
 
     Task MarkManifestProcessingAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default);
 
     Task MarkManifestCompletedAsync(
-        Guid manifestRecordId,
+        long manifestRecordId,
         CancellationToken cancellationToken = default);
 
     Task MarkManifestFailedAsync(
         Guid runId,
-        Guid manifestRecordId,
+        long manifestRecordId,
         string failureReason,
         bool isRetriable,
         CancellationToken cancellationToken = default);

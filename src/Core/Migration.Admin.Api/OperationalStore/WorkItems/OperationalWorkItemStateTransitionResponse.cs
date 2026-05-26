@@ -2,7 +2,7 @@ namespace Migration.Admin.Api.OperationalStore;
 
 public sealed class OperationalWorkItemStateTransitionResponse
 {
-    public Guid WorkItemId { get; init; }
+    public long WorkItemId { get; init; }
 
     public bool Success { get; init; }
 
