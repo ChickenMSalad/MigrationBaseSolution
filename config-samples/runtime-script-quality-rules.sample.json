@@ -1,0 +1,36 @@
+{
+  "description": "Sample rule documentation for runtime cleanup script quality gates.",
+  "rules": [
+    {
+      "id": "PS001",
+      "name": "No fragile colon interpolation",
+      "exampleBad": "\"$path: $message\"",
+      "exampleGood": "\"{0}: {1}\" -f $path, $message"
+    },
+    {
+      "id": "PS002",
+      "name": "Allow PowerShell scoped variables",
+      "allowedScopes": [
+        "script",
+        "global",
+        "local",
+        "private",
+        "using",
+        "env"
+      ]
+    },
+    {
+      "id": "PS003",
+      "name": "Avoid MyInvocation.ScriptName bootstrap assumptions",
+      "exampleGood": "Use $PSScriptRoot with a fallback to Split-Path -Parent $MyInvocation.MyCommand.Path."
+    },
+    {
+      "id": "PS004",
+      "name": "Ignore bin and obj using path segments, not brittle path regexes"
+    },
+    {
+      "id": "PS005",
+      "name": "Do not print SQL passwords or full command argument arrays from process failures"
+    }
+  ]
+}

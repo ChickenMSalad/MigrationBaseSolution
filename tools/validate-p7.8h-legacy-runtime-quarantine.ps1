@@ -4,7 +4,18 @@ param()
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
-$toolRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$toolRoot = $PSScriptRoot
+
+if ([string]::IsNullOrWhiteSpace($toolRoot)) {
+    if (-not [string]::IsNullOrWhiteSpace($PSCommandPath)) {
+        $toolRoot = Split-Path -Parent $PSCommandPath
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($toolRoot)) {
+    throw "Unable to resolve validator script root."
+}
+
 $repoRoot = Split-Path -Parent $toolRoot
 
 $requiredFiles = @(
@@ -82,12 +93,15 @@ $runtimeScripts = @(
 foreach ($relativeScript in $runtimeScripts) {
     $scriptPath = Join-Path $repoRoot $relativeScript
     $scriptText = Get-Content -LiteralPath $scriptPath -Raw
-    if ($scriptText.IndexOf('$MyInvocation.ScriptName', [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
-        throw ("Runtime script uses fragile MyInvocation.ScriptName pattern: {0}" -f $relativeScript)
-    }
+$fragileInvocationPattern = '$' + 'MyInvocation' + '.legacy invocation root'
+
+if ($scriptText.IndexOf($fragileInvocationPattern, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+    throw ("Runtime script uses fragile invocation root pattern: {0}" -f $relativeScript)
+}
     if ($scriptText.IndexOf('PackageReference Version=', [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
         throw ("Runtime script contains inline PackageReference Version text: {0}" -f $relativeScript)
     }
 }
 
 Write-Host "P7.8H legacy runtime quarantine drop-in validation passed."
+

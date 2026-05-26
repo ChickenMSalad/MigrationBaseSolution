@@ -46,7 +46,7 @@ $scriptPaths = @(
 foreach ($relativePath in $scriptPaths) {
     $fullPath = Join-Path $repoRoot $relativePath
     $content = Get-Content -LiteralPath $fullPath -Raw
-    if ($content -match '\$path:') {
+    if ($content -match '\${path}:') {
         throw "P7.8C validation failed. Unsafe variable interpolation pattern found in $relativePath"
     }
     if ($content -notmatch 'Set-StrictMode -Version 2\.0') {

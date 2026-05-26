@@ -1,0 +1,46 @@
+{
+  "handoffVersion": "P7.8J",
+  "deployment": {
+    "commitSha": "REPLACE_WITH_COMMIT_SHA",
+    "dispatcherApp": "REPLACE_WITH_DISPATCHER_APP",
+    "executorApp": "REPLACE_WITH_EXECUTOR_APP",
+    "resourceGroup": "REPLACE_WITH_RESOURCE_GROUP",
+    "database": "REPLACE_WITH_DATABASE_NAME",
+    "serviceBusNamespace": "REPLACE_WITH_NAMESPACE",
+    "queueName": "migration-operational-work-items"
+  },
+  "requiredEvidence": [
+    "cleanGitStatus",
+    "sqlContractValidation",
+    "appSettingsSnapshot",
+    "runtimeSmokeState",
+    "queueCounts",
+    "dispatcherLogExcerpt",
+    "executorLogExcerpt"
+  ],
+  "canonicalSqlObjects": {
+    "workItems": "migration.WorkItems",
+    "manifestRows": "migration.ManifestRows"
+  },
+  "canonicalSettings": [
+    "ConnectionStrings__MigrationOperationalStore",
+    "SqlServiceBusDispatcher__Enabled",
+    "SqlServiceBusDispatcher__SqlConnectionString",
+    "SqlServiceBusDispatcher__ServiceBusConnectionString",
+    "SqlServiceBusDispatcher__QueueName",
+    "SqlServiceBusExecutor__ServiceBusConnectionString",
+    "SqlServiceBusExecutor__QueueName",
+    "SqlOperationalMigrationJobExecutor__Enabled",
+    "SqlOperationalWorkItemQueue__SchemaName",
+    "SqlOperationalWorkItemQueue__WorkItemsTableName",
+    "GenericMigrationRuntime__RegisterAllWhenEmpty"
+  ],
+  "noGoConditions": [
+    "dirtyWorkingTree",
+    "failedSqlContractValidation",
+    "failedAppSettingsValidation",
+    "newDeadLetterMessagesDuringSmoke",
+    "dispatcherUsesLegacyGuidTables",
+    "executorUsesLegacyGuidTables"
+  ]
+}
