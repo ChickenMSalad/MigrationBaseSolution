@@ -1,0 +1,35 @@
+{
+  "releaseGateName": "P7.8 Runtime Release Gate",
+  "requiredScripts": [
+    "tools/validate-p7.8a-runtime-contract-cleanup.ps1",
+    "tools/validate-p7.8b-sql-baseline-consolidation.ps1",
+    "tools/validate-p7.8c-runtime-appsettings-normalization.ps1",
+    "tools/validate-p7.8d-runtime-deployment-smoke-handoff.ps1",
+    "tools/validate-p7.8e-local-azure-parity.ps1",
+    "tools/validate-p7.8f-runtime-code-contract-guardrails.ps1"
+  ],
+  "recommendedInputs": [
+    "dispatcher-appsettings.json",
+    "executor-appsettings.json",
+    "azure-migration-schema.txt"
+  ],
+  "forbiddenRuntimeTableReferences": [
+    "dbo.MigrationWorkItems",
+    "migration.MigrationWorkItems",
+    "dbo.MigrationManifestRows",
+    "migration.MigrationManifestRecords"
+  ],
+  "canonicalSettings": [
+    "ConnectionStrings__MigrationOperationalStore",
+    "SqlServiceBusDispatcher__Enabled",
+    "SqlServiceBusDispatcher__SqlConnectionString",
+    "SqlServiceBusDispatcher__ServiceBusConnectionString",
+    "SqlServiceBusDispatcher__QueueName",
+    "SqlServiceBusExecutor__ServiceBusConnectionString",
+    "SqlServiceBusExecutor__QueueName",
+    "SqlOperationalMigrationJobExecutor__Enabled",
+    "SqlOperationalWorkItemQueue__SchemaName",
+    "SqlOperationalWorkItemQueue__WorkItemsTableName",
+    "GenericMigrationRuntime__RegisterAllWhenEmpty"
+  ]
+}
