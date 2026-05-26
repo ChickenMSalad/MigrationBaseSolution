@@ -1,0 +1,35 @@
+{
+  "runtimeContractVersion": "P7.8E",
+  "canonicalSettings": [
+    "ConnectionStrings__MigrationOperationalStore",
+    "SqlServiceBusDispatcher__Enabled",
+    "SqlServiceBusDispatcher__SqlConnectionString",
+    "SqlServiceBusDispatcher__ServiceBusConnectionString",
+    "SqlServiceBusDispatcher__QueueName",
+    "SqlServiceBusExecutor__ServiceBusConnectionString",
+    "SqlServiceBusExecutor__QueueName",
+    "SqlOperationalMigrationJobExecutor__Enabled",
+    "SqlOperationalWorkItemQueue__SchemaName",
+    "SqlOperationalWorkItemQueue__WorkItemsTableName",
+    "GenericMigrationRuntime__RegisterAllWhenEmpty"
+  ],
+  "retiredSettings": [
+    "MIGRATION_ConnectionStrings__MigrationOperationStore",
+    "MIGRATION_SqlWorkItemDispatcher__ServiceBusConnectionString",
+    "MIGRATION_SqlWorkItemDispatcher__QueueName",
+    "MIGRATION_ServiceBusDispatcher__ServiceBusConnectionString",
+    "MIGRATION_ServiceBusDispatcher__QueueName",
+    "MIGRATION_SqlServiceBusExecutor__ServiceBusConnectionString",
+    "MIGRATION_SqlServiceBusExecutor__QueueName",
+    "OperationalStore__Sql__SchemaName",
+    "OperationalStore__Sql__WorkItemsTableName"
+  ],
+  "sqlContract": {
+    "schema": "migration",
+    "workItemsTable": "WorkItems",
+    "manifestRowsTable": "ManifestRows",
+    "workItemIdType": "bigint",
+    "manifestRowIdType": "bigint",
+    "runIdType": "uniqueidentifier"
+  }
+}
