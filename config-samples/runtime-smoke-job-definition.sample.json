@@ -1,0 +1,8 @@
+{
+  "jobName": "RuntimeSmoke",
+  "sourceType": "LocalStorage",
+  "targetType": "LocalStorage",
+  "manifestType": "Csv",
+  "mappingProfilePath": "smoke.json",
+  "dryRun": true
+}
