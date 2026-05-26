@@ -1,0 +1,15 @@
+{
+  "description": "Optional allowlist for P7.8F runtime code contract scanner. Keep this small and temporary.",
+  "allowedFindings": [
+    {
+      "pathContains": "docs/",
+      "patternId": "LegacyTableReference",
+      "reason": "Historical documentation may mention legacy table names. Active runtime code should not."
+    },
+    {
+      "pathContains": "database/sql/operational/",
+      "patternId": "LegacyTableReference",
+      "reason": "Pre-P7 operational scripts are legacy and should not be used for SQL Service Bus runtime deployment."
+    }
+  ]
+}
