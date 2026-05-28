@@ -1,0 +1,21 @@
+{
+  "environmentName": "dev",
+  "resourceGroup": "rg-migration-runtime-dev",
+  "dispatcherApp": "app-migration-sb-dispatcher-dev",
+  "executorApp": "app-migration-sb-executor-dev",
+  "sqlServer": "mbsdeanruntime76848",
+  "database": "MigrationOperationalStoreClean",
+  "serviceBusNamespace": "sb-migration-runtime-dev",
+  "serviceBusQueue": "migration-operational-work-items",
+  "dispatcherZipPath": "artifacts/publish/sb-dispatcher.zip",
+  "executorZipPath": "artifacts/publish/sb-executor.zip",
+  "canonicalSqlScripts": [
+    "database/sql/p7/001_operational_runtime_store.sql",
+    "database/sql/p7/002_operational_queue_procedures.sql",
+    "database/sql/p7/003_operational_queue_runtime_wiring.sql",
+    "database/sql/p7/007_sql_operational_execution_history.sql",
+    "database/sql/p7/013_runtime_run_parent_fk_canonicalization.sql",
+    "database/sql/p7/014_runtime_run_parent_fk_validator.sql"
+  ],
+  "evidenceOutputPath": "artifacts/clean-dev-runtime-rebuild"
+}
