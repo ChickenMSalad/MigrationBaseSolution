@@ -1,0 +1,7 @@
+{
+  "profileName": "RuntimeSmokeMapping",
+  "sourceType": "RuntimeSmoke",
+  "targetType": "RuntimeSmoke",
+  "fieldMappings": [],
+  "requiredTargetFields": []
+}

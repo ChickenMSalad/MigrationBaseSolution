@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Migration.Workers.ServiceBusExecutor.Smoke;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Migration.Application.Abstractions;
 using Migration.Application.Operational.Telemetry;
@@ -24,6 +25,7 @@ builder.Services
 builder.Services.AddSqlOperationalMigrationJobRuntime(builder.Configuration);
 builder.Services.AddSqlOperationalWorkItemQueue();
 builder.Services.AddSqlOperationalMigrationJobWorkItemExecutor(builder.Configuration);
+builder.Services.AddRuntimeSmokeExecutionProviders();
 builder.Services.AddSingleton<IServiceBusWorkItemExecutor, SqlOperationalServiceBusWorkItemExecutor>();
 builder.Services.AddHostedService<SqlServiceBusExecutorWorker>();
 builder.Services.AddOperationalOpenTelemetry(builder.Configuration);
@@ -34,5 +36,7 @@ builder.Services.AddSingleton<ProjectCredentialJobSettingsHydrator>();
 builder.Services.AddMigrationControlPlane(builder.Configuration);
 
 await builder.Build().RunAsync();
+
+
 
 

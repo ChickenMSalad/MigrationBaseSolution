@@ -1,0 +1,9 @@
+{
+  "jobName": "RuntimeSmoke",
+  "sourceType": "RuntimeSmoke",
+  "targetType": "RuntimeSmoke",
+  "manifestType": "RuntimeSmoke",
+  "mappingProfilePath": "runtime-smoke.mapping.json",
+  "dryRun": true,
+  "parallelism": 1
+}

@@ -1,43 +1,41 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk.Worker">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Azure.Messaging.ServiceBus" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Migration.Application\Migration.Application.csproj" />
-	<ProjectReference Include="..\..\Core\Migration.GenericRuntime\Migration.GenericRuntime.csproj" />
+    <ProjectReference Include="..\..\Core\Migration.GenericRuntime\Migration.GenericRuntime.csproj" />
     <ProjectReference Include="..\..\Core\Migration.Infrastructure.Sql\Migration.Infrastructure.Sql.csproj" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Migration.Workers.QueueExecutor\Migration.Workers.QueueExecutor.csproj" />
   </ItemGroup>
-
-	<ItemGroup>
-		<Content Update="appsettings.json" CopyToPublishDirectory="Never" />
-		<Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Content Remove="Runtime\**" />
-		<Content Remove="migration-state\**" />
-		<Content Remove="Rules\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Remove="Runtime\**" />
-		<None Remove="migration-state\**" />
-		<None Remove="Rules\**" />
-	</ItemGroup>
-
-
+  <ItemGroup>
+    <Content Update="appsettings.json" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Remove="Runtime\**" />
+    <Content Remove="migration-state\**" />
+    <Content Remove="Rules\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Runtime\**" />
+    <None Remove="migration-state\**" />
+    <None Remove="Rules\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="runtime-smoke.mapping.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
 </Project>
-
