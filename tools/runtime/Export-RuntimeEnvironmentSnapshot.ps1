@@ -14,24 +14,37 @@ param(
     [string]$SqlSchemaPath,
 
     [Parameter(Mandatory = $false)]
-    [string]$EnvironmentName = "unknown"
+    [string]$EnvironmentName = 'unknown'
 )
 
 Set-StrictMode -Version 2.0
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 
 function Resolve-FullPath {
-    param([Parameter(Mandatory = $true)][string]$Path)
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Path
+    )
 
     if ([System.IO.Path]::IsPathRooted($Path)) {
         return $Path
     }
 
-    return (Join-Path (Get-Location).Path $Path)
+    return (Join-Path -Path (Get-Location).Path -ChildPath $Path)
 }
 
-function Read-JsonFile {
-    param([string]$Path)
+function Read-TextFileOrNull {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Description
+    )
 
     if ([string]::IsNullOrWhiteSpace($Path)) {
         return $null
@@ -39,35 +52,65 @@ function Read-JsonFile {
 
     $fullPath = Resolve-FullPath -Path $Path
     if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
-        throw "JSON file not found: $fullPath"
+        throw ('{0} file not found: {1}' -f $Description, $fullPath)
     }
 
-    $raw = Get-Content -LiteralPath $fullPath -Raw
+    return [System.IO.File]::ReadAllText($fullPath)
+}
+
+function Read-JsonFileOrNull {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Description
+    )
+
+    $raw = Read-TextFileOrNull -Path $Path -Description $Description
     if ([string]::IsNullOrWhiteSpace($raw)) {
         return $null
     }
 
-    return $raw | ConvertFrom-Json
+    try {
+        return ConvertFrom-Json -InputObject $raw
+    }
+    catch {
+        throw ('{0} file is not valid JSON. Path={1}. Error={2}' -f $Description, $Path, $_.Exception.Message)
+    }
 }
 
 function Convert-AppSettingsToMap {
-    param($Settings)
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        $Settings
+    )
 
-    $map = @{}
+    $map = [ordered]@{}
     if ($null -eq $Settings) {
         return $map
     }
 
     foreach ($item in @($Settings)) {
-        if ($null -eq $item) { continue }
-        $nameProperty = $item.PSObject.Properties["name"]
-        $valueProperty = $item.PSObject.Properties["value"]
-        if ($null -eq $nameProperty) { continue }
+        if ($null -eq $item) {
+            continue
+        }
+
+        $nameProperty = $item.PSObject.Properties['name']
+        if ($null -eq $nameProperty) {
+            continue
+        }
 
         $name = [string]$nameProperty.Value
-        if ([string]::IsNullOrWhiteSpace($name)) { continue }
+        if ([string]::IsNullOrWhiteSpace($name)) {
+            continue
+        }
 
         $value = $null
+        $valueProperty = $item.PSObject.Properties['value']
         if ($null -ne $valueProperty) {
             $value = $valueProperty.Value
         }
@@ -78,38 +121,38 @@ function Convert-AppSettingsToMap {
     return $map
 }
 
-function Read-SchemaText {
-    param([string]$Path)
-
-    if ([string]::IsNullOrWhiteSpace($Path)) {
-        return $null
-    }
-
-    $fullPath = Resolve-FullPath -Path $Path
-    if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
-        throw "SQL schema export file not found: $fullPath"
-    }
-
-    return Get-Content -LiteralPath $fullPath -Raw
-}
-
 $outputFullPath = Resolve-FullPath -Path $OutputPath
 $outputDirectory = Split-Path -Path $outputFullPath -Parent
 if (-not [string]::IsNullOrWhiteSpace($outputDirectory)) {
     New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 }
 
-$dispatcherSettings = Convert-AppSettingsToMap -Settings (Read-JsonFile -Path $DispatcherAppSettingsPath)
-$executorSettings = Convert-AppSettingsToMap -Settings (Read-JsonFile -Path $ExecutorAppSettingsPath)
-$schemaText = Read-SchemaText -Path $SqlSchemaPath
+$dispatcherSettingsObject = Read-JsonFileOrNull -Path $DispatcherAppSettingsPath -Description 'Dispatcher app settings'
+$executorSettingsObject = Read-JsonFileOrNull -Path $ExecutorAppSettingsPath -Description 'Executor app settings'
+$schemaText = Read-TextFileOrNull -Path $SqlSchemaPath -Description 'SQL schema export'
+
+$dispatcherSettings = Convert-AppSettingsToMap -Settings $dispatcherSettingsObject
+$executorSettings = Convert-AppSettingsToMap -Settings $executorSettingsObject
 
 $snapshot = [ordered]@{
     environmentName = $EnvironmentName
-    generatedUtc = [DateTimeOffset]::UtcNow.ToString("o")
+    generatedUtc = [DateTimeOffset]::UtcNow.ToString('o')
+    inputs = [ordered]@{
+        dispatcherAppSettingsPath = $DispatcherAppSettingsPath
+        executorAppSettingsPath = $ExecutorAppSettingsPath
+        sqlSchemaPath = $SqlSchemaPath
+    }
     dispatcherAppSettings = $dispatcherSettings
     executorAppSettings = $executorSettings
     sqlSchemaText = $schemaText
 }
 
-$snapshot | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $outputFullPath -Encoding UTF8
-Write-Host "Runtime environment snapshot written to $outputFullPath"
+try {
+    $json = ConvertTo-Json -InputObject $snapshot -Depth 12
+    [System.IO.File]::WriteAllText($outputFullPath, $json, [System.Text.Encoding]::UTF8)
+}
+catch {
+    throw ('Failed to write runtime environment snapshot to {0}. Error={1}' -f $outputFullPath, $_.Exception.Message)
+}
+
+Write-Host ('Runtime environment snapshot written to {0}' -f $outputFullPath)

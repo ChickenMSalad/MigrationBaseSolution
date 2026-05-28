@@ -21,6 +21,7 @@ builder.Services
     .Validate(options => !string.IsNullOrWhiteSpace(options.QueueName), "SqlServiceBusExecutor:QueueName is required.")
     .ValidateOnStart();
 
+builder.Services.AddSqlOperationalMigrationJobRuntime(builder.Configuration);
 builder.Services.AddSqlOperationalWorkItemQueue();
 builder.Services.AddSqlOperationalMigrationJobWorkItemExecutor(builder.Configuration);
 builder.Services.AddSingleton<IServiceBusWorkItemExecutor, SqlOperationalServiceBusWorkItemExecutor>();
