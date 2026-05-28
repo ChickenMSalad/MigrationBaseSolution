@@ -1,0 +1,24 @@
+{
+  "environmentName": "dev",
+  "repoCommit": "<git-sha>",
+  "repoTag": "<optional-tag>",
+  "deploymentUtc": "<iso-utc>",
+  "resourceGroup": "<resource-group>",
+  "dispatcherApp": "<dispatcher-app>",
+  "executorApp": "<executor-app>",
+  "sqlServer": "<sql-server>",
+  "database": "<database>",
+  "serviceBusNamespace": "<namespace>",
+  "serviceBusQueue": "<queue>",
+  "evidenceFiles": {
+    "runtimeSnapshot": "artifacts/runtime-parity/azure-runtime-snapshot.json",
+    "parityReport": "artifacts/runtime-parity/runtime-parity-report.md",
+    "sqlRunParentFkValidation": "artifacts/runtime-sql/run-parent-fk-validator.txt",
+    "sqlBaselineReconciliationValidation": "artifacts/runtime-sql/baseline-reconciliation-validator.txt",
+    "canonicalAppSettingsPlan": "artifacts/runtime-appsettings/canonical-appsettings-plan.json",
+    "serviceBusQueueState": "artifacts/runtime-smoke/servicebus-queue-state.txt",
+    "dispatcherLog": "artifacts/runtime-smoke/dispatcher.log",
+    "executorLog": "artifacts/runtime-smoke/executor.log",
+    "workItemState": "artifacts/runtime-smoke/workitem-state.txt"
+  }
+}
