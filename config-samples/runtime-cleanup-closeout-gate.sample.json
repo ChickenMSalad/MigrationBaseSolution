@@ -1,0 +1,16 @@
+{
+  "phase": "P7.9",
+  "description": "Targeted runtime cleanup closeout gate configuration.",
+  "validatorScripts": [
+    "tools/validate-p7.9a-runtime-run-parent-fk.ps1",
+    "tools/validate-p7.9b-runtime-appsettings-canonicalization.ps1",
+    "tools/validate-p7.9c-runtime-noop-smoke-provider.ps1",
+    "tools/validate-p7.9d-runtime-noop-smoke-harness.ps1",
+    "tools/validate-p7.9e-dev-cloud-reset-readiness.ps1",
+    "tools/validate-p7.9f-clean-dev-runtime-rebuild.ps1",
+    "tools/validate-p7.9g-runtime-validator-hardening.ps1",
+    "tools/validate-p7.9h-runtime-sql-baseline-reconciliation.ps1",
+    "tools/validate-p7.9i-runtime-deployment-evidence-handoff.ps1"
+  ],
+  "missingValidatorBehavior": "Skip"
+}
