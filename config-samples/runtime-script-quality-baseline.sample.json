@@ -1,0 +1,23 @@
+{
+  "description": "Runtime PowerShell script quality baseline for cleanup/deployment scripts.",
+  "defaultTargetPathFragments": [
+    "tools/runtime",
+    "tools/validate-p7.9"
+  ],
+  "rules": {
+    "avoidMyInvocationScriptName": true,
+    "avoidFragileColonInterpolation": true,
+    "avoidStrictModeUnsafeXmlPropertyAccess": true,
+    "avoidInlinePackageReferenceVersion": true,
+    "avoidSecretEcho": true,
+    "avoidBinObjRegexPathChecks": true
+  },
+  "allowedScopedVariablePrefixes": [
+    "script",
+    "global",
+    "local",
+    "private",
+    "using",
+    "env"
+  ]
+}
