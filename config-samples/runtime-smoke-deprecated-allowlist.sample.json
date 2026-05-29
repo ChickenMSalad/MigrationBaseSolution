@@ -1,0 +1,22 @@
+{
+  "description": "P7.10A validates only active runtime smoke assets. Historical Csv migration examples and generated control-plane artifacts are excluded by path boundary, not by weakening active-smoke checks.",
+  "activeSmokeIncludePathFragments": [
+    "tools\\runtime",
+    "config-samples",
+    "database\\sql\\p7",
+    "profiles\\jobs"
+  ],
+  "excludedPathFragments": [
+    ".migration-control-plane",
+    "src\\Core\\Migration.Admin.Api\\Runtime",
+    "docs",
+    "bin",
+    "obj",
+    ".git"
+  ],
+  "deprecatedActiveSmokeTerms": [
+    "\"manifestType\":\"Csv\"",
+    "\"manifestType\": \"Csv\"",
+    "smoke.json"
+  ]
+}
