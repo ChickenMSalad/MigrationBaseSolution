@@ -104,8 +104,8 @@ else {
     $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
 }
 
-$sqlPath = Join-Path $RepoRoot 'database\sql\p7
-_runtime_run_parent_fk_diagnostics.sql'
+$sqlRelativePath = 'database\sql\p7\012_runtime_run_parent_fk_diagnostics.sql'
+$sqlPath = [System.IO.Path]::Combine($repoRoot, $sqlRelativePath)
 if (-not (Test-Path -LiteralPath $sqlPath)) {
     throw ('Required SQL file not found: {0}' -f $sqlPath)
 }
