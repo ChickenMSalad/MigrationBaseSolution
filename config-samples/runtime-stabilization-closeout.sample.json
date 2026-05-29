@@ -1,0 +1,14 @@
+{
+  "requiredEvidence": [
+    "p7.9-closeout-report",
+    "p7.10-closeout-report",
+    "runtime-noop-smoke-state",
+    "azure-appsettings-final-export",
+    "runtime-fk-validator-output"
+  ],
+  "retainedMigrationPrefixedKeys": [
+    "MIGRATION_OpenTelemetry__EnableTracing",
+    "MIGRATION_OpenTelemetry__EnableAzureMonitorExporter"
+  ],
+  "canonicalSmokeManifestType": "RuntimeSmoke"
+}
