@@ -1,0 +1,20 @@
+{
+  "artifactRoots": [
+    "artifacts",
+    ".migration-control-plane",
+    "payload"
+  ],
+  "publishRoots": [
+    "artifacts/publish"
+  ],
+  "evidenceRoots": [
+    "artifacts/runtime-evidence",
+    "artifacts/runtime-parity",
+    "artifacts/runtime-smoke"
+  ],
+  "excludePathFragments": [
+    ".git",
+    "bin",
+    "obj"
+  ]
+}
