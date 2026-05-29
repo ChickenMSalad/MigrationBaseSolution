@@ -1,0 +1,11 @@
+{
+  "validators": [
+    "tools/validate-p7.10a-retire-csv-smoke-path.ps1",
+    "tools/validate-p7.10b-canonical-sql-baseline-handoff.ps1",
+    "tools/validate-p7.10c-local-azure-runtime-parity.ps1",
+    "tools/validate-p7.10d-ci-runtime-release-gate.ps1",
+    "tools/validate-p7.10e-stale-runtime-artifact-quarantine.ps1",
+    "tools/validate-p7.10f-runtime-handoff-index.ps1"
+  ],
+  "failOnMissingValidator": true
+}
