@@ -1,0 +1,29 @@
+name: Runtime CI Release Gate Sample
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'database/sql/p7/**'
+      - 'tools/**'
+      - 'config-samples/**'
+      - 'docs/p7/**'
+
+jobs:
+  runtime-ci-release-gate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate P7.10D package
+        shell: powershell
+        run: .\tools\validate-p7.10d-ci-runtime-release-gate.ps1
+
+      - name: Run runtime CI release gate
+        shell: powershell
+        run: |
+          .\tools\runtime\Invoke-RuntimeCiReleaseGate.ps1 `
+            -ConfigurationPath .\config-samples\runtime-ci-release-gate.sample.json `
+            -OutputPath .\artifacts\runtime-ci-release-gate
