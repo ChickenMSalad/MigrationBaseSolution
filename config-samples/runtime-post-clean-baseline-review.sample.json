@@ -1,0 +1,34 @@
+{
+  "baselineName": "p7.10-clean-runtime-baseline",
+  "requiredEvidence": [
+    "noopSmokeRunId",
+    "fkValidatorOutput",
+    "dispatcherSettingsSnapshot",
+    "executorSettingsSnapshot",
+    "closeoutGateReport",
+    "deploymentEvidenceBundle"
+  ],
+  "allowedRemainingMigrationPrefixedKeys": [
+    "MIGRATION_OpenTelemetry__EnableTracing",
+    "MIGRATION_OpenTelemetry__EnableAzureMonitorExporter"
+  ],
+  "requiredRuntimeSettings": {
+    "dispatcher": [
+      "ConnectionStrings__MigrationOperationalStore",
+      "SqlOperationalRuntimeReadiness__ConnectionString",
+      "SqlServiceBusDispatcher__Enabled",
+      "SqlServiceBusDispatcher__SqlConnectionString",
+      "SqlServiceBusDispatcher__ServiceBusConnectionString",
+      "SqlServiceBusDispatcher__QueueName"
+    ],
+    "executor": [
+      "ConnectionStrings__MigrationOperationalStore",
+      "SqlOperationalRuntimeReadiness__ConnectionString",
+      "SqlServiceBusExecutor__ServiceBusConnectionString",
+      "SqlServiceBusExecutor__QueueName",
+      "SqlOperationalWorkItemQueue__SchemaName",
+      "SqlOperationalWorkItemQueue__WorkItemsTableName",
+      "SqlOperationalMigrationJobExecutor__Enabled"
+    ]
+  }
+}
