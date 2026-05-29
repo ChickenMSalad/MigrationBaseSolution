@@ -1,0 +1,23 @@
+{
+  "includePathFragments": [
+    ".migration-control-plane",
+    "artifacts/runtime-parity",
+    "artifacts/runtime-smoke",
+    "profiles/jobs",
+    "src/Core/Migration.Admin.Api/Runtime/admin-api"
+  ],
+  "staleReferenceTerms": [
+    "\"manifestType\": \"Csv\"",
+    "\"manifestType\":\"Csv\"",
+    "smoke.json",
+    "MigrationWorkItems",
+    "MigrationManifestRecords",
+    "MigrationOperationStore"
+  ],
+  "excludePathFragments": [
+    ".git",
+    "bin",
+    "obj",
+    ".vs"
+  ]
+}
