@@ -1,0 +1,19 @@
+{
+  "local": {
+    "name": "local-dev",
+    "sqlSnapshotPath": "artifacts/runtime-parity/local-sql-runtime-objects.json"
+  },
+  "azure": {
+    "name": "azure-dev",
+    "sqlSnapshotPath": "artifacts/runtime-parity/azure-sql-runtime-objects.json"
+  },
+  "requiredObjects": [
+    "migration.Runs",
+    "migration.WorkItems",
+    "migration.ManifestRows"
+  ],
+  "requiredForeignKeys": [
+    "migration.WorkItems.RunId->migration.Runs.RunId",
+    "migration.WorkItems.ManifestRowId->migration.ManifestRows.ManifestRowId"
+  ]
+}
