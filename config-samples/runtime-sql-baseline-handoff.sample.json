@@ -1,0 +1,17 @@
+{
+  "environmentName": "dev",
+  "database": "MigrationOperationalStoreClean",
+  "canonicalSqlInventory": "database/sql/p7/022_runtime_canonical_sql_baseline_handoff_inventory.sql",
+  "canonicalSqlValidator": "database/sql/p7/023_runtime_canonical_sql_baseline_handoff_validator.sql",
+  "requiredRuntimeTables": [
+    "migration.Runs",
+    "migration.WorkItems",
+    "migration.ManifestRows"
+  ],
+  "legacyCompatibilityTables": [
+    "migration.MigrationRuns",
+    "migration.MigrationWorkItems",
+    "migration.MigrationManifestRecords"
+  ],
+  "canonicalSmokePath": "RuntimeSmoke"
+}
