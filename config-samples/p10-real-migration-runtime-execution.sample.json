@@ -1,0 +1,12 @@
+{
+  "description": "P10.0C real migration runtime execution sample. Values are examples only and must not contain secrets.",
+  "sqlServer": "mbsdeanruntime76848",
+  "database": "MigrationOperationalStoreClean",
+  "jobDefinitionPath": "profiles/jobs/p10-localstorage-real-migration.job.json",
+  "expectedWorkType": "MigrationJobDefinition",
+  "expectedFinalStatuses": [
+    "Completed",
+    "Failed",
+    "FailedRetryable"
+  ]
+}
