@@ -1,0 +1,12 @@
+{
+  "jobDefinitionPath": "profiles/jobs/p10-localstorage-real-migration.job.json",
+  "mappingProfilePath": "profiles/mappings/p10-localstorage-real-migration.mapping.json",
+  "manifestPath": "profiles/manifests/localstorage-platform-smoke.csv",
+  "sourceRoot": "samples/localstorage/source",
+  "targetRoot": "samples/localstorage/target",
+  "expectedWorkType": "MigrationJobDefinition",
+  "notes": [
+    "This is the P10.0 real execution candidate artifact set.",
+    "P10.0C should execute this through dispatcher/executor and verify final SQL state."
+  ]
+}

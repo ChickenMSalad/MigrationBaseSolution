@@ -1,0 +1,8 @@
+{
+  "jobName": "P10LocalStorageRealMigration",
+  "sourceType": "LocalStorage",
+  "targetType": "LocalStorage",
+  "manifestType": "Csv",
+  "mappingProfilePath": "profiles/mappings/p10-localstorage-real-migration.mapping.json",
+  "dryRun": true
+}
