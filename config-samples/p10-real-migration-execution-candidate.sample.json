@@ -1,0 +1,18 @@
+{
+  "candidateName": "localstorage-csv-to-localstorage",
+  "jobDefinitionPath": "profiles/jobs/localstorage-platform-smoke.job.json",
+  "manifestPath": "profiles/manifests/localstorage-platform-smoke.csv",
+  "mappingProfilePath": "profiles/mappings/localstorage-platform-smoke.json",
+  "sourceRoot": "samples/localstorage/source",
+  "targetRoot": "samples/localstorage/target",
+  "expectedSourceFiles": [
+    "samples/localstorage/source/animals/cats/ls-cat-001.txt",
+    "samples/localstorage/source/animals/dogs/ls-dog-001.txt",
+    "samples/localstorage/source/documents/ls-doc-001.txt"
+  ],
+  "expectedJobTypes": {
+    "sourceType": "LocalStorage",
+    "targetType": "LocalStorage",
+    "manifestType": "Csv"
+  }
+}
