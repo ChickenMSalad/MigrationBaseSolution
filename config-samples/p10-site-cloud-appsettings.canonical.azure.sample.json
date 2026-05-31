@@ -1,0 +1,27 @@
+{
+  "description": "Canonical Azure App Service settings for Migration.Admin.Api site/API host. Replace placeholder values before applying.",
+  "targetProject": "src/Core/Migration.Admin.Api/Migration.Admin.Api.csproj",
+  "settings": {
+    "ConnectionStrings__MigrationOperationalStore": "<SQL_CONNECTION_STRING>",
+    "SqlOperationalRuntimeReadiness__ConnectionString": "<SQL_CONNECTION_STRING>",
+    "SqlOperationalWorkItemQueue__SchemaName": "migration",
+    "SqlOperationalWorkItemQueue__WorkItemsTableName": "WorkItems",
+    "AdminApi__StorageRoot": "/home/site/wwwroot/Runtime/admin-api",
+    "AdminApi__AllowInProcessExecution": "false",
+    "MigrationExecution__StatePath": "/home/site/wwwroot/Runtime/migration-state",
+    "MigrationExecution__ResumeCompletedWorkItems": "true",
+    "MigrationExecution__MaxDegreeOfParallelism": "1",
+    "MigrationExecution__StopOnFirstError": "false",
+    "MigrationExecution__ContinueOnValidationError": "true"
+  },
+  "forbiddenRuntimeAliases": [
+    "MIGRATION_ConnectionStrings__MigrationOperationalStore",
+    "MIGRATION_SqlOperationalRuntimeReadiness__ConnectionString",
+    "MIGRATION_SqlOperationalWorkItemQueue__SchemaName",
+    "MIGRATION_SqlOperationalWorkItemQueue__WorkItemsTableName"
+  ],
+  "notes": [
+    "Keep AdminApi__AllowInProcessExecution=false in Azure for this phase.",
+    "This config is for site/API observation and coordination against the cloud runtime DB."
+  ]
+}
