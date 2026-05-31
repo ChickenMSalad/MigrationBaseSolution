@@ -1,0 +1,19 @@
+{
+  "resourceGroup": "rg-migration-runtime-dev",
+  "adminApiApp": "app-migration-admin-api-dev",
+  "projectPath": "src/Core/Migration.Admin.Api/Migration.Admin.Api.csproj",
+  "publishPath": "artifacts/publish/admin-api",
+  "zipPath": "artifacts/publish/admin-api.zip",
+  "healthUrls": [
+    "https://app-migration-admin-api-dev.azurewebsites.net/swagger/v1/swagger.json",
+    "https://app-migration-admin-api-dev.azurewebsites.net/swagger"
+  ],
+  "requiredAppSettings": [
+    "ConnectionStrings__MigrationOperationalStore",
+    "SqlOperationalRuntimeReadiness__ConnectionString"
+  ],
+  "notes": [
+    "Replace adminApiApp with the actual App Service name before generating commands.",
+    "This deploys the Admin API shell first; Admin Web/Vite source should be validated separately before Static Web App deployment."
+  ]
+}
