@@ -1,0 +1,20 @@
+{
+  "phase": "P10.1A",
+  "siteName": "migration-admin-ui",
+  "frontendPath": "apps/migration-admin-ui",
+  "adminApiPath": "src/Core/Migration.Admin.Api",
+  "expectedRuntimeState": {
+    "runsTable": "migration.Runs",
+    "workItemsTable": "migration.WorkItems",
+    "manifestRowsTable": "migration.ManifestRows"
+  },
+  "requiredCloudSettings": [
+    "ConnectionStrings__MigrationOperationalStore",
+    "SqlOperationalRuntimeReadiness__ConnectionString"
+  ],
+  "notes": [
+    "Do not introduce a parallel site host.",
+    "Prefer existing React routes and Admin API endpoints.",
+    "Use the stabilized P7.9/P7.10 runtime path as the backend source of truth."
+  ]
+}
