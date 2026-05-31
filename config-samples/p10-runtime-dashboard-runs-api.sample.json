@@ -1,0 +1,13 @@
+{
+  "adminApiProjectPath": "src/Core/Migration.Admin.Api/Migration.Admin.Api.csproj",
+  "programPath": "src/Core/Migration.Admin.Api/Program.cs",
+  "endpointExtensionPath": "src/Core/Migration.Admin.Api/Endpoints/Operational/Dashboard/RuntimeDashboardEndpointExtensions.cs",
+  "requiredRoutes": [
+    "/api/runtime/dashboard/summary",
+    "/api/runtime/dashboard/runs"
+  ],
+  "runtimeTables": [
+    "migration.Runs",
+    "migration.WorkItems"
+  ]
+}
