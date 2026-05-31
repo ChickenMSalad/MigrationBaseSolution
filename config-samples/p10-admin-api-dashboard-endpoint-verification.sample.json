@@ -1,0 +1,12 @@
+{
+  "resourceGroup": "rg-migration-runtime-dev",
+  "adminApiAppName": "app-migration-admin-api-dev",
+  "baseUrl": "https://app-migration-admin-api-dev.azurewebsites.net",
+  "requiredSettings": [
+    "ConnectionStrings__MigrationOperationalStore"
+  ],
+  "dashboardEndpoints": [
+    "/api/runtime/dashboard/summary",
+    "/api/runtime/dashboard/runs"
+  ]
+}
