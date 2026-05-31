@@ -1,0 +1,16 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "inventoryOutputPath": "artifacts/admin-ui-consolidation/p10-admin-ui-consolidation-inventory.md",
+  "featureFamilies": [
+    "runtimeDashboard",
+    "executionSessions",
+    "failureRetry",
+    "manifestImportRunLaunch",
+    "credentialVault",
+    "connectorConfiguration",
+    "operationalEventsAudit",
+    "workerTelemetry",
+    "commandCenterCapacityCost"
+  ]
+}
