@@ -1,0 +1,7 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "runtimeDashboardRoute": "/runtime-dashboard",
+  "runtimeRunDetailRoute": "/runtime-dashboard/:runId",
+  "runtimeRunDetailApiPath": "/api/runtime/dashboard/runs/{runId}"
+}

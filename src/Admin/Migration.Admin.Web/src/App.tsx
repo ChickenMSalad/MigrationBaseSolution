@@ -6,6 +6,7 @@ import { Connectors } from "./pages/Connectors";
 import { Credentials } from "./pages/Credentials";
 import { Dashboard } from "./pages/Dashboard";
 import { RuntimeDashboard } from "./pages/RuntimeDashboard";
+import { RuntimeRunDetail } from "./pages/RuntimeRunDetail";
 import { ManifestBuilder } from "./pages/ManifestBuilder";
 import { MappingBuilder } from "./pages/MappingBuilder";
 import { Preflight } from "./pages/Preflight";
@@ -34,7 +35,9 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
       <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
+        <Route path="/runtime-dashboard/:runId" element={<RuntimeRunDetail />} />
       </Routes>
   );
 }
+
 
