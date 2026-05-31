@@ -1,0 +1,62 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "outputDirectory": "artifacts/admin-ui-consolidation",
+  "featureFamilies": [
+    {
+      "name": "RuntimeOperations",
+      "sourceFragments": [
+        "src/components/OperationalRuntimeDashboard.tsx",
+        "src/components/RunLaunchPanel.tsx",
+        "src/components/ManifestImportPanel.tsx",
+        "src/components/FailureRetryWorkspace.tsx"
+      ],
+      "canonicalDestination": "src/Admin/Migration.Admin.Web/src/pages"
+    },
+    {
+      "name": "ExecutionSessions",
+      "sourceFragments": [
+        "src/features/executionSessions"
+      ],
+      "canonicalDestination": "src/Admin/Migration.Admin.Web/src/features/executionSessions"
+    },
+    {
+      "name": "ConnectorConfiguration",
+      "sourceFragments": [
+        "src/features/connectors"
+      ],
+      "canonicalDestination": "src/Admin/Migration.Admin.Web/src/features/connectors"
+    },
+    {
+      "name": "CredentialVault",
+      "sourceFragments": [
+        "src/features/credentials"
+      ],
+      "canonicalDestination": "src/Admin/Migration.Admin.Web/src/features/credentials"
+    },
+    {
+      "name": "OperationalEventsAndAudit",
+      "sourceFragments": [
+        "src/features/events",
+        "src/features/audit"
+      ],
+      "canonicalDestination": "src/Admin/Migration.Admin.Web/src/features/operationalEvents"
+    },
+    {
+      "name": "WorkerTelemetry",
+      "sourceFragments": [
+        "src/features/executionWorkers"
+      ],
+      "canonicalDestination": "src/Admin/Migration.Admin.Web/src/features/executionWorkers"
+    },
+    {
+      "name": "CommandCenterCapacityCost",
+      "sourceFragments": [
+        "src/features/commandCenter",
+        "src/features/capacity",
+        "src/features/cost"
+      ],
+      "canonicalDestination": "src/Admin/Migration.Admin.Web/src/features/commandCenter"
+    }
+  ]
+}
