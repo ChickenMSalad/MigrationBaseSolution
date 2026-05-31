@@ -1,0 +1,11 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "featureFamily": "executionSessions",
+  "addedFiles": [
+    "src/Admin/Migration.Admin.Web/src/types/executionSessions.ts",
+    "src/Admin/Migration.Admin.Web/src/api/executionSessionsApi.ts",
+    "src/Admin/Migration.Admin.Web/src/pages/ExecutionSessions.tsx"
+  ],
+  "routeWiringDeferred": true
+}
