@@ -1,0 +1,12 @@
+{
+  "adminWebProjectPath": "src/Admin/Migration.Admin.Web",
+  "runtimeDashboardApi": {
+    "summaryPath": "/api/runtime/dashboard/summary",
+    "runsPath": "/api/runtime/dashboard/runs",
+    "runDetailPath": "/api/runtime/dashboard/runs/{runId}"
+  },
+  "notes": [
+    "P10.2D adds the client/page only.",
+    "P10.2E should wire the page into App.tsx/Layout.tsx after checking the current committed SPA route shape."
+  ]
+}
