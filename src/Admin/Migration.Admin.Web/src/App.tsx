@@ -1,10 +1,11 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+﻿import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
 import { Artifacts } from "./pages/Artifacts";
 import { Connectors } from "./pages/Connectors";
 import { Credentials } from "./pages/Credentials";
 import { Dashboard } from "./pages/Dashboard";
+import { RuntimeDashboard } from "./pages/RuntimeDashboard";
 import { ManifestBuilder } from "./pages/ManifestBuilder";
 import { MappingBuilder } from "./pages/MappingBuilder";
 import { Preflight } from "./pages/Preflight";
@@ -32,6 +33,8 @@ export default function App() {
         <Route path="mapping-builder" element={<MappingBuilder />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
-    </Routes>
+      <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
+      </Routes>
   );
 }
+

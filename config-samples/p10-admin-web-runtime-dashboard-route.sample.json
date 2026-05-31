@@ -1,0 +1,8 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "routePath": "/runtime-dashboard",
+  "pageModule": "./pages/RuntimeDashboard",
+  "pageComponent": "RuntimeDashboard",
+  "navLabel": "Runtime Dashboard"
+}
