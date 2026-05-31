@@ -1,4 +1,4 @@
-using Migration.Admin.Api.Endpoints.Operational.Dashboard;
+﻿using Migration.Admin.Api.Endpoints.Operational.Dashboard;
 using Migration.Admin.Api.Operational.Execution;
 using Migration.Admin.Api.Operational.Events;
 using Migration.Admin.Api.Operational.SqlMetrics;
@@ -61,12 +61,14 @@ app.MapSqlOperationalWorkItemQueueEndpoints();
 app.MapSqlOperationalRunCoordinatorEndpoints();
 app.MapSqlOperationalRuntimeReadinessEndpoints();
 app.MapSqlOperationalRuntimeDashboardEndpoints();
+app.MapSqlOperationalRuntimeDashboardDetailEndpoints();
 app.MapOperationalConnectorCredentialVaultEndpoints();
 
 app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
 app.Run();
+
 
 
 

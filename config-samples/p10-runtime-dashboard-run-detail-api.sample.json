@@ -1,0 +1,11 @@
+{
+  "adminApiProjectPath": "src/Core/Migration.Admin.Api/Migration.Admin.Api.csproj",
+  "programPath": "src/Core/Migration.Admin.Api/Program.cs",
+  "endpointFile": "src/Core/Migration.Admin.Api/Endpoints/Operational/Dashboard/RuntimeDashboardDetailEndpointExtensions.cs",
+  "requiredRoutes": [
+    "/api/runtime/dashboard/runs/{runId}",
+    "/api/runtime/dashboard/runs/{runId}/work-items",
+    "/api/runtime/dashboard/runs/{runId}/failures"
+  ],
+  "requiredProgramMapping": "app.MapSqlOperationalRuntimeDashboardDetailEndpoints();"
+}
