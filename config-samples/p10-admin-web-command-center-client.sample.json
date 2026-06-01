@@ -1,0 +1,9 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "featureFamily": "commandCenter",
+  "page": "src/Admin/Migration.Admin.Web/src/pages/CommandCenter.tsx",
+  "apiClient": "src/Admin/Migration.Admin.Web/src/api/commandCenterApi.ts",
+  "types": "src/Admin/Migration.Admin.Web/src/types/commandCenter.ts",
+  "routeDeferred": true
+}
