@@ -1,4 +1,4 @@
-import { adminApiClient } from "./core/adminApiClient";
+import { adminApiClient } from "../../../../api/core/adminApiClient";
 import type { CostAnalyticsResponse } from "../types/costAnalytics";
 
 export async function getCostAnalytics(): Promise<CostAnalyticsResponse> {
