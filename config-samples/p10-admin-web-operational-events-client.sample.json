@@ -1,0 +1,8 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "page": "src/Admin/Migration.Admin.Web/src/pages/OperationalEvents.tsx",
+  "apiClient": "src/Admin/Migration.Admin.Web/src/api/operationalEventsApi.ts",
+  "types": "src/Admin/Migration.Admin.Web/src/types/operationalEvents.ts",
+  "routesDeferred": true
+}
