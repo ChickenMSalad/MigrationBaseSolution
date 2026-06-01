@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+﻿import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
 import { Artifacts } from "./pages/Artifacts";
@@ -9,7 +9,7 @@ import { CredentialVault } from "./pages/CredentialVault";
 import { Dashboard } from "./pages/Dashboard";
 import { RuntimeDashboard } from "./features/operations/runtimeDashboard/pages/RuntimeDashboard";
 import { RuntimeRunDetail } from "./features/operations/runtimeDashboard/pages/RuntimeRunDetail";
-import { ExecutionSessions } from "./pages/ExecutionSessions";
+import { ExecutionSessions } from "./features/operations/executionSessions/pages/ExecutionSessions";
 import { FailureRetry } from "./pages/FailureRetry";
 import { ManifestBuilder } from "./pages/ManifestBuilder";
 import { MappingBuilder } from "./pages/MappingBuilder";
@@ -61,6 +61,7 @@ export default function App() {
       </Routes>
   );
 }
+
 
 
 
