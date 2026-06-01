@@ -1,0 +1,12 @@
+{
+  "phase": "P10.2W",
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "featureFamily": "capacityForecast",
+  "addedFiles": [
+    "src/Admin/Migration.Admin.Web/src/types/capacityForecast.ts",
+    "src/Admin/Migration.Admin.Web/src/api/capacityForecastApi.ts",
+    "src/Admin/Migration.Admin.Web/src/pages/CapacityForecast.tsx"
+  ],
+  "routeWiringDeferred": true
+}
