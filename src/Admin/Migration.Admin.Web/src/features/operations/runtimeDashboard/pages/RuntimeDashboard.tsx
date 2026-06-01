@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { runtimeDashboardApi } from "../api/runtimeDashboardApi";
-import { Card, EmptyState, StatusPill } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
+import { Card, EmptyState, StatusPill } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
 import type { RuntimeDashboardRun, RuntimeDashboardSummary } from "../types/runtimeDashboard";
 
 function formatDate(value?: string | null) {
   if (!value) {
-    return "—";
+    return "â€”";
   }
 
   const date = new Date(value);
@@ -15,7 +15,7 @@ function formatDate(value?: string | null) {
 }
 
 function formatNumber(value: number | undefined | null) {
-  return value === undefined || value === null ? "—" : value.toLocaleString();
+  return value === undefined || value === null ? "â€”" : value.toLocaleString();
 }
 
 export function RuntimeDashboard() {
@@ -110,7 +110,7 @@ export function RuntimeDashboard() {
                           <div className="mutedText">{run.runId}</div>
                         </td>
                         <td><StatusPill status={run.status ?? undefined} /></td>
-                        <td>{run.environmentName ?? "—"}</td>
+                        <td>{run.environmentName ?? "â€”"}</td>
                         <td>
                           {formatNumber(run.completedWorkItemCount)} / {formatNumber(run.workItemCount)} complete
                           {run.failedWorkItemCount > 0 && <div className="errorText">{run.failedWorkItemCount} failed</div>}

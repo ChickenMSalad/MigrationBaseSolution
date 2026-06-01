@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { runtimeDashboardApi } from "../api/runtimeDashboardApi";
-import { Card, EmptyState, StatusPill } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
+import { Card, EmptyState, StatusPill } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
 import type { RuntimeDashboardRunDetail } from "../types/runtimeDashboard";
 
 function formatDate(value?: string | null) {
   if (!value) {
-    return "—";
+    return "â€”";
   }
 
   const date = new Date(value);
@@ -15,7 +15,7 @@ function formatDate(value?: string | null) {
 }
 
 function formatNumber(value?: number | null) {
-  return value === undefined || value === null ? "—" : value.toLocaleString();
+  return value === undefined || value === null ? "â€”" : value.toLocaleString();
 }
 
 export function RuntimeRunDetail() {
@@ -62,7 +62,7 @@ export function RuntimeRunDetail() {
     <>
       <div className="page-header">
         <div>
-          <Link to="/runtime-dashboard">← Runtime dashboard</Link>
+          <Link to="/runtime-dashboard">â† Runtime dashboard</Link>
           <h1>{detail.runName || detail.runKey || detail.runId}</h1>
           <p>Operational runtime run detail from Azure SQL.</p>
         </div>
@@ -80,8 +80,8 @@ export function RuntimeRunDetail() {
         <h2>Run metadata</h2>
         <dl className="definition-list">
           <dt>Run ID</dt><dd>{detail.runId}</dd>
-          <dt>Run key</dt><dd>{detail.runKey ?? "—"}</dd>
-          <dt>Environment</dt><dd>{detail.environmentName ?? "—"}</dd>
+          <dt>Run key</dt><dd>{detail.runKey ?? "â€”"}</dd>
+          <dt>Environment</dt><dd>{detail.environmentName ?? "â€”"}</dd>
           <dt>Requested</dt><dd>{formatDate(detail.requestedAtUtc)}</dd>
           <dt>Created</dt><dd>{formatDate(detail.createdAtUtc)}</dd>
           <dt>Updated</dt><dd>{formatDate(detail.updatedAtUtc)}</dd>
@@ -112,7 +112,7 @@ export function RuntimeRunDetail() {
                   <td>{item.workType}</td>
                   <td>{formatNumber(item.attemptCount)}</td>
                   <td>{formatDate(item.updatedAtUtc)}</td>
-                  <td>{item.lastErrorMessage ?? "—"}</td>
+                  <td>{item.lastErrorMessage ?? "â€”"}</td>
                 </tr>
               ))}
             </tbody>
