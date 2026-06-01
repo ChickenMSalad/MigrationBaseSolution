@@ -1,9 +1,9 @@
-﻿import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
 import { Artifacts } from "./pages/Artifacts";
 import { Connectors } from "./pages/Connectors";
-import { ConnectorConfiguration } from "./pages/ConnectorConfiguration";
+import { ConnectorConfiguration } from "./features/connectors/configuration/pages/ConnectorConfiguration"";
 import { Credentials } from "./pages/Credentials";
 import { CredentialVault } from "./features/security/credentialVault/pages/CredentialVault";
 import { Dashboard } from "./pages/Dashboard";
@@ -24,6 +24,7 @@ import { ExecutionWorkerTelemetry } from "./features/operations/executionWorkerT
 import { NotificationRouting } from "./features/governance/notificationRouting/pages/NotificationRouting";
 import { AuditTrail } from "./features/governance/auditTrail/pages/AuditTrail";
 import { CommandCenter } from "./features/operations/commandCenter/pages/CommandCenter"; import { OperationalEvents } from "./features/operations/operationalEvents/pages/OperationalEvents";
+import { ConnectorConfiguration } from "./features/connectors/configuration/pages/ConnectorConfiguration";
 export default function App() {
   return (
     <Routes>

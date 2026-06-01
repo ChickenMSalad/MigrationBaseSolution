@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { connectorConfigurationApi } from "../api/connectorConfigurationApi";
-import { Card, EmptyState, StatusPill } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
+import { connectorConfigurationApi } from "../api/connectorConfigurationApi"";
+import { Card, EmptyState, StatusPill } from "../../../../components/Card"";
+import { LoadingError } from "../../../../components/LoadingError"";
 import type {
   ConnectorConfigurationCatalogItem,
   ConnectorConfigurationSummary,
