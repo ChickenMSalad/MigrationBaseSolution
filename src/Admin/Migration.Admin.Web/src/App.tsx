@@ -1,9 +1,9 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+﻿import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
 import { Artifacts } from './features/platform/artifacts/pages/Artifacts';
 import { Connectors } from './features/connectors/catalog/pages/Connectors';
-import { ConnectorConfiguration } from "./features/connectors/configuration/pages/ConnectorConfiguration"";
+
 import { Credentials } from './features/security/credentials/pages/Credentials';
 import { CredentialVault } from "./features/security/credentialVault/pages/CredentialVault";
 import { Dashboard } from './features/platform/dashboard/pages/Dashboard';
