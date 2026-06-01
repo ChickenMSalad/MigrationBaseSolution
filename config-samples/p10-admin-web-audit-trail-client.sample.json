@@ -1,0 +1,14 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "featureFamily": "audit-trail",
+  "apiEndpoints": [
+    "/api/operational/audit-trail/summary",
+    "/api/operational/audit-trail/recent?take=50"
+  ],
+  "addedFiles": [
+    "src/Admin/Migration.Admin.Web/src/types/auditTrail.ts",
+    "src/Admin/Migration.Admin.Web/src/api/auditTrailApi.ts",
+    "src/Admin/Migration.Admin.Web/src/pages/AuditTrail.tsx"
+  ]
+}
