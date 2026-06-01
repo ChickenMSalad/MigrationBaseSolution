@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { Artifacts } from "./pages/Artifacts";
 import { Connectors } from "./pages/Connectors";
 import { Credentials } from "./pages/Credentials";
+import { CredentialVault } from "./pages/CredentialVault";
 import { Dashboard } from "./pages/Dashboard";
 import { RuntimeDashboard } from "./pages/RuntimeDashboard";
 import { RuntimeRunDetail } from "./pages/RuntimeRunDetail"; import { ExecutionSessions } from "./pages/ExecutionSessions"; import { FailureRetry } from "./pages/FailureRetry";
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="runs/:runId" element={<RunDetail />} />
         <Route path="connectors" element={<Connectors />} />
         <Route path="credentials" element={<Credentials />} />
+        <Route path="/credential-vault" element={<CredentialVault />} />
         <Route path="artifacts" element={<Artifacts />} />
         <Route path="manifest-builder" element={<ManifestBuilder />} />
         <Route path="taxonomy-builder" element={<TaxonomyBuilder />} />
@@ -39,6 +41,7 @@ export default function App() {
       </Routes>
   );
 }
+
 
 
 

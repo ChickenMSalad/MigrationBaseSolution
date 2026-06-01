@@ -7,6 +7,7 @@ const nav = [
   { to: "/runs", label: "Runs", icon: Activity }, { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Gauge }, { to: "/execution-sessions", label: "Execution Sessions", icon: Workflow }, { to: "/failure-retry", label: "Failure Retry", icon: RefreshCcw },
   { to: "/connectors", label: "Connectors", icon: PlugZap },
   { to: "/credentials", label: "Credentials", icon: KeyRound },
+  { to: "/credential-vault", label: "Credential Vault", icon: KeyRound },
   { to: "/artifacts", label: "Artifacts", icon: Amphora },
   { to: "/manifest-builder", label: "Manifest Builder", icon: FileSpreadsheet },
   { to: "/taxonomy-builder", label: "Taxonomy Builder", icon: Tags },
@@ -51,5 +52,6 @@ export function Layout() {
     </div>
   );
 }
+
 
 
