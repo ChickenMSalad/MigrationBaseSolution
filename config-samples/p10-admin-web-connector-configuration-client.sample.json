@@ -1,0 +1,15 @@
+{
+  "phase": "P10.2N",
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "addedFiles": [
+    "src/Admin/Migration.Admin.Web/src/types/connectorConfiguration.ts",
+    "src/Admin/Migration.Admin.Web/src/api/connectorConfigurationApi.ts",
+    "src/Admin/Migration.Admin.Web/src/pages/ConnectorConfiguration.tsx"
+  ],
+  "apiEndpoints": [
+    "/api/operational/connectors/configuration/summary",
+    "/api/operational/connectors/configuration/catalog",
+    "/api/operational/connectors/configuration/validate"
+  ]
+}
