@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "./core/adminApiClient";
+﻿import { apiGet, apiPost } from "../../../../api/core/adminApiClient";
 import type {
   ConnectorCredentialCatalogItem,
   ConnectorCredentialValidationRequest,
@@ -19,3 +19,4 @@ export const credentialVaultApi = {
       request
     )
 };
+

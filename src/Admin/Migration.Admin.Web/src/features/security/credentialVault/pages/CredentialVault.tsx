@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { credentialVaultApi } from "../api/credentialVaultApi";
-import { Card, EmptyState, StatusPill } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
+import { Card, EmptyState, StatusPill } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
 import type {
   ConnectorCredentialCatalogItem,
   ConnectorCredentialValidationResponse,

@@ -5,7 +5,7 @@ import { Artifacts } from "./pages/Artifacts";
 import { Connectors } from "./pages/Connectors";
 import { ConnectorConfiguration } from "./pages/ConnectorConfiguration";
 import { Credentials } from "./pages/Credentials";
-import { CredentialVault } from "./pages/CredentialVault";
+import { CredentialVault } from "./features/security/credentialVault/pages/CredentialVault";
 import { Dashboard } from "./pages/Dashboard";
 import { RuntimeDashboard } from "./features/operations/runtimeDashboard/pages/RuntimeDashboard";
 import { RuntimeRunDetail } from "./features/operations/runtimeDashboard/pages/RuntimeRunDetail";
@@ -61,6 +61,7 @@ export default function App() {
       </Routes>
   );
 }
+
 
 
 
