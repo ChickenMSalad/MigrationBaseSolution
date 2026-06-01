@@ -23,7 +23,7 @@ import { TaxonomyBuilder } from "./pages/TaxonomyBuilder";
 import { ExecutionWorkerTelemetry } from "./features/operations/executionWorkerTelemetry/pages/ExecutionWorkerTelemetry";
 import { NotificationRouting } from "./features/governance/notificationRouting/pages/NotificationRouting";
 import { AuditTrail } from "./features/governance/auditTrail/pages/AuditTrail";
-import { CommandCenter } from "./pages/CommandCenter";
+import { CommandCenter } from "./features/operations/commandCenter/pages/CommandCenter";
 export default function App() {
   return (
     <Routes>
