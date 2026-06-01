@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { Card, JsonBlock } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
+import { Card, JsonBlock } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
 
 type ArtifactKind =
   | "Manifest"

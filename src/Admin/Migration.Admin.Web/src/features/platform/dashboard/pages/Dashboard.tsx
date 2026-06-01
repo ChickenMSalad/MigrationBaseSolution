@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api/client";
-import { Card, StatusPill } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { ProjectRecord, RunRecord } from "../types/api";
+import { api } from "../../../../api/client";
+import { Card, StatusPill } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { ProjectRecord, RunRecord } from "../../../../types/api";
 
 export function Dashboard() {
   const navigate = useNavigate();

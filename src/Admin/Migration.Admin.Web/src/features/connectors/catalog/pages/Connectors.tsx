@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { api, displayConnectorName } from "../api/client";
-import { Card, EmptyState, JsonBlock } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { ConnectorsResponse, ConnectorDescriptor } from "../types/api";
+import { api, displayConnectorName } from "../../../../api/client";
+import { Card, EmptyState, JsonBlock } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { ConnectorsResponse, ConnectorDescriptor } from "../../../../types/api";
 
 function ConnectorList({ title, items }: { title: string; items: ConnectorDescriptor[] }) {
   return (

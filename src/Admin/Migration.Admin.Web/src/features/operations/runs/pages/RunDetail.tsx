@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../api/client";
-import { Card, JsonBlock, StatusPill } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { RunEventsResponse, RunFailuresResponse, RunRecord, RunSummary, RunWorkItemsResponse } from "../types/api";
+import { api } from "../../../../api/client";
+import { Card, JsonBlock, StatusPill } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { RunEventsResponse, RunFailuresResponse, RunRecord, RunSummary, RunWorkItemsResponse } from "../../../../types/api";
 
 export function RunDetail() {
   const navigate = useNavigate();

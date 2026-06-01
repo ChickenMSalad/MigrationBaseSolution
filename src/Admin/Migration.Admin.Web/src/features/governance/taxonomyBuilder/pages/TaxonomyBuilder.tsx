@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, connectorValue, displayConnectorName } from "../api/client";
-import { Card } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { ArtifactRecord, ConnectorDescriptor, CredentialSetSummary, ProjectRecord } from "../types/api";
+import { api, connectorValue, displayConnectorName } from "../../../../api/client";
+import { Card } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { ArtifactRecord, ConnectorDescriptor, CredentialSetSummary, ProjectRecord } from "../../../../types/api";
 
 type NoticeKind = "success" | "error" | "info";
 

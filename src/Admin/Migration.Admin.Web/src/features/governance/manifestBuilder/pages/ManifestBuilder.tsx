@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { api } from "../api/client";
-import { Card } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { BuildSourceManifestResponse, CredentialSetSummary, ManifestBuilderSourceDescriptor } from "../types/api";
+import { api } from "../../../../api/client";
+import { Card } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { BuildSourceManifestResponse, CredentialSetSummary, ManifestBuilderSourceDescriptor } from "../../../../types/api";
 
 export function ManifestBuilder() {
   const [sources, setSources] = useState<ManifestBuilderSourceDescriptor[]>([]);

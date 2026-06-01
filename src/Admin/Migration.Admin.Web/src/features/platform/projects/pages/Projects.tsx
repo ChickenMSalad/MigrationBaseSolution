@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, connectorValue, displayConnectorName } from "../api/client";
-import { Card, EmptyState } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { ConnectorsResponse, ConnectorDescriptor, ProjectRecord } from "../types/api";
+import { api, connectorValue, displayConnectorName } from "../../../../api/client";
+import { Card, EmptyState } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { ConnectorsResponse, ConnectorDescriptor, ProjectRecord } from "../../../../types/api";
 
 function uniqueConnectorOptions(connectors: ConnectorDescriptor[], fallback: string) {
   const seen = new Set<string>();

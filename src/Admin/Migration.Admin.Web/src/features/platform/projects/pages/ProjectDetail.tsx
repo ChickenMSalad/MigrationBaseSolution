@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../api/client";
-import { Card, JsonBlock } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { ArtifactRecord, CredentialSetSummary, ProjectRecord } from "../types/api";
+import { api } from "../../../../api/client";
+import { Card, JsonBlock } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { ArtifactRecord, CredentialSetSummary, ProjectRecord } from "../../../../types/api";
 
 function normalized(value: string | null | undefined) {
   return String(value ?? "").trim().toLowerCase();

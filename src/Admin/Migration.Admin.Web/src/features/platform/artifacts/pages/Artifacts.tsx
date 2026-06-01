@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
-import { Card, EmptyState } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { ArtifactRecord } from "../types/api";
+import { api } from "../../../../api/client";
+import { Card, EmptyState } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { ArtifactRecord } from "../../../../types/api";
 
 const artifactKindNames: Record<string, string> = {
   "0": "Other",

@@ -1,8 +1,8 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { api, connectorValue, displayConnectorName } from "../api/client";
-import { Card, EmptyState, JsonBlock } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
-import type { ConnectorDescriptor, CredentialSetSummary } from "../types/api";
+import { useEffect, useMemo, useState } from "react";
+import { api, connectorValue, displayConnectorName } from "../../../../api/client";
+import { Card, EmptyState, JsonBlock } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
+import type { ConnectorDescriptor, CredentialSetSummary } from "../../../../types/api";
 import "./Credentials.css";
 
 type Role = "Source" | "Target" | "Manifest";
