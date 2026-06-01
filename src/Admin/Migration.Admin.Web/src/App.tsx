@@ -1,31 +1,4 @@
-﻿import { Navigate, Route, Routes } from "react-router-dom";
-
-import { Layout } from "./components/Layout";
-import { Artifacts } from './features/platform/artifacts/pages/Artifacts';
-import { Connectors } from './features/connectors/catalog/pages/Connectors';
-
-import { Credentials } from './features/security/credentials/pages/Credentials';
-import { CredentialVault } from "./features/security/credentialVault/pages/CredentialVault";
-import { Dashboard } from './features/platform/dashboard/pages/Dashboard';
-import { RuntimeDashboard } from "./features/operations/runtimeDashboard/pages/RuntimeDashboard";
-import { RuntimeRunDetail } from "./features/operations/runtimeDashboard/pages/RuntimeRunDetail";
-import { ExecutionSessions } from "./features/operations/executionSessions/pages/ExecutionSessions";
-import { FailureRetry } from "./features/operations/failureRetry/pages/FailureRetry";
-import { ManifestBuilder } from './features/governance/manifestBuilder/pages/ManifestBuilder';
-import { MappingBuilder } from './features/governance/mappingBuilder/pages/MappingBuilder';
-import { Preflight } from './features/operations/preflight/pages/Preflight';
-import { ProjectDetail } from './features/platform/projects/pages/ProjectDetail';
-import { Projects } from './features/platform/projects/pages/Projects';
-import { RunDetail } from './features/operations/runs/pages/RunDetail';
-import { Runs } from './features/operations/runs/pages/Runs';
-import { TaxonomyBuilder } from './features/governance/taxonomyBuilder/pages/TaxonomyBuilder';
-
-import { ExecutionWorkerTelemetry } from "./features/operations/executionWorkerTelemetry/pages/ExecutionWorkerTelemetry";
-import { NotificationRouting } from "./features/governance/notificationRouting/pages/NotificationRouting";
-import { AuditTrail } from "./features/governance/auditTrail/pages/AuditTrail";
-import { CommandCenter } from "./features/operations/commandCenter/pages/CommandCenter"; import { OperationalEvents } from "./features/operations/operationalEvents/pages/OperationalEvents";
-import { ConnectorConfiguration } from "./features/connectors/configuration/pages/ConnectorConfiguration";
-export default function App() {
+﻿import { Navigate, Route, Routes } from "react-router-dom"; import { Layout } from "./components/Layout"; import { Artifacts } from './features/platform/artifacts/pages/Artifacts'; import { Connectors } from './features/connectors/catalog/pages/Connectors'; import { Credentials } from './features/security/credentials/pages/Credentials'; import { CredentialVault } from "./features/security/credentialVault/pages/CredentialVault"; import { Dashboard } from './features/platform/dashboard/pages/Dashboard'; import { RuntimeDashboard } from "./features/operations/runtimeDashboard/pages/RuntimeDashboard"; import { RuntimeRunDetail } from "./features/operations/runtimeDashboard/pages/RuntimeRunDetail"; import { ExecutionSessions } from "./features/operations/executionSessions/pages/ExecutionSessions"; import { FailureRetry } from "./features/operations/failureRetry/pages/FailureRetry"; import { ManifestBuilder } from './features/governance/manifestBuilder/pages/ManifestBuilder'; import { MappingBuilder } from './features/governance/mappingBuilder/pages/MappingBuilder'; import { Preflight } from './features/operations/preflight/pages/Preflight'; import { ProjectDetail } from './features/platform/projects/pages/ProjectDetail'; import { Projects } from './features/platform/projects/pages/Projects'; import { RunDetail } from './features/operations/runs/pages/RunDetail'; import { Runs } from './features/operations/runs/pages/Runs'; import { TaxonomyBuilder } from './features/governance/taxonomyBuilder/pages/TaxonomyBuilder'; import { ExecutionWorkerTelemetry } from "./features/operations/executionWorkerTelemetry/pages/ExecutionWorkerTelemetry"; import { NotificationRouting } from "./features/governance/notificationRouting/pages/NotificationRouting"; import { AuditTrail } from "./features/governance/auditTrail/pages/AuditTrail"; import { CommandCenter } from "./features/operations/commandCenter/pages/CommandCenter"; import { OperationalEvents } from "./features/operations/operationalEvents/pages/OperationalEvents"; import { ConnectorConfiguration } from "./features/connectors/configuration/pages/ConnectorConfiguration"; export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
@@ -60,15 +33,4 @@ export default function App() {
       <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
         <Route path="/runtime-dashboard/:runId" element={<RuntimeRunDetail />} />
       </Routes>
-  );
-}
-
-
-
-
-
-
-
-
-
-
+  ); };
