@@ -1,0 +1,28 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "canonicalFeatureRoot": "src/Admin/Migration.Admin.Web/src/features",
+  "reportOutputPath": "artifacts/admin-ui-consolidation/p10-admin-web-feature-structure-report.md",
+  "featureGroups": [
+    {
+      "name": "operations",
+      "description": "Runtime dashboard, run detail, execution sessions, failure retry, worker telemetry, operational events"
+    },
+    {
+      "name": "connectors",
+      "description": "Connector configuration and execution profile surfaces"
+    },
+    {
+      "name": "security",
+      "description": "Credentials and credential vault surfaces"
+    },
+    {
+      "name": "governance",
+      "description": "Audit, notifications, command center, capacity forecast, cost analytics"
+    },
+    {
+      "name": "platform",
+      "description": "Shell, navigation, shared layout, and cross-cutting UI structure"
+    }
+  ]
+}
