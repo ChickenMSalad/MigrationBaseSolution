@@ -1,0 +1,9 @@
+{
+  "phase": "P10.2P",
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui/src/features/executionWorkers",
+  "pagePath": "src/Admin/Migration.Admin.Web/src/pages/ExecutionWorkerTelemetry.tsx",
+  "apiPath": "src/Admin/Migration.Admin.Web/src/api/executionWorkerTelemetryApi.ts",
+  "typesPath": "src/Admin/Migration.Admin.Web/src/types/executionWorkerTelemetry.ts",
+  "endpoint": "/api/operational/execution-workers/summary"
+}
