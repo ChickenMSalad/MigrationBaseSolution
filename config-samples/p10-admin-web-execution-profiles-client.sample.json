@@ -1,0 +1,12 @@
+{
+  "phase": "P10.2U",
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "featureFamily": "executionProfiles",
+  "routeRecommendation": "/execution-profiles",
+  "addedFiles": [
+    "src/Admin/Migration.Admin.Web/src/types/executionProfiles.ts",
+    "src/Admin/Migration.Admin.Web/src/api/executionProfilesApi.ts",
+    "src/Admin/Migration.Admin.Web/src/pages/ExecutionProfiles.tsx"
+  ]
+}
