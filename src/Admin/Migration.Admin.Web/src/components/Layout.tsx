@@ -1,4 +1,4 @@
-﻿import { Activity, Gauge, Workflow, RefreshCcw, Amphora, Boxes, FileSpreadsheet, FolderKanban, Home, KeyRound, Map, PlugZap, Tags, Settings } from "lucide-react";
+﻿import { Activity, Gauge, Workflow, RefreshCcw, Amphora, Boxes, FileSpreadsheet, FolderKanban, Home, KeyRound, Map, PlugZap, Tags, Settings, GitBranch } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const nav = [
@@ -9,6 +9,14 @@ const nav = [
   { to: "/connector-configuration", label: "Connector Configuration", icon: Settings },
   { to: "/credentials", label: "Credentials", icon: KeyRound },
   { to: "/credential-vault", label: "Credential Vault", icon: KeyRound },
+  { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Activity },
+  { to: "/execution-sessions", label: "Execution Sessions", icon: Activity },
+  { to: "/failure-retry", label: "Failure Retry", icon: Activity },
+  { to: "/connector-configuration", label: "Connector Configuration", icon: PlugZap },
+  { to: "/execution-worker-telemetry", label: "Worker Telemetry", icon: Activity },
+  { to: "/notification-routing", label: "Notification Routing", icon: GitBranch },
+  { to: "/audit-trail", label: "Audit Trail", icon: Activity },
+  { to: "/command-center", label: "Command Center", icon: Boxes },
   { to: "/artifacts", label: "Artifacts", icon: Amphora },
   { to: "/manifest-builder", label: "Manifest Builder", icon: FileSpreadsheet },
   { to: "/taxonomy-builder", label: "Taxonomy Builder", icon: Tags },
@@ -53,6 +61,7 @@ export function Layout() {
     </div>
   );
 }
+
 
 
 

@@ -20,6 +20,10 @@ import { RunDetail } from "./pages/RunDetail";
 import { Runs } from "./pages/Runs";
 import { TaxonomyBuilder } from "./pages/TaxonomyBuilder";
 
+import { ExecutionWorkerTelemetry } from "./pages/ExecutionWorkerTelemetry";
+import { NotificationRouting } from "./pages/NotificationRouting";
+import { AuditTrail } from "./pages/AuditTrail";
+import { CommandCenter } from "./pages/CommandCenter";
 export default function App() {
   return (
     <Routes>
@@ -40,13 +44,24 @@ export default function App() {
         <Route path="mapping-builder" element={<MappingBuilder />} />
         <Route path="/execution-sessions" element={<ExecutionSessions />} />
         <Route path="/failure-retry" element={<FailureRetry />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="runtime-dashboard" element={<RuntimeDashboard />} />
+  <Route path="runtime-runs/:runId" element={<RuntimeRunDetail />} />
+  <Route path="execution-sessions" element={<ExecutionSessions />} />
+  <Route path="failure-retry" element={<FailureRetry />} />
+  <Route path="credential-vault" element={<CredentialVault />} />
+  <Route path="connector-configuration" element={<ConnectorConfiguration />} />
+  <Route path="execution-worker-telemetry" element={<ExecutionWorkerTelemetry />} />
+  <Route path="notification-routing" element={<NotificationRouting />} />
+  <Route path="audit-trail" element={<AuditTrail />} />
+  <Route path="command-center" element={<CommandCenter />} />
+  <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
       <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
         <Route path="/runtime-dashboard/:runId" element={<RuntimeRunDetail />} />
       </Routes>
   );
 }
+
 
 
 

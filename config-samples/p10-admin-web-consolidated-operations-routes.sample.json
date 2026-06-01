@@ -1,0 +1,16 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "routes": [
+    "/runtime-dashboard",
+    "/runtime-runs/:runId",
+    "/execution-sessions",
+    "/failure-retry",
+    "/credential-vault",
+    "/connector-configuration",
+    "/execution-worker-telemetry",
+    "/notification-routing",
+    "/audit-trail",
+    "/command-center"
+  ]
+}
