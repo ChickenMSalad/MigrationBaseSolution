@@ -1,0 +1,55 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "outputPath": "artifacts/p10/admin-web-canonical-nav-and-feature-structure-review.md",
+  "featureFamilies": [
+    {
+      "name": "operations",
+      "destination": "src/Admin/Migration.Admin.Web/src/features/operations",
+      "pageNames": [
+        "RuntimeDashboard",
+        "RuntimeRunDetail",
+        "ExecutionSessions",
+        "FailureRetry",
+        "ExecutionWorkerTelemetry",
+        "OperationalEvents"
+      ]
+    },
+    {
+      "name": "connectors",
+      "destination": "src/Admin/Migration.Admin.Web/src/features/connectors",
+      "pageNames": [
+        "Connectors",
+        "ConnectorConfiguration",
+        "ExecutionProfiles"
+      ]
+    },
+    {
+      "name": "security",
+      "destination": "src/Admin/Migration.Admin.Web/src/features/security",
+      "pageNames": [
+        "Credentials",
+        "CredentialVault"
+      ]
+    },
+    {
+      "name": "governance",
+      "destination": "src/Admin/Migration.Admin.Web/src/features/governance",
+      "pageNames": [
+        "AuditTrail",
+        "NotificationRouting",
+        "CommandCenter"
+      ]
+    },
+    {
+      "name": "platform",
+      "destination": "src/Admin/Migration.Admin.Web/src/features/platform",
+      "pageNames": [
+        "CapacityForecast",
+        "CostAnalytics",
+        "Artifacts",
+        "Preflight"
+      ]
+    }
+  ]
+}
