@@ -1,4 +1,4 @@
-import { adminApiClient } from "./core/adminApiClient";
+import { adminApiClient } from "../../../../api/core/client";
 import type {
   ConnectorExecutionProfileCatalogItem,
   ConnectorExecutionProfileSummary,
