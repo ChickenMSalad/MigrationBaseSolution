@@ -1,4 +1,4 @@
-﻿import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
 import { Artifacts } from "./pages/Artifacts";
@@ -20,7 +20,7 @@ import { RunDetail } from "./pages/RunDetail";
 import { Runs } from "./pages/Runs";
 import { TaxonomyBuilder } from "./pages/TaxonomyBuilder";
 
-import { ExecutionWorkerTelemetry } from "./pages/ExecutionWorkerTelemetry";
+import { ExecutionWorkerTelemetry } from "./features/operations/executionWorkerTelemetry/pages/ExecutionWorkerTelemetry";
 import { NotificationRouting } from "./pages/NotificationRouting";
 import { AuditTrail } from "./pages/AuditTrail";
 import { CommandCenter } from "./pages/CommandCenter";
