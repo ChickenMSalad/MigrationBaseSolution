@@ -1,4 +1,4 @@
-import { adminApiClient } from "./core/adminApiClient";
+import { adminApiClient } from "../../../../api/core/adminApiClient";
 import type { CapacityForecastSummary } from "../types/capacityForecast";
 
 const fallbackCapacityForecast: CapacityForecastSummary = {
