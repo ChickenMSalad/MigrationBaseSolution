@@ -21,7 +21,6 @@ import { ExecutionWorkerTelemetry } from "./features/operations/executionWorkerT
 import { NotificationRouting } from "./features/governance/notificationRouting/pages/NotificationRouting";
 import { AuditTrail } from "./features/governance/auditTrail/pages/AuditTrail";
 import { CommandCenter } from "./features/operations/commandCenter/pages/CommandCenter";
-import { OperationalEvents } from "./features/operations/operationalEvents/pages/OperationalEvents";
 import { ConnectorConfiguration } from "./features/connectors/configuration/pages/ConnectorConfiguration";
 
 export default function App() {
@@ -49,7 +48,6 @@ export default function App() {
   <Route path="execution-sessions" element={<ExecutionSessions />} />
   <Route path="failure-retry" element={<FailureRetry />} />
   <Route path="credential-vault" element={<CredentialVault />} />
-  <Route path="connector-configuration" element={<ConnectorConfiguration />} />
   <Route path="execution-worker-telemetry" element={<ExecutionWorkerTelemetry />} />
   <Route path="notification-routing" element={<NotificationRouting />} />
   <Route path="audit-trail" element={<AuditTrail />} />
