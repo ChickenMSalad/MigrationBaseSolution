@@ -1,0 +1,14 @@
+{
+  "phase": "P10.2Q",
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "pagePath": "src/Admin/Migration.Admin.Web/src/pages/NotificationRouting.tsx",
+  "apiClientPath": "src/Admin/Migration.Admin.Web/src/api/notificationRoutingApi.ts",
+  "typePath": "src/Admin/Migration.Admin.Web/src/types/notificationRouting.ts",
+  "routeDeferred": true,
+  "endpoints": [
+    "/api/operational/notifications/summary",
+    "/api/operational/notifications/routes",
+    "/api/operational/notifications/alert-preview"
+  ]
+}
