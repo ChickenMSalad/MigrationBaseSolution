@@ -1,4 +1,4 @@
-﻿import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
 import { Artifacts } from "./pages/Artifacts";
@@ -7,8 +7,8 @@ import { ConnectorConfiguration } from "./pages/ConnectorConfiguration";
 import { Credentials } from "./pages/Credentials";
 import { CredentialVault } from "./pages/CredentialVault";
 import { Dashboard } from "./pages/Dashboard";
-import { RuntimeDashboard } from "./pages/RuntimeDashboard";
-import { RuntimeRunDetail } from "./pages/RuntimeRunDetail";
+import { RuntimeDashboard } from "./features/operations/runtimeDashboard/pages/RuntimeDashboard";
+import { RuntimeRunDetail } from "./features/operations/runtimeDashboard/pages/RuntimeRunDetail";
 import { ExecutionSessions } from "./pages/ExecutionSessions";
 import { FailureRetry } from "./pages/FailureRetry";
 import { ManifestBuilder } from "./pages/ManifestBuilder";
