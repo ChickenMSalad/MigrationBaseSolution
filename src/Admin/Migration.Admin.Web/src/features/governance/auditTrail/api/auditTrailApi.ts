@@ -1,4 +1,4 @@
-import { apiGet } from './core/adminApiClient';
+import { apiGet } from '../../../../api/core/adminApiClient';
 import type { AuditTrailRecentResponse, AuditTrailSummary } from '../types/auditTrail';
 
 export function getAuditTrailSummary(): Promise<AuditTrailSummary> {
