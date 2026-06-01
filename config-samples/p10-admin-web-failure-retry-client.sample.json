@@ -1,0 +1,9 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "pagePath": "src/Admin/Migration.Admin.Web/src/pages/FailureRetry.tsx",
+  "apiClientPath": "src/Admin/Migration.Admin.Web/src/api/failureRetryApi.ts",
+  "typesPath": "src/Admin/Migration.Admin.Web/src/types/failureRetry.ts",
+  "intendedRoute": "/runtime/failures",
+  "routeWiringDeferred": true
+}
