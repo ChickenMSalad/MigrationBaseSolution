@@ -1,10 +1,10 @@
-﻿import { Activity, Gauge, Amphora, Boxes, FileSpreadsheet, FolderKanban, Home, KeyRound, Map, PlugZap, Tags } from "lucide-react";
+﻿import { Activity, Gauge, Workflow, RefreshCcw, Amphora, Boxes, FileSpreadsheet, FolderKanban, Home, KeyRound, Map, PlugZap, Tags } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
   { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/runs", label: "Runs", icon: Activity }, { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Gauge },
+  { to: "/runs", label: "Runs", icon: Activity }, { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Gauge }, { to: "/execution-sessions", label: "Execution Sessions", icon: Workflow }, { to: "/failure-retry", label: "Failure Retry", icon: RefreshCcw },
   { to: "/connectors", label: "Connectors", icon: PlugZap },
   { to: "/credentials", label: "Credentials", icon: KeyRound },
   { to: "/artifacts", label: "Artifacts", icon: Amphora },
@@ -51,4 +51,5 @@ export function Layout() {
     </div>
   );
 }
+
 

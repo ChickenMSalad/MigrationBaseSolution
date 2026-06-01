@@ -6,7 +6,7 @@ import { Connectors } from "./pages/Connectors";
 import { Credentials } from "./pages/Credentials";
 import { Dashboard } from "./pages/Dashboard";
 import { RuntimeDashboard } from "./pages/RuntimeDashboard";
-import { RuntimeRunDetail } from "./pages/RuntimeRunDetail";
+import { RuntimeRunDetail } from "./pages/RuntimeRunDetail"; import { ExecutionSessions } from "./pages/ExecutionSessions"; import { FailureRetry } from "./pages/FailureRetry";
 import { ManifestBuilder } from "./pages/ManifestBuilder";
 import { MappingBuilder } from "./pages/MappingBuilder";
 import { Preflight } from "./pages/Preflight";
@@ -32,12 +32,13 @@ export default function App() {
         <Route path="manifest-builder" element={<ManifestBuilder />} />
         <Route path="taxonomy-builder" element={<TaxonomyBuilder />} />
         <Route path="mapping-builder" element={<MappingBuilder />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/execution-sessions" element={<ExecutionSessions />} /> <Route path="/failure-retry" element={<FailureRetry />} /> <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
       <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
         <Route path="/runtime-dashboard/:runId" element={<RuntimeRunDetail />} />
       </Routes>
   );
 }
+
 
 

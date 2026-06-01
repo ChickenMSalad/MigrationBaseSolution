@@ -1,0 +1,12 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "routes": [
+    "/execution-sessions",
+    "/failure-retry"
+  ],
+  "pages": [
+    "ExecutionSessions",
+    "FailureRetry"
+  ]
+}
