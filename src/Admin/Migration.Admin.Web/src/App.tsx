@@ -22,6 +22,7 @@ import { NotificationRouting } from "./features/governance/notificationRouting/p
 import { AuditTrail } from "./features/governance/auditTrail/pages/AuditTrail";
 import { CommandCenter } from "./features/operations/commandCenter/pages/CommandCenter";
 import { ConnectorConfiguration } from "./features/connectors/configuration/pages/ConnectorConfiguration";
+import { OperationalEvents } from "./features/operations/operationalEvents/pages/OperationalEvents";
 
 export default function App() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
   <Route path="notification-routing" element={<NotificationRouting />} />
   <Route path="audit-trail" element={<AuditTrail />} />
   <Route path="command-center" element={<CommandCenter />} />
+          <Route path="/operations/operational-events" element={<OperationalEvents />} />
   <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
       <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
