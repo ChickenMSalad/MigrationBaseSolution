@@ -1,0 +1,22 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "reportOutputPath": "artifacts/admin-ui-consolidation/p10.2y-admin-ui-consolidation-report.md",
+  "canonicalFeatureFolderRecommendation": "src/Admin/Migration.Admin.Web/src/features",
+  "migratedFeatureSurfaces": [
+    "Runtime Dashboard",
+    "Runtime Run Detail",
+    "Execution Sessions",
+    "Failure Retry",
+    "Credential Vault",
+    "Connector Configuration",
+    "Execution Worker Telemetry",
+    "Notification Routing",
+    "Audit Trail",
+    "Command Center",
+    "Execution Profiles",
+    "Operational Events",
+    "Capacity Forecast",
+    "Cost Analytics"
+  ]
+}
