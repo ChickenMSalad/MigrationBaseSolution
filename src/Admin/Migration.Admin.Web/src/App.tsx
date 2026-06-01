@@ -3,11 +3,14 @@
 import { Layout } from "./components/Layout";
 import { Artifacts } from "./pages/Artifacts";
 import { Connectors } from "./pages/Connectors";
+import { ConnectorConfiguration } from "./pages/ConnectorConfiguration";
 import { Credentials } from "./pages/Credentials";
 import { CredentialVault } from "./pages/CredentialVault";
 import { Dashboard } from "./pages/Dashboard";
 import { RuntimeDashboard } from "./pages/RuntimeDashboard";
-import { RuntimeRunDetail } from "./pages/RuntimeRunDetail"; import { ExecutionSessions } from "./pages/ExecutionSessions"; import { FailureRetry } from "./pages/FailureRetry";
+import { RuntimeRunDetail } from "./pages/RuntimeRunDetail";
+import { ExecutionSessions } from "./pages/ExecutionSessions";
+import { FailureRetry } from "./pages/FailureRetry";
 import { ManifestBuilder } from "./pages/ManifestBuilder";
 import { MappingBuilder } from "./pages/MappingBuilder";
 import { Preflight } from "./pages/Preflight";
@@ -28,13 +31,16 @@ export default function App() {
         <Route path="runs" element={<Runs />} />
         <Route path="runs/:runId" element={<RunDetail />} />
         <Route path="connectors" element={<Connectors />} />
+        <Route path="/connector-configuration" element={<ConnectorConfiguration />} />
         <Route path="credentials" element={<Credentials />} />
         <Route path="/credential-vault" element={<CredentialVault />} />
         <Route path="artifacts" element={<Artifacts />} />
         <Route path="manifest-builder" element={<ManifestBuilder />} />
         <Route path="taxonomy-builder" element={<TaxonomyBuilder />} />
         <Route path="mapping-builder" element={<MappingBuilder />} />
-        <Route path="/execution-sessions" element={<ExecutionSessions />} /> <Route path="/failure-retry" element={<FailureRetry />} /> <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/execution-sessions" element={<ExecutionSessions />} />
+        <Route path="/failure-retry" element={<FailureRetry />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
       <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
         <Route path="/runtime-dashboard/:runId" element={<RuntimeRunDetail />} />

@@ -1,0 +1,7 @@
+{
+  "canonicalAdminUiPath": "src/Admin/Migration.Admin.Web",
+  "featureSourcePath": "apps/migration-admin-ui",
+  "route": "/connector-configuration",
+  "page": "src/Admin/Migration.Admin.Web/src/pages/ConnectorConfiguration.tsx",
+  "navigationLabel": "Connector Config"
+}
