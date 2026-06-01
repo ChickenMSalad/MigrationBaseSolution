@@ -10,7 +10,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { RuntimeDashboard } from "./features/operations/runtimeDashboard/pages/RuntimeDashboard";
 import { RuntimeRunDetail } from "./features/operations/runtimeDashboard/pages/RuntimeRunDetail";
 import { ExecutionSessions } from "./features/operations/executionSessions/pages/ExecutionSessions";
-import { FailureRetry } from "./pages/FailureRetry";
+import { FailureRetry } from "./features/operations/failureRetry/pages/FailureRetry";
 import { ManifestBuilder } from "./pages/ManifestBuilder";
 import { MappingBuilder } from "./pages/MappingBuilder";
 import { Preflight } from "./pages/Preflight";
@@ -61,6 +61,7 @@ export default function App() {
       </Routes>
   );
 }
+
 
 
 
