@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+﻿import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Artifacts } from './features/platform/artifacts/pages/Artifacts';
 import { Connectors } from './features/connectors/catalog/pages/Connectors';
@@ -58,5 +58,9 @@ export default function App() {
       </Route>
       <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
         <Route path="/runtime-dashboard/:runId" element={<RuntimeRunDetail />} />
+              <Route path="/manifest-builder" element={<ManifestBuilder />} />
+              <Route path="/taxonomy-builder" element={<TaxonomyBuilder />} />
+              <Route path="/mapping-builder" element={<MappingBuilder />} />
       </Routes>
   ); };
+
