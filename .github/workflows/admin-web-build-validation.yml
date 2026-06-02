@@ -1,0 +1,38 @@
+name: Admin Web Build Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/Admin/Migration.Admin.Web/**'
+      - '.github/workflows/admin-web-build-validation.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/Admin/Migration.Admin.Web/**'
+      - '.github/workflows/admin-web-build-validation.yml'
+
+jobs:
+  admin-web-build:
+    name: Build canonical Admin Web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Admin/Migration.Admin.Web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: src/Admin/Migration.Admin.Web/package-lock.json
+
+      - name: Restore Admin Web dependencies
+        run: npm ci
+
+      - name: Build Admin Web
+        run: npm run build
