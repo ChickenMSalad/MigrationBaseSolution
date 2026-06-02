@@ -20,5 +20,5 @@ export type AuditEventWriterProbe = {
 };
 
 export async function probeAuditEventWriter(): Promise<AuditEventWriterProbe> {
-  return apiPost<AuditEventWriterProbe>('/api/cloud/audit/writer/probe', {});
+  return apiPost<unknown, AuditEventWriterProbe>('/api/cloud/audit/writer/probe', {});
 }

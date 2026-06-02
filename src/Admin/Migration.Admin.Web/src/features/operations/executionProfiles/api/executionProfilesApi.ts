@@ -1,4 +1,5 @@
-import { adminApiClient } from "../../../../api/core/client";
+﻿import { adminApiClient } from '../../../../api/core/adminApiClient';
+import { apiGet, apiPost } from "../../../../api/core/adminApiClient";
 import type {
   ConnectorExecutionProfileCatalogItem,
   ConnectorExecutionProfileSummary,
@@ -28,3 +29,4 @@ export const executionProfilesApi = {
     );
   },
 };
+

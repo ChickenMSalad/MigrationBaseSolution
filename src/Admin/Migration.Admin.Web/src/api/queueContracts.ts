@@ -26,5 +26,5 @@ export async function getQueueProviderDescriptor(): Promise<QueueProviderDescrip
 }
 
 export async function probeQueueEnvelope(): Promise<QueueMessageEnvelope> {
-  return apiPost<QueueMessageEnvelope>('/api/cloud/queue/envelope/probe', {});
+  return apiPost<unknown, QueueMessageEnvelope>('/api/cloud/queue/envelope/probe', {});
 }

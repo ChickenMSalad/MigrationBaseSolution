@@ -48,7 +48,7 @@ export async function getTelemetryProvider(): Promise<TelemetryProviderDescripto
 }
 
 export async function probeTelemetry(): Promise<TelemetryProbe> {
-  return apiPost<TelemetryProbe>('/api/cloud/telemetry/probe', {});
+  return apiPost<unknown, TelemetryProbe>('/api/cloud/telemetry/probe', {});
 }
 
 export async function getRecentTelemetry(take = 25): Promise<RecentTelemetryResponse> {

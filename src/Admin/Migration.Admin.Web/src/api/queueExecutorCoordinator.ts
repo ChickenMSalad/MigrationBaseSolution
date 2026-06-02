@@ -41,5 +41,5 @@ export async function getQueueExecutorCoordinatorOptions(): Promise<QueueExecuto
 }
 
 export async function probeQueueExecutorCoordinator(): Promise<QueueExecutorCoordinatorProbe> {
-  return apiPost<QueueExecutorCoordinatorProbe>('/api/cloud/queue/executor-coordinator/probe', {});
+  return apiPost<unknown, QueueExecutorCoordinatorProbe>('/api/cloud/queue/executor-coordinator/probe', {});
 }

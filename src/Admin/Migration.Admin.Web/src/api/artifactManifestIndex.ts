@@ -28,7 +28,7 @@ export async function getArtifactManifestIndex(): Promise<ArtifactManifestIndex>
 }
 
 export async function probeArtifactManifestIndex(): Promise<ArtifactManifestIndexProbeResponse> {
-  return apiPost<ArtifactManifestIndexProbeResponse, Record<string, never>>(
+  return apiPost<Record<string, never>, ArtifactManifestIndexProbeResponse>(
     '/api/cloud/artifacts/index/probe',
     {}
   );

@@ -23,7 +23,7 @@ export async function getCloudBinaryStorageProvider(): Promise<CloudBinaryStorag
 }
 
 export async function probeCloudBinaryStorage(): Promise<CloudBinaryStorageProbeResponse> {
-  return apiPost<CloudBinaryStorageProbeResponse, Record<string, never>>(
+  return apiPost<Record<string, never>, CloudBinaryStorageProbeResponse>(
     '/api/cloud/storage/probe',
     {}
   );

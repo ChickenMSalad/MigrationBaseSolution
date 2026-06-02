@@ -24,15 +24,11 @@ export async function uploadArtifactBridge(
 ): Promise<ArtifactStorageBridgeUploadResponse> {
   const path = `/api/cloud/artifacts/${encodeURIComponent(artifactKind)}/${encodeURIComponent(artifactId)}/files/${encodeURIComponent(fileName)}`;
 
-  return apiPost<ArtifactStorageBridgeUploadResponse, string | Blob>(
-    path,
-    content,
-    {
-      headers: {
-        'Content-Type': contentType
-      }
+  return apiPost<string | Blob, ArtifactStorageBridgeUploadResponse>(path, content, {
+    headers: {
+      'Content-Type': contentType
     }
-  );
+  });
 }
 
 export async function downloadArtifactBridge(
@@ -41,10 +37,7 @@ export async function downloadArtifactBridge(
   fileName: string
 ): Promise<Blob> {
   const path = `/api/cloud/artifacts/${encodeURIComponent(artifactKind)}/${encodeURIComponent(artifactId)}/files/${encodeURIComponent(fileName)}`;
-
-  const response = await fetch(path, {
-    method: 'GET'
-  });
+  const response = await fetch(path, { method: 'GET' });
 
   if (!response.ok) {
     throw new Error(`Artifact download failed: ${response.status} ${response.statusText}`);
@@ -59,6 +52,5 @@ export async function deleteArtifactBridge(
   fileName: string
 ): Promise<ArtifactStorageBridgeDeleteResponse> {
   const path = `/api/cloud/artifacts/${encodeURIComponent(artifactKind)}/${encodeURIComponent(artifactId)}/files/${encodeURIComponent(fileName)}`;
-
   return apiDelete<ArtifactStorageBridgeDeleteResponse>(path);
 }

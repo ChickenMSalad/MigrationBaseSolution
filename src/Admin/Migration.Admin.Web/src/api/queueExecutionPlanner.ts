@@ -25,7 +25,7 @@ export type QueueExecutionMessageTypes = {
 };
 
 export async function probeQueueExecutionPlan(): Promise<QueueExecutionPlanProbe> {
-  return apiPost<QueueExecutionPlanProbe>('/api/cloud/queue/execution-plan/probe', {});
+  return apiPost<unknown, QueueExecutionPlanProbe>('/api/cloud/queue/execution-plan/probe', {});
 }
 
 export async function getQueueExecutionMessageTypes(): Promise<QueueExecutionMessageTypes> {

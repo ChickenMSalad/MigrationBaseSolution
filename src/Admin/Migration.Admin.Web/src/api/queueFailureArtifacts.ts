@@ -43,5 +43,5 @@ export async function getQueueFailureArtifactPlan(): Promise<QueueFailureArtifac
 }
 
 export async function probeQueueFailureArtifact(): Promise<QueueFailureArtifactProbe> {
-  return apiPost<QueueFailureArtifactProbe>('/api/cloud/queue/failure-artifact/probe', {});
+  return apiPost<unknown, QueueFailureArtifactProbe>('/api/cloud/queue/failure-artifact/probe', {});
 }

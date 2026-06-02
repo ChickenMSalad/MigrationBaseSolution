@@ -17,5 +17,5 @@ export async function getCloudOperationAuditEventNames(): Promise<CloudOperation
 }
 
 export async function probeCloudOperationAudit(): Promise<CloudOperationAuditProbe> {
-  return apiPost<CloudOperationAuditProbe>('/api/cloud/audit/operation/probe', {});
+  return apiPost<unknown, CloudOperationAuditProbe>('/api/cloud/audit/operation/probe', {});
 }

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { connectorConfigurationApi } from "../api/connectorConfigurationApi"";
-import { Card, EmptyState, StatusPill } from "../../../../components/Card"";
-import { LoadingError } from "../../../../components/LoadingError"";
+﻿import { useEffect, useMemo, useState } from "react";
+import { connectorConfigurationApi } from "../api/connectorConfigurationApi";
+import { Card, EmptyState, StatusPill } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
 import type {
   ConnectorConfigurationCatalogItem,
   ConnectorConfigurationSummary,
@@ -27,12 +27,12 @@ const emptySummary: ConnectorConfigurationSummary = {
 };
 
 function formatNumber(value: number | undefined | null) {
-  return value === undefined || value === null ? "—" : value.toLocaleString();
+  return value === undefined || value === null ? "â€”" : value.toLocaleString();
 }
 
 function formatDate(value?: string | null) {
   if (!value) {
-    return "—";
+    return "â€”";
   }
 
   const date = new Date(value);
@@ -235,3 +235,4 @@ export function ConnectorConfiguration() {
     </>
   );
 }
+

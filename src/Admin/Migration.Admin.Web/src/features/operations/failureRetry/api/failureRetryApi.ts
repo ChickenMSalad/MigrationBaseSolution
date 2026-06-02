@@ -1,4 +1,4 @@
-import { apiGet } from "./core/adminApiClient";
+import { apiGet } from "../../../../api/core/adminApiClient";
 import type { FailureRetryResponse } from "../types/failureRetry";
 
 function queryString(params: Record<string, string | number | boolean | null | undefined>) {

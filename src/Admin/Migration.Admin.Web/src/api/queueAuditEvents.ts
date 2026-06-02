@@ -19,5 +19,5 @@ export async function getQueueAuditEventNames(): Promise<QueueAuditEventNames> {
 }
 
 export async function probeQueueAuditEvents(): Promise<QueueAuditProbe> {
-  return apiPost<QueueAuditProbe>('/api/cloud/queue/audit/probe', {});
+  return apiPost<unknown, QueueAuditProbe>('/api/cloud/queue/audit/probe', {});
 }

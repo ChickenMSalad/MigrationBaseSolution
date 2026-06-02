@@ -1,4 +1,5 @@
-import { adminApiClient } from "../../../../api/core/adminApiClient";
+﻿import { adminApiClient } from '../../../../api/core/adminApiClient';
+import { apiGet } from "../../../../api/core/adminApiClient";
 import type { CapacityForecastSummary } from "../types/capacityForecast";
 
 const fallbackCapacityForecast: CapacityForecastSummary = {
@@ -19,3 +20,4 @@ export async function getCapacityForecast(): Promise<CapacityForecastSummary> {
     return fallbackCapacityForecast;
   }
 }
+

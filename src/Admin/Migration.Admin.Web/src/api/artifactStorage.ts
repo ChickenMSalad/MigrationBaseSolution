@@ -23,17 +23,12 @@ export async function resolveArtifactStorage(
   artifactId = 'sample-artifact',
   fileName = 'sample.json'
 ): Promise<ArtifactStorageDescriptor> {
-  const params = new URLSearchParams({
-    kind,
-    artifactId,
-    fileName
-  });
-
+  const params = new URLSearchParams({ kind, artifactId, fileName });
   return apiGet<ArtifactStorageDescriptor>(`/api/cloud/artifacts/resolve?${params}`);
 }
 
 export async function probeArtifactStorage(): Promise<ArtifactStorageProbeResponse> {
-  return apiPost<ArtifactStorageProbeResponse, Record<string, never>>(
+  return apiPost<Record<string, never>, ArtifactStorageProbeResponse>(
     '/api/cloud/artifacts/probe',
     {}
   );

@@ -17,5 +17,5 @@ export type QueueFailureHandlerProbe = {
 };
 
 export async function probeQueueFailureHandler(): Promise<QueueFailureHandlerProbe> {
-  return apiPost<QueueFailureHandlerProbe>('/api/cloud/queue/failure-handler/probe', {});
+  return apiPost<unknown, QueueFailureHandlerProbe>('/api/cloud/queue/failure-handler/probe', {});
 }

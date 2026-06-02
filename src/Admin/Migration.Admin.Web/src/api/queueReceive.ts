@@ -32,5 +32,5 @@ export async function getQueueReceiveProvider(): Promise<QueueReceiveProviderDes
 }
 
 export async function probeQueueReceive(): Promise<QueueReceiveProbeResponse> {
-  return apiPost<QueueReceiveProbeResponse>('/api/cloud/queue/receive/probe', {});
+  return apiPost<unknown, QueueReceiveProbeResponse>('/api/cloud/queue/receive/probe', {});
 }

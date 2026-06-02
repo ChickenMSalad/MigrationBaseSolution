@@ -17,5 +17,5 @@ export async function getCloudOperationTelemetryEventNames(): Promise<CloudOpera
 }
 
 export async function probeCloudOperationTelemetry(): Promise<CloudOperationTelemetryProbe> {
-  return apiPost<CloudOperationTelemetryProbe>('/api/cloud/telemetry/operation/probe', {});
+  return apiPost<unknown, CloudOperationTelemetryProbe>('/api/cloud/telemetry/operation/probe', {});
 }

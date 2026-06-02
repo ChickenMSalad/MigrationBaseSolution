@@ -1,6 +1,8 @@
-import { adminApiClient } from "../../../../api/core/adminApiClient";
+﻿import { adminApiClient } from '../../../../api/core/adminApiClient';
+import { apiGet } from "../../../../api/core/adminApiClient";
 import type { CostAnalyticsResponse } from "../types/costAnalytics";
 
 export async function getCostAnalytics(): Promise<CostAnalyticsResponse> {
   return adminApiClient.get<CostAnalyticsResponse>("/api/operational/cost/analytics");
 }
+

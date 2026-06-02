@@ -19,5 +19,5 @@ export async function getQueueTelemetryEventNames(): Promise<QueueTelemetryEvent
 }
 
 export async function probeQueueTelemetryEvents(): Promise<QueueTelemetryProbe> {
-  return apiPost<QueueTelemetryProbe>('/api/cloud/queue/telemetry/probe', {});
+  return apiPost<unknown, QueueTelemetryProbe>('/api/cloud/queue/telemetry/probe', {});
 }

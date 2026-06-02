@@ -20,5 +20,5 @@ export type TelemetryEventWriterProbe = {
 };
 
 export async function probeTelemetryEventWriter(): Promise<TelemetryEventWriterProbe> {
-  return apiPost<TelemetryEventWriterProbe>('/api/cloud/telemetry/writer/probe', {});
+  return apiPost<unknown, TelemetryEventWriterProbe>('/api/cloud/telemetry/writer/probe', {});
 }

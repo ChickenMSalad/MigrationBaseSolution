@@ -1,13 +1,27 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 
-export function Card({ title, subtitle, action, children }: { title?: string; subtitle?: string; action?: ReactNode; children: ReactNode }) {
+export function Card({
+  title,
+  subtitle,
+  description,
+  action,
+  children,
+}: {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  action?: ReactNode;
+  children?: ReactNode;
+}) {
+  const supportingText = subtitle ?? description;
+
   return (
     <section className="card">
-      {(title || subtitle || action) && (
-        <div className="cardHeader">
+      {(title || supportingText || action) && (
+        <div className="card-header">
           <div>
             {title && <h2>{title}</h2>}
-            {subtitle && <p>{subtitle}</p>}
+            {supportingText && <p>{supportingText}</p>}
           </div>
           {action}
         </div>
@@ -17,22 +31,39 @@ export function Card({ title, subtitle, action, children }: { title?: string; su
   );
 }
 
-export function StatusPill({ status }: { status?: string }) {
-  const value = status || "Unknown";
-  const normalized = value.toLowerCase();
-  const kind = normalized.includes("fail") ? "bad" : normalized.includes("complete") ? "good" : normalized.includes("run") || normalized.includes("queue") ? "warn" : "neutral";
-  return <span className={`pill ${kind}`}>{value}</span>;
+export function StatusPill({ status, value }: { status?: string; value?: string }) {
+  const displayValue = status ?? value ?? "Unknown";
+  const normalized = displayValue.toLowerCase();
+  const kind = normalized.includes("fail")
+    ? "bad"
+    : normalized.includes("complete")
+      ? "good"
+      : normalized.includes("run") || normalized.includes("queue")
+        ? "warn"
+        : "neutral";
+
+  return <span className={`pill ${kind}`}>{displayValue}</span>;
 }
 
-export function EmptyState({ title, message }: { title: string; message?: string }) {
+export function EmptyState({
+  title,
+  message,
+  description,
+}: {
+  title: string;
+  message?: string;
+  description?: string;
+}) {
+  const text = message ?? description;
+
   return (
-    <div className="empty">
-      <strong>{title}</strong>
-      {message && <span>{message}</span>}
+    <div className="empty-state">
+      <h3>{title}</h3>
+      {text && <p>{text}</p>}
     </div>
   );
 }
 
 export function JsonBlock({ value }: { value: unknown }) {
-  return <pre className="jsonBlock">{JSON.stringify(value, null, 2)}</pre>;
+  return <pre className="json-block">{JSON.stringify(value, null, 2)}</pre>;
 }

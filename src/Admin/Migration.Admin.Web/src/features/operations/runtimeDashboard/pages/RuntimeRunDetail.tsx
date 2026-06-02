@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { runtimeDashboardApi } from "../api/runtimeDashboardApi";
 import { Card, EmptyState, StatusPill } from "../../../../components/Card";
@@ -32,6 +32,7 @@ export function RuntimeRunDetail() {
     }
 
     setError(null);
+
     try {
       const result = await runtimeDashboardApi.runDetail(runId);
       setDetail(result);
@@ -47,51 +48,69 @@ export function RuntimeRunDetail() {
   }, [runId]);
 
   if (loading) {
-    return <EmptyState title="Loading runtime run" description="Reading run detail from the operational store." />;
+    return <LoadingError loading />;
   }
 
   if (error) {
-    return <LoadingError title="Runtime run failed to load" message={error} onRetry={() => void load()} />;
+    return <LoadingError message={error} onRetry={() => void load()} />;
   }
 
-  if (!detail) {
-    return <EmptyState title="Runtime run not found" description="No run detail was returned for this run id." />;
+  if (!detail || !detail.run) {
+    return <EmptyState title="Run not found" message="The requested runtime run was not returned by the Admin API." />;
   }
+
+  const run = detail.run;
+  const displayName = run.runName ?? run.runKey ?? run.runId;
 
   return (
     <>
-      <div className="page-header">
-        <div>
-          <Link to="/runtime-dashboard">â† Runtime dashboard</Link>
-          <h1>{detail.runName || detail.runKey || detail.runId}</h1>
-          <p>Operational runtime run detail from Azure SQL.</p>
+      <Link to="/operations/runtime-dashboard">â† Runtime dashboard</Link>
+
+      <Card
+        title={displayName}
+        subtitle="Operational runtime run detail from Azure SQL."
+        action={<button type="button" onClick={() => void load()}>Refresh</button>}
+      >
+        <div className="metric-grid">
+          <div>
+            <span>Total work items</span>
+            <strong>{formatNumber(run.workItemCount)}</strong>
+          </div>
+          <div>
+            <span>Completed</span>
+            <strong>{formatNumber(run.completedWorkItemCount)}</strong>
+          </div>
+          <div>
+            <span>Failed</span>
+            <strong>{formatNumber(run.failedWorkItemCount)}</strong>
+          </div>
+          <div>
+            <span>Status</span>
+            <StatusPill status={run.status ?? undefined} />
+          </div>
         </div>
-        <button type="button" onClick={() => void load()}>Refresh</button>
-      </div>
+      </Card>
 
-      <div className="metric-grid">
-        <Card title="Status"><StatusPill status={detail.status} /></Card>
-        <Card title="Work items">{formatNumber(detail.workItemCount)}</Card>
-        <Card title="Completed">{formatNumber(detail.completedWorkItemCount)}</Card>
-        <Card title="Failed">{formatNumber(detail.failedWorkItemCount)}</Card>
-      </div>
-
-      <section className="panel">
-        <h2>Run metadata</h2>
-        <dl className="definition-list">
-          <dt>Run ID</dt><dd>{detail.runId}</dd>
-          <dt>Run key</dt><dd>{detail.runKey ?? "â€”"}</dd>
-          <dt>Environment</dt><dd>{detail.environmentName ?? "â€”"}</dd>
-          <dt>Requested</dt><dd>{formatDate(detail.requestedAtUtc)}</dd>
-          <dt>Created</dt><dd>{formatDate(detail.createdAtUtc)}</dd>
-          <dt>Updated</dt><dd>{formatDate(detail.updatedAtUtc)}</dd>
+      <Card title="Run metadata">
+        <dl className="detail-grid">
+          <dt>Run ID</dt>
+          <dd>{run.runId}</dd>
+          <dt>Run key</dt>
+          <dd>{run.runKey ?? "â€”"}</dd>
+          <dt>Environment</dt>
+          <dd>{run.environmentName ?? "â€”"}</dd>
+          <dt>Requested</dt>
+          <dd>{formatDate(run.requestedAtUtc)}</dd>
+          <dt>Created</dt>
+          <dd>{formatDate(run.createdAtUtc)}</dd>
+          <dt>Updated</dt>
+          <dd>{formatDate(run.updatedAtUtc)}</dd>
         </dl>
-      </section>
+      </Card>
 
-      <section className="panel">
-        <h2>Work items</h2>
+      <Card title="Work items">
         {detail.workItems.length === 0 ? (
-          <EmptyState title="No work items" description="This run has no operational work items." />
+          <EmptyState title="No work items" message="No work items were returned for this run." />
         ) : (
           <table className="data-table">
             <thead>
@@ -108,8 +127,8 @@ export function RuntimeRunDetail() {
               {detail.workItems.map((item) => (
                 <tr key={item.workItemId}>
                   <td>{item.workItemId}</td>
-                  <td><StatusPill status={item.status} /></td>
-                  <td>{item.workType}</td>
+                  <td><StatusPill status={item.status ?? undefined} /></td>
+                  <td>{item.workType ?? "â€”"}</td>
                   <td>{formatNumber(item.attemptCount)}</td>
                   <td>{formatDate(item.updatedAtUtc)}</td>
                   <td>{item.lastErrorMessage ?? "â€”"}</td>
@@ -118,7 +137,7 @@ export function RuntimeRunDetail() {
             </tbody>
           </table>
         )}
-      </section>
+      </Card>
     </>
   );
 }

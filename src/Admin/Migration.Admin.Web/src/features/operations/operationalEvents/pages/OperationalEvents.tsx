@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { Card } from "../components/Card";
-import { LoadingError } from "../components/LoadingError";
+import { Card } from "../../../../components/Card";
+import { LoadingError } from "../../../../components/LoadingError";
 import { getOperationalEventTimeline } from "../api/operationalEventsApi";
 import type { OperationalEventTimelineItem } from "../types/operationalEvents";
 
@@ -120,4 +120,5 @@ export function OperationalEvents() {
     </div>
   );
 }
+
 

@@ -32,5 +32,5 @@ export async function getQueueDispatchProvider(): Promise<QueueDispatchProviderD
 }
 
 export async function probeQueueDispatch(): Promise<QueueDispatchProbeResponse> {
-  return apiPost<QueueDispatchProbeResponse>('/api/cloud/queue/dispatch/probe', {});
+  return apiPost<unknown, QueueDispatchProbeResponse>('/api/cloud/queue/dispatch/probe', {});
 }

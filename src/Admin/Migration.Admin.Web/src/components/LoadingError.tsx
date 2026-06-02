@@ -1,13 +1,14 @@
-type LoadingErrorProps = {
+﻿type LoadingErrorProps = {
   loading?: boolean;
+  title?: string;
   error?: string | null;
   message?: string | null;
   onRetry?: () => void;
 };
 
-export function LoadingError({ loading, error, message, onRetry }: LoadingErrorProps) {
+export function LoadingError({ loading, title, error, message, onRetry }: LoadingErrorProps) {
   if (loading) {
-    return <div className="notice">Loading…</div>;
+    return <p className="muted">Loadingâ€¦</p>;
   }
 
   const text = error ?? message;
@@ -17,8 +18,9 @@ export function LoadingError({ loading, error, message, onRetry }: LoadingErrorP
   }
 
   return (
-    <div className="notice error">
-      <span>{text}</span>
+    <div className="error-state">
+      {title && <h3>{title}</h3>}
+      <p>{text}</p>
       {onRetry && (
         <button type="button" onClick={onRetry}>
           Retry

@@ -34,5 +34,5 @@ export async function getQueueIdempotencyPlan(
 }
 
 export async function serializeQueueEnvelopeProbe(): Promise<QueueEnvelopeSerializationProbe> {
-  return apiPost<QueueEnvelopeSerializationProbe>('/api/cloud/queue/envelope/serialize', {});
+  return apiPost<unknown, QueueEnvelopeSerializationProbe>('/api/cloud/queue/envelope/serialize', {});
 }

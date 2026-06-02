@@ -48,7 +48,7 @@ export async function getAuditPersistenceProvider(): Promise<AuditPersistencePro
 }
 
 export async function probeAuditPersistence(): Promise<AuditPersistenceProbe> {
-  return apiPost<AuditPersistenceProbe>('/api/cloud/audit/persistence/probe', {});
+  return apiPost<unknown, AuditPersistenceProbe>('/api/cloud/audit/persistence/probe', {});
 }
 
 export async function getRecentAuditRecords(take = 25): Promise<RecentAuditRecordsResponse> {
