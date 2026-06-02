@@ -3,24 +3,12 @@ import { NavLink, Outlet } from "react-router-dom";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
-  { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/runs", label: "Runs", icon: Activity }, { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Gauge }, { to: "/execution-sessions", label: "Execution Sessions", icon: Workflow }, { to: "/failure-retry", label: "Failure Retry", icon: RefreshCcw },
-  { to: "/connectors", label: "Connectors", icon: PlugZap },
+  { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Gauge },
+  { to: "/execution-sessions", label: "Execution Sessions", icon: Workflow },
+  { to: "/failure-retry", label: "Failure Retry", icon: RefreshCcw },
+  { to: "/operations/operational-events", label: "Operational Events", icon: Activity },
   { to: "/connector-configuration", label: "Connector Configuration", icon: Settings },
-  { to: "/credentials", label: "Credentials", icon: KeyRound },
-  { to: "/credential-vault", label: "Credential Vault", icon: KeyRound },
-  { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Activity },
-  { to: "/execution-sessions", label: "Execution Sessions", icon: Activity },
-  { to: "/failure-retry", label: "Failure Retry", icon: Activity },
-  { to: "/connector-configuration", label: "Connector Configuration", icon: PlugZap },
-  { to: "/execution-worker-telemetry", label: "Worker Telemetry", icon: Activity },
-  { to: "/notification-routing", label: "Notification Routing", icon: GitBranch },
-  { to: "/audit-trail", label: "Audit Trail", icon: Activity },
-  { to: "/command-center", label: "Command Center", icon: Boxes },
-  { to: "/artifacts", label: "Artifacts", icon: Amphora },
-  { to: "/manifest-builder", label: "Manifest Builder", icon: FileSpreadsheet },
-  { to: "/taxonomy-builder", label: "Taxonomy Builder", icon: Tags },
-  { to: "/mapping-builder", label: "Mapping Builder", icon: Map }
+  { to: "/credential-vault", label: "Credential Vault", icon: KeyRound }
 ];
 
 export function Layout() {
@@ -61,6 +49,7 @@ export function Layout() {
     </div>
   );
 }
+
 
 
 
