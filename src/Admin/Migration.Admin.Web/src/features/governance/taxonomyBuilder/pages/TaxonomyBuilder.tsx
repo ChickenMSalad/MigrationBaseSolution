@@ -52,7 +52,7 @@ function BuilderWorkspace({ title, apiPath }: BuilderWorkspaceProps) {
         </div>
       </Card>
       {status === "error" && message && <LoadingError message={message} />}
-      {status === "success" && message && <Card title="Endpoint reachable" message={message} />}
+      {status === "success" && message && <Card title="Endpoint reachable" description={message} />}
     </div>
   );
 }
@@ -60,3 +60,5 @@ function BuilderWorkspace({ title, apiPath }: BuilderWorkspaceProps) {
 export function TaxonomyBuilder() {
   return <BuilderWorkspace title="Taxonomy Builder" apiPath="/api/taxonomy-builder/build" />;
 }
+
+
