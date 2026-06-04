@@ -1,3 +1,5 @@
+import { apiDelete, apiGet, apiPost } from '../api/core/adminApiClient';
+
 export type ArtifactKind = 'Unknown' | 'Manifest' | 'Mapping' | 'Taxonomy' | 'Binary' | 'Report' | 'Other';
 
 export interface ControlPlaneArtifactRecord {
@@ -25,9 +27,8 @@ export async function listArtifacts(kind?: ArtifactKind, projectId?: string): Pr
   const params = new URLSearchParams();
   if (kind) params.set('kind', kind);
   if (projectId) params.set('projectId', projectId);
-  const response = await fetch(`/api/artifacts?${params.toString()}`);
-  if (!response.ok) throw new Error(`Failed to list artifacts (${response.status})`);
-  return response.json();
+  const query = params.toString();
+  return apiGet<ControlPlaneArtifactRecord[]>(`/api/artifacts${query ? `?${query}` : ''}`);
 }
 
 export async function uploadArtifact(file: File, kind: ArtifactKind, projectId?: string, description?: string): Promise<ControlPlaneArtifactRecord> {
@@ -37,26 +38,13 @@ export async function uploadArtifact(file: File, kind: ArtifactKind, projectId?:
   if (projectId) form.append('projectId', projectId);
   if (description) form.append('description', description);
 
-  const response = await fetch('/api/artifacts', {
-    method: 'POST',
-    body: form,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Failed to upload artifact (${response.status})`);
-  }
-
-  return response.json();
+  return apiPost<ControlPlaneArtifactRecord>('/api/artifacts', form);
 }
 
 export async function getManifestPreview(artifactId: string, take = 10): Promise<ManifestPreview> {
-  const response = await fetch(`/api/artifacts/${artifactId}/manifest-preview?take=${take}`);
-  if (!response.ok) throw new Error(`Failed to load manifest preview (${response.status})`);
-  return response.json();
+  return apiGet<ManifestPreview>(`/api/artifacts/${encodeURIComponent(artifactId)}/manifest-preview?take=${encodeURIComponent(String(take))}`);
 }
 
 export async function deleteArtifact(artifactId: string): Promise<void> {
-  const response = await fetch(`/api/artifacts/${artifactId}`, { method: 'DELETE' });
-  if (!response.ok && response.status !== 404) throw new Error(`Failed to delete artifact (${response.status})`);
+  await apiDelete(`/api/artifacts/${encodeURIComponent(artifactId)}`);
 }

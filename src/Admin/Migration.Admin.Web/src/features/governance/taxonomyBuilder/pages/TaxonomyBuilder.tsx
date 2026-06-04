@@ -1,6 +1,7 @@
 ﻿import { useState } from "react";
 import { Card } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
+import { adminApiBaseUrl } from "../../../../lib/adminApi";
 
 type ProbeState = "idle" | "running" | "success" | "error";
 
@@ -18,7 +19,7 @@ function BuilderWorkspace({ title, apiPath }: BuilderWorkspaceProps) {
     setMessage(null);
 
     try {
-      const response = await fetch(apiPath, { method: "OPTIONS" });
+      const response = await fetch(`${adminApiBaseUrl}${apiPath}`, { method: "OPTIONS" });
       if (response.ok || response.status === 204 || response.status === 405) {
         setStatus("success");
         setMessage("Builder endpoint is reachable. HTTP " + String(response.status) + ".");

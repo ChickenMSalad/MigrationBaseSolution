@@ -67,7 +67,9 @@ app.MapOperationalConnectorCredentialVaultEndpoints();
 app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
+
 app.Run();
+
 
 
 

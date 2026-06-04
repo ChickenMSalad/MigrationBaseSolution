@@ -1,3 +1,5 @@
+const API_BASE_URL = (import.meta.env.VITE_ADMIN_API_BASE_URL ?? '').replace(/\/$/, '');
+
 export type TaxonomyTargetType = "Bynder" | "Cloudinary" | "Aprimo";
 
 export interface TaxonomyTargetOption {
@@ -13,7 +15,7 @@ export interface TaxonomyExportRequest {
 }
 
 export async function getTaxonomyTargets(): Promise<TaxonomyTargetOption[]> {
-  const response = await fetch("/api/taxonomy/targets");
+  const response = await fetch(`${API_BASE_URL}/api/taxonomy/targets`);
 
   if (!response.ok) {
     throw new Error(await response.text());
@@ -23,7 +25,7 @@ export async function getTaxonomyTargets(): Promise<TaxonomyTargetOption[]> {
 }
 
 export async function exportTaxonomyExcel(request: TaxonomyExportRequest): Promise<void> {
-  const response = await fetch("/api/taxonomy/export", {
+  const response = await fetch(`${API_BASE_URL}/api/taxonomy/export`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"

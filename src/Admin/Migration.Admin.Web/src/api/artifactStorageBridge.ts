@@ -1,6 +1,8 @@
-import { apiDelete, apiGet, apiPost } from './core/adminApiClient';
+import { apiDelete, apiPost } from './core/adminApiClient';
 import type { ArtifactManifestIndex } from './artifactManifestIndex';
 import type { ArtifactStorageDescriptor } from './artifactStorage';
+
+const API_BASE_URL = (import.meta.env.VITE_ADMIN_API_BASE_URL ?? '').replace(/\/$/, '');
 
 export type ArtifactStorageBridgeUploadResponse = {
   artifact: ArtifactStorageDescriptor;
@@ -37,7 +39,7 @@ export async function downloadArtifactBridge(
   fileName: string
 ): Promise<Blob> {
   const path = `/api/cloud/artifacts/${encodeURIComponent(artifactKind)}/${encodeURIComponent(artifactId)}/files/${encodeURIComponent(fileName)}`;
-  const response = await fetch(path, { method: 'GET' });
+  const response = await fetch(`${API_BASE_URL}${path}`, { method: 'GET' });
 
   if (!response.ok) {
     throw new Error(`Artifact download failed: ${response.status} ${response.statusText}`);

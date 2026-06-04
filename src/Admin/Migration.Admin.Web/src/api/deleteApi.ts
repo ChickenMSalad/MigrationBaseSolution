@@ -1,59 +1,21 @@
-export async function deleteProject(projectId: string, includeRuns = false) {
-  const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}?includeRuns=${includeRuns}`, {
-    method: "DELETE"
-  });
+import { apiDelete } from './core/adminApiClient';
 
-  if (!response.ok) {
-    throw new Error(await response.text());
-  }
-
-  return response.json();
+export function deleteProject(projectId: string, includeRuns = false) {
+  return apiDelete(`/api/projects/${encodeURIComponent(projectId)}?includeRuns=${includeRuns}`);
 }
 
-export async function deleteRun(runId: string) {
-  const response = await fetch(`/api/runs/${encodeURIComponent(runId)}`, {
-    method: "DELETE"
-  });
-
-  if (!response.ok) {
-    throw new Error(await response.text());
-  }
-
-  return response.json();
+export function deleteRun(runId: string) {
+  return apiDelete(`/api/runs/${encodeURIComponent(runId)}`);
 }
 
-export async function deleteCredential(credentialId: string) {
-  const response = await fetch(`/api/credentials/${encodeURIComponent(credentialId)}`, {
-    method: "DELETE"
-  });
-
-  if (!response.ok) {
-    throw new Error(await response.text());
-  }
-
-  return response.json();
+export function deleteCredential(credentialId: string) {
+  return apiDelete(`/api/credentials/${encodeURIComponent(credentialId)}`);
 }
 
-export async function deleteArtifact(artifactId: string) {
-  const response = await fetch(`/api/artifacts/${encodeURIComponent(artifactId)}`, {
-    method: "DELETE"
-  });
-
-  if (!response.ok) {
-    throw new Error(await response.text());
-  }
-
-  return response.json();
+export function deleteArtifact(artifactId: string) {
+  return apiDelete(`/api/artifacts/${encodeURIComponent(artifactId)}`);
 }
 
-export async function deleteConnector(connectorType: string) {
-  const response = await fetch(`/api/connectors/${encodeURIComponent(connectorType)}`, {
-    method: "DELETE"
-  });
-
-  if (!response.ok) {
-    throw new Error(await response.text());
-  }
-
-  return response.json();
+export function deleteConnector(connectorType: string) {
+  return apiDelete(`/api/connectors/${encodeURIComponent(connectorType)}`);
 }
