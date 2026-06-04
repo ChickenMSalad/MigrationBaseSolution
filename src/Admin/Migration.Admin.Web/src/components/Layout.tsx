@@ -1,4 +1,4 @@
-import { Activity, Boxes, FileSpreadsheet, Gauge, Home, KeyRound, Map, RefreshCcw, Settings, Tags, Workflow } from "lucide-react";
+import { Activity, Gauge, Workflow, RefreshCcw, Amphora, Boxes, FileSpreadsheet, FolderKanban, Home, KeyRound, Map, PlugZap, Tags, Settings, GitBranch } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const nav = [
@@ -6,12 +6,12 @@ const nav = [
   { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Gauge },
   { to: "/execution-sessions", label: "Execution Sessions", icon: Workflow },
   { to: "/failure-retry", label: "Failure Retry", icon: RefreshCcw },
-  { to: "/operations/operational-events", label: "Operational Events", icon: Activity },
   { to: "/manifest-builder", label: "Manifest Builder", icon: FileSpreadsheet },
   { to: "/mapping-builder", label: "Mapping Builder", icon: Map },
   { to: "/taxonomy-builder", label: "Taxonomy Builder", icon: Tags },
+  { to: "/operations/operational-events", label: "Operational Events", icon: Activity },
   { to: "/connector-configuration", label: "Connector Configuration", icon: Settings },
-  { to: "/credential-vault", label: "Credential Vault", icon: KeyRound },
+  { to: "/credential-vault", label: "Credential Vault", icon: KeyRound }
 ];
 
 export function Layout() {
@@ -52,3 +52,8 @@ export function Layout() {
     </div>
   );
 }
+
+
+
+
+

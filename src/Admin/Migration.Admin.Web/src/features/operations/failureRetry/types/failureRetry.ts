@@ -23,4 +23,5 @@ export type FailureRetrySummary = {
 export type FailureRetryResponse = {
   summary: FailureRetrySummary;
   workItems: FailureRetryWorkItem[];
+  message?: string | null;
 };

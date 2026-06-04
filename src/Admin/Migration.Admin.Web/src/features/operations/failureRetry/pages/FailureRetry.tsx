@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { failureRetryApi } from "../api/failureRetryApi";
 import type { FailureRetryResponse, FailureRetryWorkItem } from "../types/failureRetry";
 
@@ -69,6 +69,7 @@ export function FailureRetry() {
 
   const workItems = state.response?.workItems ?? [];
   const summary = state.response?.summary;
+  const infoMessage = state.response?.message;
 
   return (
     <section className="page-stack">
@@ -84,6 +85,7 @@ export function FailureRetry() {
 
       {state.error ? <div className="error-card">{state.error}</div> : null}
       {state.loading ? <div className="loading-card">Loading failure retry state...</div> : null}
+      {!state.loading && infoMessage ? <div className="info-card">{infoMessage}</div> : null}
 
       {!state.loading && summary ? (
         <div className="metric-grid">
