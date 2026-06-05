@@ -242,3 +242,6 @@ site.js
 
 src/Manifests/Migration.Manifest.Csv/bin/
 src/Manifests/Migration.Manifest.Csv/obj/
+
+# temporary repository cleanup inventories
+cleanup-*.txt
