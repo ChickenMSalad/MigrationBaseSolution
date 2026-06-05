@@ -21,12 +21,15 @@ namespace Migration.Infrastructure.State.OperationalStore.Sql
         public string ResolveConnectionString()
         {
             var connectionString =
-                _configuration.GetConnectionString("OperationalStore");
+                _configuration.GetConnectionString("OperationalSql")
+                ?? _configuration.GetConnectionString("OperationalStore")
+                ?? _configuration["OperationalSql:ConnectionString"]
+                ?? _configuration["OperationalStore:ConnectionString"];
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {
                 throw new InvalidOperationException(
-                    "Connection string 'OperationalStore' was not configured.");
+                    "Operational SQL connection string is not configured. Configure ConnectionStrings:OperationalSql.");
             }
 
             return connectionString;
