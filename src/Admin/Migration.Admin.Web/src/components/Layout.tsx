@@ -1,4 +1,4 @@
-import { Activity, Gauge, Workflow, RefreshCcw, Amphora, Boxes, FileSpreadsheet, FolderKanban, Home, KeyRound, Map, PlugZap, Tags, Settings, GitBranch } from "lucide-react";
+import { Activity, Gauge, Workflow, RefreshCcw, FileSpreadsheet, Home, KeyRound, Map, Tags, Settings } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 const nav = [
@@ -11,7 +11,7 @@ const nav = [
   { to: "/taxonomy-builder", label: "Taxonomy Builder", icon: Tags },
   { to: "/operations/operational-events", label: "Operational Events", icon: Activity },
   { to: "/connector-configuration", label: "Connector Configuration", icon: Settings },
-  { to: "/credential-vault", label: "Credential Vault", icon: KeyRound }
+  { to: "/credentials", label: "Credentials", icon: KeyRound }
 ];
 
 export function Layout() {
@@ -19,10 +19,10 @@ export function Layout() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brandIcon"><Boxes size={22} /></div>
+          <div className="brandIcon">M</div>
           <div>
-            <div className="brandTitle">Migration Admin</div>
-            <div className="brandSub">Control Plane v1</div>
+            <strong>Migration Admin</strong>
+            <span>Control Plane v1</span>
           </div>
         </div>
 
@@ -36,8 +36,8 @@ export function Layout() {
                 end={item.end}
                 className={({ isActive }) => isActive ? "navItem active" : "navItem"}
               >
-                <Icon size={20} />
-                <span>{item.label}</span>
+                <Icon size={18} />
+                {item.label}
               </NavLink>
             );
           })}
@@ -45,15 +45,9 @@ export function Layout() {
 
         <div className="sidebarFooter">API-driven shell</div>
       </aside>
-
-      <main className="main">
+      <main className="content">
         <Outlet />
       </main>
     </div>
   );
 }
-
-
-
-
-
