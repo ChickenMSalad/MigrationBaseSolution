@@ -143,6 +143,7 @@ logs/
 azurite/
 local-azurite/
 
+__azurite_db*.json
 __azurite_db_*.json
 __azurite_db_*
 
@@ -182,6 +183,11 @@ retry-output/
 
 # Runtime/local manifest profile data.
 /profiles/manifests/
+
+#artifacts
+/artifacts/publish/
+deployed.js
+site.js
 
 # =========================================================
 # Data Exports
