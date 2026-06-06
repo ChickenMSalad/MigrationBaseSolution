@@ -1,4 +1,3 @@
-using Migration.Connectors.Sources.WebDam.Clients;
 using Migration.ControlPlane.Artifacts;
 using Migration.ControlPlane.ManifestBuilder;
 
@@ -12,93 +11,98 @@ public static class ManifestBuilderEndpoints
             .WithTags("Manifest Builder");
 
         group.MapGet("/sources", (ManifestBuilderServiceRegistry registry) =>
-        {
-            return Results.Ok(registry.GetSources());
-        })
-        .WithName("GetManifestBuilderSources")
-        .WithSummary("Lists source connectors and services that can generate manifest artifacts.");
+            {
+                return Results.Ok(registry.GetSources());
+            })
+            .WithName("GetManifestBuilderSources")
+            .WithSummary("Lists source connectors and services that can generate manifest artifacts.");
 
         group.MapPost("/build", async (
-            BuildSourceManifestRequest request,
-            ManifestBuilderServiceRegistry registry,
-            IArtifactStore artifacts,
-            CancellationToken cancellationToken) =>
-        {
-            if (string.IsNullOrWhiteSpace(request.SourceType))
+                BuildSourceManifestRequest request,
+                ManifestBuilderServiceRegistry registry,
+                IArtifactStore artifacts,
+                CancellationToken cancellationToken) =>
             {
-                return Results.BadRequest(new { error = "SourceType is required." });
-            }
-
-            if (string.IsNullOrWhiteSpace(request.ServiceName))
-            {
-                return Results.BadRequest(new { error = "ServiceName is required." });
-            }
-
-            var service = registry.TryGetService(request.SourceType, request.ServiceName);
-
-            if (service is null)
-            {
-                return Results.BadRequest(new
+                if (string.IsNullOrWhiteSpace(request.SourceType))
                 {
-                    error = $"No manifest builder service is registered for source '{request.SourceType}' and service '{request.ServiceName}'."
-                });
-            }
+                    return Results.BadRequest(new { error = "SourceType is required." });
+                }
 
-            BuildSourceManifestResult result;
+                if (string.IsNullOrWhiteSpace(request.ServiceName))
+                {
+                    return Results.BadRequest(new { error = "ServiceName is required." });
+                }
 
-            //try
-            //{
-            //    result = await service.BuildAsync(request, cancellationToken).ConfigureAwait(false);
-            //}
-            //catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
-            //{
-            //    return Results.BadRequest(new { error = ex.Message });
-            //}
+                var service = registry.TryGetService(request.SourceType, request.ServiceName);
+                if (service is null)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = $"No manifest builder service is registered for source '{request.SourceType}' and service '{request.ServiceName}'."
+                    });
+                }
 
-            try
-            {
-                result = await service.BuildAsync(request, cancellationToken).ConfigureAwait(false);
-                return Results.Ok(result);
-            }
-            catch (WebDamException ex)
-            {
-                return Results.Problem(
-                    title: "WebDam token request failed.",
-                    detail: $"Status={(int?)ex.StatusCode}; Response={ex.ResponseBody}",
-                    statusCode: StatusCodes.Status502BadGateway);
-            }
+                BuildSourceManifestResult result;
+                try
+                {
+                    result = await service.BuildAsync(request, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+                {
+                    return Results.BadRequest(new { error = ex.Message });
+                }
 
-            //await using var stream = new MemoryStream(result.ContentBytes);
+                var contentType = string.IsNullOrWhiteSpace(result.ContentType)
+                    ? "application/octet-stream"
+                    : result.ContentType;
 
-            await using var stream = result.ContentBytes is not null
-                ? new MemoryStream(result.ContentBytes)
-                : new MemoryStream(System.Text.Encoding.UTF8.GetBytes(result.Content ?? ""));
+                await using var stream = CreateManifestContentStream(result);
 
-            var artifact = await artifacts.SaveAsync(
-                stream,
-                result.FileName,
-                string.IsNullOrWhiteSpace(result.ContentType) ? "application/octet-stream" : result.ContentType,
-                ArtifactKind.Manifest,
-                projectId: null,
-                description: $"Generated by Manifest Builder from {result.SourceType}/{result.ServiceName}",
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+                var artifact = await artifacts.SaveAsync(
+                        stream,
+                        result.FileName,
+                        contentType,
+                        ArtifactKind.Manifest,
+                        projectId: null,
+                        description: $"Generated by Manifest Builder from {result.SourceType}/{result.ServiceName}",
+                        metadata: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                        {
+                            ["sourceType"] = result.SourceType,
+                            ["serviceName"] = result.ServiceName,
+                            ["rowCount"] = result.RowCount.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        },
+                        cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
 
-            return Results.Created(
-                $"/api/artifacts/{artifact.ArtifactId}",
-                new BuildSourceManifestResponse(
-                    artifact.ArtifactId,
-                    artifact.ArtifactId,
-                    result.SourceType,
-                    result.ServiceName,
-                    artifact.FileName,
-                    artifact.ContentType,
-                    result.RowCount,
-                    $"/api/artifacts/{Uri.EscapeDataString(artifact.ArtifactId)}/download",
-                    artifact.CreatedUtc));
-        })
-        .WithName("BuildSourceManifest")
-        .WithSummary("Runs a source manifest service and saves the generated file as a Manifest artifact.");
+                var downloadUrl = $"/api/artifacts/{Uri.EscapeDataString(artifact.ArtifactId)}/download";
+
+                return Results.Created(
+                    $"/api/artifacts/{Uri.EscapeDataString(artifact.ArtifactId)}",
+                    new BuildSourceManifestResponse(
+                        artifact.ArtifactId,
+                        artifact.ArtifactId,
+                        result.SourceType,
+                        result.ServiceName,
+                        artifact.FileName,
+                        artifact.ContentType,
+                        result.RowCount,
+                        downloadUrl,
+                        artifact.CreatedUtc));
+            })
+            .WithName("BuildSourceManifest")
+            .WithSummary("Runs a source manifest service, saves the generated file as a Manifest artifact, and returns only artifact metadata.");
 
         return app;
+    }
+
+    private static MemoryStream CreateManifestContentStream(BuildSourceManifestResult result)
+    {
+        if (result.ContentBytes is { Length: > 0 })
+        {
+            return new MemoryStream(result.ContentBytes, writable: false);
+        }
+
+        var content = result.Content ?? string.Empty;
+        return new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content), writable: false);
     }
 }

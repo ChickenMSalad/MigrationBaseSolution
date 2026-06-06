@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-
 import { api } from "../../../../api/client";
 import { Card } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
-import type { BuildSourceManifestResponse, CredentialSetSummary, ManifestBuilderSourceDescriptor } from "../../../../types/api";
+import type {
+  BuildSourceManifestResponse,
+  CredentialSetSummary,
+  ManifestBuilderSourceDescriptor
+} from "../../../../types/api";
+
+type ManifestOptions = Record<string, string>;
 
 export function ManifestBuilder() {
   const [sources, setSources] = useState<ManifestBuilderSourceDescriptor[]>([]);
   const [credentials, setCredentials] = useState<CredentialSetSummary[]>([]);
-
   const [sourceType, setSourceType] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [credentialSetId, setCredentialSetId] = useState("");
-  const [options, setOptions] = useState<Record<string, string>>({});
-
+  const [options, setOptions] = useState<ManifestOptions>({});
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
   const [result, setResult] = useState<BuildSourceManifestResponse | null>(null);
@@ -29,27 +32,10 @@ export function ManifestBuilder() {
     [selectedSource, serviceName]
   );
 
-    const matchingCredentials = useMemo(
-        () => credentials.filter(credential => {
-            const role = credential.connectorRole?.toLowerCase();
-            const credentialType = credential.connectorType?.toLowerCase();
-            const selectedSourceType = sourceType.toLowerCase();
-
-            if (role !== "source") {
-                return false;
-            }
-
-            if (credentialType === selectedSourceType) {
-                return true;
-            }
-
-            return selectedSourceType === "contenthub" &&
-                (credentialType === "sitecore" ||
-                    credentialType === "contenthub" ||
-                    credentialType === "content hub");
-        }),
-        [credentials, sourceType]
-    );
+  const matchingCredentials = useMemo(
+    () => credentials.filter(credential => credentialMatchesSource(credential, sourceType)),
+    [credentials, sourceType]
+  );
 
   useEffect(() => {
     async function load() {
@@ -68,10 +54,7 @@ export function ManifestBuilder() {
         if (loadedSources.length > 0) {
           const firstSource = loadedSources[0];
           setSourceType(firstSource.sourceType);
-
-          if (firstSource.services.length > 0) {
-            setServiceName(firstSource.services[0].serviceName);
-          }
+          setServiceName(firstSource.services[0]?.serviceName ?? "");
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
@@ -98,29 +81,12 @@ export function ManifestBuilder() {
     setResult(null);
   }, [selectedSource, serviceName]);
 
-  function credentialMatchesSource(credential: CredentialSetSummary, selectedSourceType: string) {
-    const credentialType = credential.connectorType?.toLowerCase();
-    const credentialRole = credential.connectorRole?.toLowerCase();
-    const normalizedSourceType = selectedSourceType.toLowerCase();
-
-    if (credentialType !== normalizedSourceType) {
-      return false;
-    }
-
-    if (normalizedSourceType === "bynder") {
-      return credentialRole === "source" || credentialRole === "target";
-    }
-
-    return credentialRole === "source";
-  }
-
   function setOption(name: string, value: string) {
     setOptions(current => ({ ...current, [name]: value }));
   }
 
   function isFolderListOption(name: string) {
     const normalizedName = name.toLowerCase();
-
     return sourceType.toLowerCase() === "aem" &&
       (normalizedName === "folders" ||
         normalizedName === "folderpaths" ||
@@ -149,38 +115,36 @@ export function ManifestBuilder() {
     }
   }
 
+  const artifactId = result?.artifactId ?? result?.manifestId ?? result?.artifact?.artifactId ?? "";
+  const downloadUrl = artifactId ? api.artifactDownloadUrl(artifactId) : "";
+  const fileName = result?.fileName ?? result?.artifact?.fileName ?? "manifest";
+
   return (
-    <div className="pageStack manifestBuilder">
+    <div className="pageStack  manifestBuilder">
       <div className="pageHeader">
-        <div>
-          <h1>Manifest Builder</h1>
-          <p className="muted">
-            Choose a source, choose credentials, run a manifest service, and create a Manifest artifact.
-          </p>
-        </div>
+        <h1>Manifest Builder</h1>
+        <p>Choose a source, choose credentials, run a manifest service, and create a Manifest artifact.</p>
       </div>
 
       {error && <LoadingError message={error} />}
 
       <Card title="Build Manifest">
-        <p className="muted">
-          Generated manifests are saved under <strong>Artifacts</strong> as kind <strong>Manifest</strong>.
-          You can download the new manifest here immediately or manage it later from the Artifacts page.
+        <p className="mutedText">
+          Generated manifests are persisted under <strong>Artifacts</strong> as kind <strong>Manifest</strong>. The response only returns artifact metadata so large manifests are not pushed back through the browser payload.
         </p>
 
         {loading ? (
-          <p className="muted">Loading manifest sources…</p>
+          <p>Loading manifest sources…</p>
         ) : sources.length === 0 ? (
-          <p className="muted">No manifest builder services are registered.</p>
+          <p>No manifest builder services are registered.</p>
         ) : (
+                <>
           <div className="formGrid">
             <label>
               Source
               <select value={sourceType} onChange={event => setSourceType(event.target.value)}>
                 {sources.map(source => (
-                  <option key={source.sourceType} value={source.sourceType}>
-                    {source.displayName}
-                  </option>
+                  <option key={source.sourceType} value={source.sourceType}>{source.displayName}</option>
                 ))}
               </select>
             </label>
@@ -189,22 +153,15 @@ export function ManifestBuilder() {
               Service
               <select value={serviceName} onChange={event => setServiceName(event.target.value)}>
                 {selectedSource?.services.map(service => (
-                  <option key={service.serviceName} value={service.serviceName}>
-                    {service.displayName}
-                  </option>
+                  <option key={service.serviceName} value={service.serviceName}>{service.displayName}</option>
                 ))}
               </select>
-              {selectedService?.description && (
-                <span className="helpText">{selectedService.description}</span>
-              )}
+              {selectedService?.description && <span className="helpText">{selectedService.description}</span>}
             </label>
 
             <label>
               Credentials
-              <select
-                value={credentialSetId}
-                onChange={event => setCredentialSetId(event.target.value)}
-              >
+              <select value={credentialSetId} onChange={event => setCredentialSetId(event.target.value)}>
                 <option value="">Use configured/default credentials</option>
                 {matchingCredentials.map(credential => (
                   <option key={credential.credentialSetId} value={credential.credentialSetId}>
@@ -212,14 +169,12 @@ export function ManifestBuilder() {
                   </option>
                 ))}
               </select>
-              <span className="helpText">
-                Choose a saved credential set for this source, or use configured/default credentials.
-              </span>
+              <span className="helpText">Choose a saved credential set for this source, or use configured/default credentials.</span>
             </label>
 
             {selectedService?.options.map(option => (
               <label key={option.name}>
-                {option.label}
+                {option.label ?? option.name}
                 {isFolderListOption(option.name) ? (
                   <textarea
                     value={options[option.name] ?? ""}
@@ -239,51 +194,66 @@ export function ManifestBuilder() {
                 {option.description && <span className="helpText">{option.description}</span>}
               </label>
             ))}
-
-            <div className="buttonRow">
-              <button
-                type="button"
-                className="primaryButton"
-                onClick={() => void buildManifest()}
-                disabled={building || !sourceType || !serviceName}
-              >
-                {building ? "Building…" : "Build Manifest"}
-              </button>
-            </div>
           </div>
+          <div className="buttonRow">
+                <button
+                    type="button"
+                    className="primaryButton"
+                    onClick={() => void buildManifest()}
+                    disabled={building || !sourceType || !serviceName}
+                >
+                    {building ? "Building…" : "Build Manifest"}
+                </button>
+          </div>
+          </>
         )}
       </Card>
 
       {result && (
         <Card title="Manifest Artifact Created">
           <p className="successText">
-            Manifest saved to Artifacts as <strong>{result.fileName}</strong>.
+            Manifest saved to Artifacts as <strong>{fileName}</strong>.
           </p>
-
           <div className="detailGrid">
             <span>Artifact ID</span>
-            <strong>{result.artifactId || result.manifestId}</strong>
-
+            <strong>{artifactId || "Not returned"}</strong>
             <span>Source</span>
             <strong>{result.sourceType}</strong>
-
             <span>Service</span>
             <strong>{result.serviceName}</strong>
-
             <span>Rows</span>
             <strong>{result.rowCount}</strong>
           </div>
-
           <div className="buttonRow">
-            <a className="primaryButton" href={result.downloadUrl}>
-              Download Manifest
-            </a>
-            <a className="secondaryButton" href="/artifacts">
-              View in Artifacts
-            </a>
+            {downloadUrl ? (
+              <a className="primaryButton" href={downloadUrl} download={fileName}>
+                Download Manifest
+              </a>
+            ) : (
+              <button type="button" className="primaryButton" disabled>
+                Download unavailable
+              </button>
+            )}
+            <a className="secondaryButton" href="/artifacts">View in Artifacts</a>
           </div>
         </Card>
       )}
     </div>
   );
+}
+
+function credentialMatchesSource(credential: CredentialSetSummary, selectedSourceType: string) {
+  const credentialType = credential.connectorType?.toLowerCase();
+  const credentialRole = credential.connectorRole?.toLowerCase();
+  const normalizedSourceType = selectedSourceType.toLowerCase();
+
+  if (credentialType !== normalizedSourceType) {
+    return false;
+  }
+
+  if (normalizedSourceType === "bynder" || normalizedSourceType === "webdam") {
+    return credentialRole === "source" || credentialRole === "target";
+  }
+
+  return credentialRole === "source";
 }
