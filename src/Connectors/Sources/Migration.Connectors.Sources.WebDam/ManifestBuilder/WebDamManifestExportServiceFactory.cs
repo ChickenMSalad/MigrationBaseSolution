@@ -10,16 +10,19 @@ namespace Migration.Connectors.Sources.WebDam.ManifestBuilder;
 
 public sealed class WebDamManifestExportServiceFactory
 {
+    private readonly ICredentialResolver _credentialResolver;
     private readonly ICredentialSetStore _credentialSetStore;
     private readonly IOptions<WebDamOptions> _configuredOptions;
     private readonly ILoggerFactory _loggerFactory;
 
     public WebDamManifestExportServiceFactory(
+        ICredentialResolver credentialResolver,
         ICredentialSetStore credentialSetStore,
         IOptions<WebDamOptions> configuredOptions,
         ILoggerFactory loggerFactory)
     {
         _credentialSetStore = credentialSetStore ?? throw new ArgumentNullException(nameof(credentialSetStore));
+        _credentialResolver = credentialResolver ?? throw new ArgumentNullException(nameof(credentialResolver));
         _configuredOptions = configuredOptions ?? throw new ArgumentNullException(nameof(configuredOptions));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
     }
@@ -37,13 +40,17 @@ public sealed class WebDamManifestExportServiceFactory
                 .ConfigureAwait(false)
                 ?? throw new InvalidOperationException($"Credential set '{credentialSetId}' was not found.");
 
+            var resolvedValues = await _credentialResolver
+                .ResolveAsync(credentialSetId, cancellationToken)
+                .ConfigureAwait(false);
+
             if (!string.Equals(credentialSet.ConnectorType, "webdam", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
                     $"Credential set '{credentialSetId}' is for connector '{credentialSet.ConnectorType}', not WebDam.");
             }
 
-            ApplyCredentialValues(options, credentialSet.Values);
+            ApplyCredentialValues(options, resolvedValues);
         }
 
         ValidateUsableCredentials(options, credentialSetId);

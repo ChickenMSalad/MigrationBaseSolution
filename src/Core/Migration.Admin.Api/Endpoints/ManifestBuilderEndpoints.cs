@@ -1,3 +1,4 @@
+using Migration.Connectors.Sources.WebDam.Clients;
 using Migration.ControlPlane.Artifacts;
 using Migration.ControlPlane.ManifestBuilder;
 
@@ -45,13 +46,26 @@ public static class ManifestBuilderEndpoints
 
             BuildSourceManifestResult result;
 
+            //try
+            //{
+            //    result = await service.BuildAsync(request, cancellationToken).ConfigureAwait(false);
+            //}
+            //catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+            //{
+            //    return Results.BadRequest(new { error = ex.Message });
+            //}
+
             try
             {
                 result = await service.BuildAsync(request, cancellationToken).ConfigureAwait(false);
+                return Results.Ok(result);
             }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+            catch (WebDamException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.Problem(
+                    title: "WebDam token request failed.",
+                    detail: $"Status={(int?)ex.StatusCode}; Response={ex.ResponseBody}",
+                    statusCode: StatusCodes.Status502BadGateway);
             }
 
             //await using var stream = new MemoryStream(result.ContentBytes);

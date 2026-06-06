@@ -1,15 +1,15 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+using System.Text;
 using Migration.ControlPlane.Models;
 using Migration.ControlPlane.Services;
 using Migration.Orchestration.Abstractions;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 
 namespace Migration.Admin.Api.Endpoints;
 
 public static class CredentialEndpointExtensions
 {
+
     public static RouteGroupBuilder MapCredentialEndpoints(this RouteGroupBuilder api)
     {
         api.MapGet("/credentials", async (ICredentialSetStore store, CancellationToken ct) =>
@@ -41,18 +41,24 @@ public static class CredentialEndpointExtensions
             IHostEnvironment environment,
             CancellationToken ct) =>
         {
-            var validation = ValidateCreateRequest(request, configuration, environment);
+            var validation = ValidateCreateRequest(request);
             if (validation is not null)
             {
                 return validation;
             }
 
-            var credentialSet = factory.Create(request);
+            var prepared = await PrepareCreateRequestAsync(request, configuration, environment, ct).ConfigureAwait(false);
+            if (prepared.Error is not null)
+            {
+                return prepared.Error;
+            }
+
+            var credentialSet = factory.Create(prepared.Request!);
             await store.SaveAsync(credentialSet, ct).ConfigureAwait(false);
             return Results.Created($"/api/credentials/{credentialSet.CredentialSetId}", CredentialSetFactory.Sanitize(credentialSet));
         })
         .WithTags("Credentials")
-        .WithSummary("Create a credential set. In cloud, secret values must be Key Vault or environment references.");
+        .WithSummary("Create a credential set. In cloud, raw secret values are written to Key Vault and stored as references.");
 
         api.MapPut("/credentials/{credentialSetId}", async (
             string credentialSetId,
@@ -69,18 +75,18 @@ public static class CredentialEndpointExtensions
                 return Results.NotFound();
             }
 
-            var validation = ValidateUpdateRequest(request, configuration, environment);
-            if (validation is not null)
+            var prepared = await PrepareUpdateRequestAsync(existing, request, configuration, environment, ct).ConfigureAwait(false);
+            if (prepared.Error is not null)
             {
-                return validation;
+                return prepared.Error;
             }
 
-            var updated = factory.Update(existing, request);
+            var updated = factory.Update(existing, prepared.Request!);
             await store.SaveAsync(updated, ct).ConfigureAwait(false);
             return Results.Ok(CredentialSetFactory.Sanitize(updated));
         })
         .WithTags("Credentials")
-        .WithSummary("Update a credential set. In cloud, secret values must be Key Vault or environment references.");
+        .WithSummary("Update a credential set. In cloud, raw secret values are written to Key Vault and stored as references.");
 
         api.MapDelete("/credentials/{credentialSetId}", async (
             string credentialSetId,
@@ -138,10 +144,7 @@ public static class CredentialEndpointExtensions
         return api;
     }
 
-    private static IResult? ValidateCreateRequest(
-        CreateCredentialSetRequest request,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+    private static IResult? ValidateCreateRequest(CreateCredentialSetRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.DisplayName)
             || string.IsNullOrWhiteSpace(request.ConnectorType)
@@ -155,60 +158,110 @@ public static class CredentialEndpointExtensions
             return Results.BadRequest(new { error = "At least one credential value is required." });
         }
 
-        return ValidateSecretReferences(
-            request.Values,
-            request.SecretKeys,
-            configuration,
-            environment,
-            allowMaskedValues: false);
+        return null;
     }
 
-    private static IResult? ValidateUpdateRequest(
+    private static async Task<CreatePreparationResult> PrepareCreateRequestAsync(
+        CreateCredentialSetRequest request,
+        IConfiguration configuration,
+        IHostEnvironment environment,
+        CancellationToken cancellationToken)
+    {
+        var values = CopyValues(request.Values);
+        var secretKeys = BuildSecretKeySet(request.SecretKeys, values);
+
+        var prepared = await PrepareSecretValuesAsync(
+            request.DisplayName,
+            request.ConnectorType,
+            values,
+            secretKeys,
+            configuration,
+            environment,
+            allowMaskedValues: false,
+            existingValues: null,
+            cancellationToken).ConfigureAwait(false);
+
+        if (prepared.Error is not null)
+        {
+            return new CreatePreparationResult(null, prepared.Error);
+        }
+
+        return new CreatePreparationResult(
+            new CreateCredentialSetRequest(
+                request.DisplayName,
+                request.ConnectorType,
+                request.ConnectorRole,
+                prepared.Values,
+                secretKeys.ToArray()),
+            null);
+    }
+
+    private static async Task<UpdatePreparationResult> PrepareUpdateRequestAsync(
+        CredentialSetRecord existing,
         UpdateCredentialSetRequest request,
         IConfiguration configuration,
-        IHostEnvironment environment)
+        IHostEnvironment environment,
+        CancellationToken cancellationToken)
     {
         if (request.Values is null)
         {
-            return null;
+            return new UpdatePreparationResult(request, null);
         }
 
-        return ValidateSecretReferences(
-            request.Values,
-            request.SecretKeys,
+        var displayName = string.IsNullOrWhiteSpace(request.DisplayName)
+            ? existing.DisplayName
+            : request.DisplayName;
+        var connectorType = string.IsNullOrWhiteSpace(request.ConnectorType)
+            ? existing.ConnectorType
+            : request.ConnectorType;
+
+        var values = CopyValues(request.Values);
+        var secretKeys = BuildSecretKeySet(request.SecretKeys ?? existing.SecretKeys, values);
+
+        var prepared = await PrepareSecretValuesAsync(
+            displayName,
+            connectorType,
+            values,
+            secretKeys,
             configuration,
             environment,
-            allowMaskedValues: true);
+            allowMaskedValues: true,
+            existingValues: existing.Values,
+            cancellationToken).ConfigureAwait(false);
+
+        if (prepared.Error is not null)
+        {
+            return new UpdatePreparationResult(null, prepared.Error);
+        }
+
+        return new UpdatePreparationResult(
+            request with
+            {
+                Values = prepared.Values,
+                SecretKeys = secretKeys.ToArray()
+            },
+            null);
     }
 
-    private static IResult? ValidateSecretReferences(
-        Dictionary<string, string> values,
-        IReadOnlyCollection<string>? explicitSecretKeys,
+    private static async Task<SecretPreparationResult> PrepareSecretValuesAsync(
+        string displayName,
+        string connectorType,
+        Dictionary<string, string?> values,
+        HashSet<string> secretKeys,
         IConfiguration configuration,
         IHostEnvironment environment,
-        bool allowMaskedValues)
+        bool allowMaskedValues,
+        IReadOnlyDictionary<string, string?>? existingValues,
+        CancellationToken cancellationToken)
     {
         if (AllowsPlainTextSecrets(configuration, environment))
         {
-            return null;
+            return new SecretPreparationResult(values, null);
         }
 
-        var secretKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var keyVaultUri = GetConfiguredKeyVaultUri(configuration);
+        var needsVault = new List<string>();
 
-        if (explicitSecretKeys is not null)
-        {
-            foreach (var key in explicitSecretKeys.Where(x => !string.IsNullOrWhiteSpace(x)))
-            {
-                secretKeys.Add(key.Trim());
-            }
-        }
-
-        foreach (var key in values.Keys.Where(LooksSecret))
-        {
-            secretKeys.Add(key.Trim());
-        }
-
-        var invalid = new List<string>();
         foreach (var key in secretKeys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
         {
             if (!values.TryGetValue(key, out var value))
@@ -218,29 +271,93 @@ public static class CredentialEndpointExtensions
 
             if (allowMaskedValues && string.Equals(value, "********", StringComparison.Ordinal))
             {
+                if (existingValues is not null && existingValues.TryGetValue(key, out var existingValue))
+                {
+                    values[key] = existingValue;
+                }
+
                 continue;
             }
 
-            if (!IsSecretReference(value))
+            if (string.IsNullOrWhiteSpace(value) || IsSecretReference(value))
             {
-                invalid.Add(key);
+                continue;
+            }
+
+            needsVault.Add(key);
+        }
+
+        if (needsVault.Count == 0)
+        {
+            return new SecretPreparationResult(values, null);
+        }
+
+        if (keyVaultUri is null)
+        {
+            return new SecretPreparationResult(values, Results.BadRequest(new
+            {
+                error = "Secret credential values were entered, but no Key Vault URI is configured for cloud-safe storage.",
+                secretKeys = needsVault,
+                requiredConfiguration = new[]
+                {
+                    "CredentialVault:KeyVaultUri",
+                    "AzureKeyVault:VaultUri",
+                    "KeyVault:VaultUri"
+                }
+            }));
+        }
+
+        foreach (var key in needsVault)
+        {
+            var secretValue = values[key];
+            if (string.IsNullOrWhiteSpace(secretValue))
+            {
+                continue;
+            }
+
+            var secretName = BuildSecretName(displayName, connectorType, key);
+            await WriteKeyVaultSecretAsync(keyVaultUri, secretName, secretValue, configuration, cancellationToken)
+                .ConfigureAwait(false);
+            values[key] = $"kv://{secretName}";
+        }
+
+        return new SecretPreparationResult(values, null);
+    }
+
+    private static Dictionary<string, string?> CopyValues(Dictionary<string, string?> values)
+    {
+        var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pair in values)
+        {
+            if (!string.IsNullOrWhiteSpace(pair.Key))
+            {
+                result[pair.Key.Trim()] = pair.Value;
             }
         }
 
-        return invalid.Count == 0
-            ? null
-            : Results.BadRequest(new
+        return result;
+    }
+
+    private static HashSet<string> BuildSecretKeySet(
+        IReadOnlyCollection<string>? explicitSecretKeys,
+        IReadOnlyDictionary<string, string?> values)
+    {
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (explicitSecretKeys is not null)
+        {
+            foreach (var key in explicitSecretKeys.Where(x => !string.IsNullOrWhiteSpace(x)))
             {
-                error = "Secret credential values must be references, not raw secret material.",
-                invalidSecretKeys = invalid,
-                acceptedReferenceFormats = new[]
-                {
-                    "kv://secret-name",
-                    "kv://secret-name/secret-version",
-                    "env://VARIABLE_NAME",
-                    "https://<vault>.vault.azure.net/secrets/<secret-name>"
-                }
-            });
+                result.Add(key.Trim());
+            }
+        }
+
+        foreach (var key in values.Keys.Where(LooksSecret))
+        {
+            result.Add(key.Trim());
+        }
+
+        return result;
     }
 
     private static bool AllowsPlainTextSecrets(IConfiguration configuration, IHostEnvironment environment)
@@ -278,6 +395,77 @@ public static class CredentialEndpointExtensions
             || key.Contains("connection_string", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static Uri? GetConfiguredKeyVaultUri(IConfiguration configuration)
+    {
+        var value = configuration["CredentialVault:KeyVaultUri"]
+            ?? configuration["AzureKeyVault:VaultUri"]
+            ?? configuration["KeyVault:VaultUri"];
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return Uri.TryCreate(value.TrimEnd('/'), UriKind.Absolute, out var uri)
+            ? uri
+            : throw new InvalidOperationException($"Configured Key Vault URI '{value}' is not a valid absolute URI.");
+    }
+
+    private static string BuildSecretName(string displayName, string connectorType, string key)
+    {
+        var raw = $"migration-{connectorType}-{displayName}-{key}";
+        var builder = new StringBuilder(raw.Length);
+        var previousDash = false;
+
+        foreach (var ch in raw.ToLowerInvariant())
+        {
+            var next = char.IsLetterOrDigit(ch) ? ch : '-';
+            if (next == '-')
+            {
+                if (previousDash)
+                {
+                    continue;
+                }
+
+                previousDash = true;
+            }
+            else
+            {
+                previousDash = false;
+            }
+
+            builder.Append(next);
+        }
+
+        var result = builder.ToString().Trim('-');
+        if (result.Length == 0)
+        {
+            result = $"migration-credential-{Guid.NewGuid():N}";
+        }
+
+        if (result.Length > 100)
+        {
+            result = result[..100].Trim('-');
+        }
+
+        return result;
+    }
+
+    private static async Task WriteKeyVaultSecretAsync(
+    Uri vaultUri,
+    string secretName,
+    string secretValue,
+    IConfiguration configuration,
+    CancellationToken cancellationToken)
+    {
+        var client = new SecretClient(vaultUri, new DefaultAzureCredential());
+
+        await client.SetSecretAsync(
+            new KeyVaultSecret(secretName, secretValue),
+            cancellationToken);
+    }
+
+
     private static bool MatchesConnector(object descriptor, string requested)
     {
         return string.Equals(GetStringProperty(descriptor, "Type"), requested, StringComparison.OrdinalIgnoreCase)
@@ -296,4 +484,10 @@ public static class CredentialEndpointExtensions
         var property = value.GetType().GetProperty(name);
         return property?.GetValue(value)?.ToString();
     }
+
+    private sealed record CreatePreparationResult(CreateCredentialSetRequest? Request, IResult? Error);
+
+    private sealed record UpdatePreparationResult(UpdateCredentialSetRequest? Request, IResult? Error);
+
+    private sealed record SecretPreparationResult(Dictionary<string, string?> Values, IResult? Error);
 }

@@ -1,13 +1,12 @@
-using System.Net.Http.Headers;
-using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 
 namespace Migration.ControlPlane.Services;
 
 public sealed class FileBackedCredentialResolver : ICredentialResolver
 {
-    private static readonly HttpClient HttpClient = CreateHttpClient();
-
+    
     private readonly ICredentialSetStore _store;
     private readonly IConfiguration _configuration;
 
@@ -154,86 +153,26 @@ public sealed class FileBackedCredentialResolver : ICredentialResolver
             : throw new InvalidOperationException($"Configured Key Vault URI '{value}' is not a valid absolute URI.");
     }
 
-    private async Task<string> ReadKeyVaultSecretAsync(
+    private static async Task<string> ReadKeyVaultSecretAsync(
         Uri vaultUri,
         string secretName,
         string? secretVersion,
         CancellationToken cancellationToken)
     {
-        var token = await GetManagedIdentityTokenAsync(cancellationToken).ConfigureAwait(false);
-        var encodedSecretName = Uri.EscapeDataString(secretName);
-        var path = string.IsNullOrWhiteSpace(secretVersion)
-            ? $"/secrets/{encodedSecretName}"
-            : $"/secrets/{encodedSecretName}/{Uri.EscapeDataString(secretVersion)}";
-        var requestUri = new Uri(vaultUri, $"{path}?api-version=7.4");
+        var client = new SecretClient(
+            vaultUri,
+            new DefaultAzureCredential());
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = string.IsNullOrWhiteSpace(secretVersion)
+            ? await client.GetSecretAsync(
+                secretName,
+                cancellationToken: cancellationToken)
+            : await client.GetSecretAsync(
+                secretName,
+                secretVersion,
+                cancellationToken);
 
-        using var response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException(
-                $"Key Vault secret '{secretName}' could not be read from '{vaultUri}'. Status {(int)response.StatusCode}: {body}");
-        }
-
-        using var document = JsonDocument.Parse(body);
-        if (!document.RootElement.TryGetProperty("value", out var valueElement))
-        {
-            throw new InvalidOperationException($"Key Vault secret '{secretName}' response did not include a value.");
-        }
-
-        return valueElement.GetString() ?? string.Empty;
+        return response.Value.Value;
     }
 
-    private async Task<string> GetManagedIdentityTokenAsync(CancellationToken cancellationToken)
-    {
-        const string resource = "https://vault.azure.net";
-        var endpoint =
-            "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01" +
-            $"&resource={Uri.EscapeDataString(resource)}";
-
-        var clientId = _configuration["CredentialVault:ManagedIdentityClientId"]
-            ?? _configuration["AzureKeyVault:ManagedIdentityClientId"];
-        if (!string.IsNullOrWhiteSpace(clientId))
-        {
-            endpoint += $"&client_id={Uri.EscapeDataString(clientId)}";
-        }
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
-        request.Headers.TryAddWithoutValidation("Metadata", "true");
-
-        using var response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException(
-                $"Managed identity token request for Key Vault failed. Status {(int)response.StatusCode}: {body}");
-        }
-
-        using var document = JsonDocument.Parse(body);
-        if (!document.RootElement.TryGetProperty("access_token", out var tokenElement))
-        {
-            throw new InvalidOperationException("Managed identity token response did not include an access_token.");
-        }
-
-        var token = tokenElement.GetString();
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new InvalidOperationException("Managed identity token response included an empty access_token.");
-        }
-
-        return token;
-    }
-
-    private static HttpClient CreateHttpClient()
-    {
-        return new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(30)
-        };
-    }
 }

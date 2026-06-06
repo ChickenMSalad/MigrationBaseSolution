@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, connectorValue, displayConnectorName } from "../../../../api/client";
 import { Card, EmptyState, JsonBlock } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
-import type { ConnectorDescriptor, CredentialSetSummary, JsonObject } from "../../../../types/api";
+import type { ConnectorDescriptor, CredentialSetSummary } from "../../../../types/api";
 import "./Credentials.css";
 
 type Role = "Source" | "Target" | "Manifest";
@@ -47,7 +47,7 @@ type ConnectorListResponse = {
   manifestProviders?: ConnectorDescriptor[];
 };
 
-const emptyCredentialsJson = JSON.stringify({}, null, 2);
+type CredentialValues = Record<string, string>;
 
 const bynderScopes =
   "offline admin.profile:read admin.user:read admin.user:write current.profile:read current.user:read asset:read asset:write asset.usage:read asset.usage:write collection:read collection:write meta.assetbank:read meta.assetbank:write meta.workflow:read workflow.campaign:read workflow.campaign:write workflow.group:read workflow.group:write workflow.job:read workflow.job:write workflow.preset:read brandstore.order:read brandstore.order:write";
@@ -198,7 +198,7 @@ function normalizeCredentialFields(role: Role | undefined, connector: ConnectorD
   }
 
   return descriptorFields(connector.credentials)
-      .map((field): CredentialField | null => {
+    .map((field): CredentialField | null => {
       const key = getFieldKey(field);
       if (!key) return null;
       const requiredFromSchema = Boolean(field.required ?? field.isRequired ?? false);
@@ -210,33 +210,18 @@ function normalizeCredentialFields(role: Role | undefined, connector: ConnectorD
         secret: Boolean(field.secret ?? field.isSecret ?? isSecretLikeKey(key)),
         configurationKey: field.configurationKey,
         defaultValue: field.defaultValue ?? field.sampleValue ?? field.exampleValue ?? field.example
-      } satisfies CredentialField;
+      };
     })
     .filter((field): field is CredentialField => field !== null);
 }
 
-function referenceNameForCredential(connector: ConnectorDescriptor | null, field: CredentialField) {
-  const connectorKey = connectorValue(connector)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  const fieldKey = field.key
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return `kv://${connectorKey || "connector"}-${fieldKey || "secret"}`;
-}
-
-function sampleValueForCredential(connector: ConnectorDescriptor | null, field: CredentialField): unknown {
-  if (field.secret) {
-    return referenceNameForCredential(connector, field);
-  }
-
+function sampleValueForCredential(field: CredentialField): string {
   if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== "") {
-    return field.defaultValue;
+    return String(field.defaultValue);
   }
 
   const key = field.key.toLowerCase();
+  if (field.secret) return "";
   if (key === "baseurl" || key === "base_url" || key.endsWith("url")) return "https://example.invalid";
   if (key === "scopes" || key === "scope") return bynderScopes;
   if (key.includes("brandstore")) return "your-brandstore-id";
@@ -248,16 +233,12 @@ function sampleValueForCredential(connector: ConnectorDescriptor | null, field: 
   return `your-${field.key}`;
 }
 
-function buildCredentialValuesJson(role: Role | undefined, connector: ConnectorDescriptor | null) {
+function buildCredentialValues(role: Role | undefined, connector: ConnectorDescriptor | null) {
   const fields = normalizeCredentialFields(role, connector);
-  if (fields.length === 0) return emptyCredentialsJson;
-
-  const values = fields.reduce<Record<string, unknown>>((result, field) => {
-    result[field.key] = sampleValueForCredential(connector, field);
+  return fields.reduce<CredentialValues>((result, field) => {
+    result[field.key] = sampleValueForCredential(field);
     return result;
   }, {});
-
-  return JSON.stringify(values, null, 2);
 }
 
 function inferSecretKeys(fields: CredentialField[]) {
@@ -272,17 +253,17 @@ function isMissingRequiredValue(value: unknown) {
   return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
 }
 
-function isSecretReference(value: unknown) {
-  if (typeof value !== "string") return false;
-  const text = value.trim().toLowerCase();
-  return text.startsWith("kv://")
-    || text.startsWith("keyvault://")
-    || text.startsWith("env://")
-    || (text.startsWith("https://") && text.includes(".vault.azure.net/secrets/"));
-}
-
 function noticeClassName(kind: NoticeKind) {
   return `credentialsNotice credentialsNotice--${kind}`;
+}
+
+function inputTypeForField(field: CredentialField) {
+  return field.secret ? "password" : "text";
+}
+
+function shouldUseTextarea(field: CredentialField, value: string) {
+  const key = field.key.toLowerCase();
+  return key.includes("scope") || key.includes("json") || key.includes("certificate") || value.length > 120;
 }
 
 export function Credentials() {
@@ -297,7 +278,7 @@ export function Credentials() {
   const [error, setError] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("Bynder target credentials");
   const [selectedConnector, setSelectedConnector] = useState("");
-  const [valuesJson, setValuesJson] = useState(emptyCredentialsJson);
+  const [values, setValues] = useState<CredentialValues>({});
 
   async function load() {
     setLoading(true);
@@ -313,7 +294,7 @@ export function Credentials() {
         const cloudinaryTarget = flattened.find(item => isCloudinaryTarget(item.role, item.connector));
         const first = bynderTarget ?? cloudinaryTarget ?? flattened[0];
         setSelectedConnector(`${first.role}|${connectorValue(first.connector)}`);
-        setValuesJson(buildCredentialValuesJson(first.role, first.connector));
+        setValues(buildCredentialValues(first.role, first.connector));
         if (bynderTarget) setDisplayName("Bynder target credentials");
         else if (cloudinaryTarget) setDisplayName("Cloudinary target credentials");
         else setDisplayName(`${displayConnectorName(first.connector)} ${first.role.toLowerCase()} credentials`);
@@ -361,7 +342,7 @@ export function Credentials() {
 
     const [role, type] = value.split("|") as [Role | undefined, string | undefined];
     const next = connectors.find(item => item.role === role && connectorValue(item.connector) === type);
-    setValuesJson(buildCredentialValuesJson(next?.role, next?.connector ?? null));
+    setValues(buildCredentialValues(next?.role, next?.connector ?? null));
 
     if (next && isBynderTarget(next.role, next.connector)) {
       setDisplayName("Bynder target credentials");
@@ -373,8 +354,12 @@ export function Credentials() {
   }
 
   function resetValuesFromSchema() {
-    setValuesJson(buildCredentialValuesJson(selected?.role, selected?.connector ?? null));
-    setFormNotice({ kind: "info", message: "Values JSON reset from selected connector credential schema using Key Vault references for secret fields." });
+    setValues(buildCredentialValues(selected?.role, selected?.connector ?? null));
+    setFormNotice({ kind: "info", message: "Credential fields reset from the selected connector schema." });
+  }
+
+  function updateValue(key: string, value: string) {
+    setValues(current => ({ ...current, [key]: value }));
   }
 
   async function createCredential() {
@@ -392,14 +377,6 @@ export function Credentials() {
       return;
     }
 
-    let values: Record<string, unknown>;
-    try {
-      values = JSON.parse(valuesJson) as Record<string, unknown>;
-    } catch (err) {
-      setFormNotice({ kind: "error", message: `Values JSON is invalid: ${err instanceof Error ? err.message : String(err)}` });
-      return;
-    }
-
     const missingRequired = requiredCredentialFields.filter(field => isMissingRequiredValue(values[field.key]));
     if (missingRequired.length > 0) {
       setFormNotice({
@@ -409,14 +386,13 @@ export function Credentials() {
       return;
     }
 
-    const rawSecretFields = credentialFields.filter(field => field.secret && !isMissingRequiredValue(values[field.key]) && !isSecretReference(values[field.key]));
-    if (rawSecretFields.length > 0) {
-      setFormNotice({
-        kind: "error",
-        message: `Secret fields must be references, not raw values: ${rawSecretFields.map(field => field.key).join(", ")}. Use kv://secret-name or a full Key Vault secret URI.`
-      });
-      return;
-    }
+    const payloadValues = credentialFields.reduce<Record<string, string>>((result, field) => {
+      const value = values[field.key];
+      if (value !== undefined && value !== null && value !== "") {
+        result[field.key] = value;
+      }
+      return result;
+    }, {});
 
     setSaving(true);
     try {
@@ -424,10 +400,11 @@ export function Credentials() {
         displayName,
         connectorType: connectorValue(selected.connector),
         connectorRole: selected.role,
-        values: values as JsonObject,
+        values: payloadValues,
         secretKeys
       });
-      setFormNotice({ kind: "success", message: `Created credential set ${created.credentialSetId}.` });
+      setFormNotice({ kind: "success", message: `Created credential set ${created.credentialSetId}. Secret fields were stored by the API as vault references.` });
+      setValues(buildCredentialValues(selected.role, selected.connector));
       await load();
     } catch (err) {
       setFormNotice({ kind: "error", message: `Failed to save credential set: ${err instanceof Error ? err.message : String(err)}` });
@@ -490,19 +467,14 @@ export function Credentials() {
 
   return (
     <div className="credentialsPage">
-      <div className="pageHeader">
-        <div>
-          <h1>Credentials</h1>
-          <p>
-            Create connector credential sets for migration projects. Secret fields are stored as references only; put the actual secret values in Azure Key Vault.
-          </p>
-        </div>
-        <button type="button" onClick={() => void load()}>Refresh</button>
-      </div>
+      <h1>Credentials</h1>
+      <p className="muted">
+        Create connector credential sets for migration projects. Secret values are entered once; the API stores cloud secrets as Key Vault references and returns only masked values afterward.
+      </p>
 
       <Card title="Create credential set">
         <div className="credentialsCallout">
-          <strong>Cloud-safe mode:</strong> secret fields must use <code>kv://secret-name</code>, <code>env://VARIABLE_NAME</code>, or a full Key Vault secret URI. Raw secrets are rejected outside local development.
+          <strong>Cloud-safe mode:</strong> enter the actual secret values here. The API writes secret fields to the configured Azure Key Vault and stores only references in the credential set.
         </div>
 
         <div className="credentialsFormGrid">
@@ -531,16 +503,36 @@ export function Credentials() {
           <EmptyState title="No credential schema" message="This connector does not declare credential fields." />
         ) : (
           <>
-            <label className="credentialsJsonLabel">
-              Values JSON
-              <textarea
-                className="credentialsJsonTextarea"
-                value={valuesJson}
-                onChange={event => setValuesJson(event.target.value)}
-                spellCheck={false}
-                rows={18}
-              />
-            </label>
+            <div className="credentialFieldGrid">
+              {credentialFields.map(field => {
+                const value = values[field.key] ?? "";
+                return (
+                  <label key={field.key} className="credentialField">
+                    <span>
+                      {field.label}
+                      {field.required ? <span className="requiredMarker"> required</span> : null}
+                      {field.secret ? <span className="credentialSecretBadge">secret</span> : null}
+                    </span>
+                    {shouldUseTextarea(field, value) ? (
+                      <textarea
+                        value={value}
+                        onChange={event => updateValue(field.key, event.target.value)}
+                        rows={field.key.toLowerCase().includes("scope") ? 5 : 3}
+                        spellCheck={false}
+                      />
+                    ) : (
+                      <input
+                        type={inputTypeForField(field)}
+                        value={value}
+                        onChange={event => updateValue(field.key, event.target.value)}
+                        autoComplete="off"
+                      />
+                    )}
+                    {field.description ? <small className="muted">{field.description}</small> : null}
+                  </label>
+                );
+              })}
+            </div>
 
             <div className="credentialSchemaSummary">
               <section>
@@ -552,7 +544,6 @@ export function Credentials() {
                     {requiredCredentialFields.map(field => (
                       <li key={field.key}>
                         <code>{field.key}</code>
-                        {field.secret ? <span className="credentialSecretBadge">secret reference</span> : null}
                         {field.description ? <> - {field.description}</> : null}
                       </li>
                     ))}
@@ -569,7 +560,6 @@ export function Credentials() {
                     {optionalCredentialFields.map(field => (
                       <li key={field.key}>
                         <code>{field.key}</code>
-                        {field.secret ? <span className="credentialSecretBadge">secret reference</span> : null}
                         {field.description ? <> - {field.description}</> : null}
                       </li>
                     ))}
@@ -578,13 +568,15 @@ export function Credentials() {
               </section>
 
               <section>
-                <h3>Secret reference fields</h3>
+                <h3>Secret fields</h3>
                 {secretKeys.length === 0 ? (
                   <p className="muted">No secret credential fields are declared.</p>
                 ) : (
                   <ul>
                     {secretKeys.map(key => (
-                      <li key={key}><code>{key}</code></li>
+                      <li key={key}>
+                        <code>{key}</code>
+                      </li>
                     ))}
                   </ul>
                 )}
@@ -609,7 +601,7 @@ export function Credentials() {
             {saving ? "Saving..." : "Save credential set"}
           </button>
           <button type="button" className="secondaryButton" onClick={resetValuesFromSchema} disabled={!selected || saving}>
-            Reset JSON from schema
+            Reset from credentials schema
           </button>
         </div>
       </Card>
@@ -643,7 +635,9 @@ export function Credentials() {
                     <td>{item.connectorType}</td>
                     <td>{item.connectorRole}</td>
                     <td>{new Date(item.updatedUtc).toLocaleString()}</td>
-                    <td><JsonBlock value={item.values} /></td>
+                    <td>
+                      <JsonBlock value={item.values} />
+                    </td>
                     <td>
                       {item.secretKeys?.length > 0 ? item.secretKeys.map(key => <code key={key}>{key} </code>) : <span className="muted">None</span>}
                     </td>
