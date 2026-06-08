@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { api } from "../../../../api/client";
-import { Card } from "../../../../components/Card";
-import { LoadingError } from "../../../../components/LoadingError";
+﻿import { useEffect, useMemo, useState } from "react";
+import { api } from "../../../../../api/client";
+import { Card } from "../../../../../components/Card";
+import { LoadingError } from "../../../../../components/LoadingError";
 import type {
   BuildSourceManifestResponse,
   CredentialSetSummary,
   ManifestBuilderSourceDescriptor
-} from "../../../../types/api";
+} from "../../../../../types/api";
 
 type ManifestOptions = Record<string, string>;
 
@@ -134,7 +134,7 @@ export function ManifestBuilder() {
         </p>
 
         {loading ? (
-          <p>Loading manifest sources…</p>
+          <p>Loading manifest sourcesâ€¦</p>
         ) : sources.length === 0 ? (
           <p>No manifest builder services are registered.</p>
         ) : (
@@ -202,7 +202,7 @@ export function ManifestBuilder() {
                     onClick={() => void buildManifest()}
                     disabled={building || !sourceType || !serviceName}
                 >
-                    {building ? "Building…" : "Build Manifest"}
+                    {building ? "Buildingâ€¦" : "Build Manifest"}
                 </button>
           </div>
           </>
@@ -257,3 +257,4 @@ function credentialMatchesSource(credential: CredentialSetSummary, selectedSourc
 
   return credentialRole === "source";
 }
+

@@ -9,14 +9,14 @@ import { RuntimeDashboard } from "./features/operations/runtimeDashboard/pages/R
 import { RuntimeRunDetail } from "./features/operations/runtimeDashboard/pages/RuntimeRunDetail";
 import { ExecutionSessions } from "./features/operations/executionSessions/pages/ExecutionSessions";
 import { FailureRetry } from "./features/operations/failureRetry/pages/FailureRetry";
-import { ManifestBuilder } from './features/governance/manifestBuilder/pages/ManifestBuilder';
-import { MappingBuilder } from './features/governance/mappingBuilder/pages/MappingBuilder';
+import { ManifestBuilder } from './features/platform/builders/manifest/pages/ManifestBuilder';
+import { MappingBuilder } from './features/platform/builders/mapping/pages/MappingBuilder';
 import { Preflight } from './features/operations/preflight/pages/Preflight';
 import { ProjectDetail } from './features/platform/projects/pages/ProjectDetail';
 import { Projects } from './features/platform/projects/pages/Projects';
 import { RunDetail } from './features/operations/runs/pages/RunDetail';
 import { Runs } from './features/operations/runs/pages/Runs';
-import { TaxonomyBuilder } from './features/governance/taxonomyBuilder/pages/TaxonomyBuilder';
+import { TaxonomyBuilder } from './features/platform/builders/taxonomy/pages/TaxonomyBuilder';
 import { ExecutionWorkerTelemetry } from "./features/operations/executionWorkerTelemetry/pages/ExecutionWorkerTelemetry";
 import { NotificationRouting } from "./features/governance/notificationRouting/pages/NotificationRouting";
 import { AuditTrail } from "./features/governance/auditTrail/pages/AuditTrail";
@@ -63,4 +63,5 @@ export default function App() {
               <Route path="/mapping-builder" element={<MappingBuilder />} />
       </Routes>
   ); };
+
 

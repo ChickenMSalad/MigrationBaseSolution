@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { apiRequest } from "../../../../api/core/adminApiClient";
+﻿import { useEffect, useMemo, useState } from "react";
+import { apiRequest } from "../../../../../api/core/adminApiClient";
 
-import { Card, JsonBlock } from "../../../../components/Card";
-import { LoadingError } from "../../../../components/LoadingError";
+import { Card, JsonBlock } from "../../../../../components/Card";
+import { LoadingError } from "../../../../../components/LoadingError";
 
 type ArtifactKind =
   | "Manifest"
@@ -232,7 +232,7 @@ function CompactColumnPreview({
       title={title}
       subtitle={
         subtitle ??
-        `${preview.fileName} — ${preview.columns.length} columns detected`
+        `${preview.fileName} â€” ${preview.columns.length} columns detected`
       }
     >
       <div
@@ -864,7 +864,7 @@ export function MappingBuilder() {
               <option value="">No project selected</option>
               {projects.map((project) => (
                 <option key={project.projectId} value={project.projectId}>
-                  {project.displayName} ({project.sourceType} →{" "}
+                  {project.displayName} ({project.sourceType} â†’{" "}
                   {project.targetType})
                 </option>
               ))}
@@ -924,7 +924,7 @@ export function MappingBuilder() {
         <CompactColumnPreview
           preview={preview}
           title="Source manifest preview"
-          subtitle={`${preview.fileName} — ${preview.columns.length} source columns detected`}
+          subtitle={`${preview.fileName} â€” ${preview.columns.length} source columns detected`}
         />
       )}
 
@@ -932,7 +932,7 @@ export function MappingBuilder() {
         <CompactColumnPreview
           preview={targetPreview}
           title="Target taxonomy/manifest preview"
-          subtitle={`${targetPreview.fileName} — ${targetPreview.columns.length} target columns detected`}
+          subtitle={`${targetPreview.fileName} â€” ${targetPreview.columns.length} target columns detected`}
         />
       )}
 
@@ -1455,7 +1455,7 @@ export function MappingBuilder() {
           disabled={saving || !canSave}
           onClick={saveMapping}
         >
-          {saving ? "Saving…" : "Save Mapping Artifact"}
+          {saving ? "Savingâ€¦" : "Save Mapping Artifact"}
         </button>
       </Card>
 
@@ -1467,3 +1467,4 @@ export function MappingBuilder() {
     </div>
   );
 }
+

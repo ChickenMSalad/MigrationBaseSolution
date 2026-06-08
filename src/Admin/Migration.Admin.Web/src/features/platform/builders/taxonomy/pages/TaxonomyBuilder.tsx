@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { apiRequest } from "../../../../api/core/adminApiClient";
-import { api, connectorValue, displayConnectorName } from "../../../../api/client";
-import { Card } from "../../../../components/Card";
-import { LoadingError } from "../../../../components/LoadingError";
-import type { ArtifactRecord, ConnectorDescriptor, CredentialSetSummary, ProjectRecord } from "../../../../types/api";
+﻿import { useEffect, useMemo, useState } from "react";
+import { apiRequest } from "../../../../../api/core/adminApiClient";
+import { api, connectorValue, displayConnectorName } from "../../../../../api/client";
+import { Card } from "../../../../../components/Card";
+import { LoadingError } from "../../../../../components/LoadingError";
+import type { ArtifactRecord, ConnectorDescriptor, CredentialSetSummary, ProjectRecord } from "../../../../../types/api";
 
 type NoticeKind = "success" | "error" | "info";
 
@@ -277,7 +277,7 @@ export function TaxonomyBuilder() {
 
       {loading ? (
         <Card>
-          <p>Loading taxonomy builder inputs…</p>
+          <p>Loading taxonomy builder inputsâ€¦</p>
         </Card>
       ) : targets.length === 0 ? (
         <Card title="No supported target connectors">
@@ -336,7 +336,7 @@ export function TaxonomyBuilder() {
                 <option value="">Do not bind to a project</option>
                 {projects.map(project => (
                   <option key={project.projectId} value={project.projectId}>
-                    {project.displayName} ({project.sourceType} → {project.targetType})
+                    {project.displayName} ({project.sourceType} â†’ {project.targetType})
                   </option>
                 ))}
               </select>
@@ -373,7 +373,7 @@ export function TaxonomyBuilder() {
               onClick={() => void buildArtifact()}
               disabled={!canBuild}
             >
-              {building ? "Building…" : "Build Excel Taxonomy Artifact"}
+              {building ? "Buildingâ€¦" : "Build Excel Taxonomy Artifact"}
             </button>
 
             <button
@@ -382,7 +382,7 @@ export function TaxonomyBuilder() {
               onClick={() => void buildBlankMetadataTemplate()}
               disabled={!canBuild}
             >
-              {building ? "Building…" : "Build Blank Metadata Template"}
+              {building ? "Buildingâ€¦" : "Build Blank Metadata Template"}
             </button>
           </div>
         </Card>
@@ -420,3 +420,4 @@ export function TaxonomyBuilder() {
     </div>
   );
 }
+
