@@ -11,17 +11,17 @@ namespace Migration.Connectors.Sources.Aem.Registration;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddAemSourceConnector(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddAemSourceConnector(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        services.Configure<AemOptions>(configuration.GetSection("Aem"));
+        services.Configure<AemOptions>(
+            configuration.GetSection("Aem"));
 
-        services.AddSingleton<IAemClient>(sp =>
-        {
-            var options = sp.GetRequiredService<IOptions<AemOptions>>();
-            return new AemClient(new HttpClient(), options.Value);
-        });
+        services.AddHttpClient<IAemClient, AemClient>();
 
         services.AddSingleton<IAssetSourceConnector, AemSourceConnector>();
+
         services.AddSingleton<ISourceManifestService, AemExportFoldersManifestService>();
 
         return services;

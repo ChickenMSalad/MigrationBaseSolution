@@ -1,10 +1,11 @@
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Migration.Connectors.Sources.Aem.Clients;
-using Migration.Connectors.Sources.Aem.Models;
 using Migration.Connectors.Sources.Aem.Configuration;
+using Migration.Connectors.Sources.Aem.Models;
 using Migration.Shared.Configuration.Hosts.Aem;
 using Migration.Shared.Configuration.Infrastructure;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Engineering;
@@ -28,10 +29,10 @@ public sealed class AemClient : IAemClient
     private List<string> _failures = new List<string>();
     private string outputFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\Ntara\\Ashley Migration\\RerunFirstRun\\folder_errors_1.txt";
 
-    public AemClient(HttpClient http, AemOptions opt)
+    public AemClient(HttpClient http, IOptions<AemOptions> options)
     {
         _http = http;
-        _opt = opt;
+        _opt = options.Value;
 
         _http.Timeout = TimeSpan.FromMinutes(10); // some folder contain tens of thousands of assets
 
@@ -47,7 +48,10 @@ public sealed class AemClient : IAemClient
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", raw);
         }
 
-        _http.BaseAddress = new Uri(_opt.BaseUrl);
+        if (!string.IsNullOrWhiteSpace(_opt.BaseUrl))
+        {
+            _http.BaseAddress = new Uri(_opt.BaseUrl);
+        }
     }
 
     public async Task<AemFolder> GetFolderAsync(string folderPath, ILogger log, CancellationToken ct = default, bool useLastModifiedOnly = false)

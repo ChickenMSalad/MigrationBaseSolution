@@ -18,4 +18,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Migration.Infrastructure.Sql\Migration.Infrastructure.Sql.csproj" />
   </ItemGroup>
+	<ItemGroup>
+		<Content Remove="appsettings.Local.json" />
+		<None Remove="appsettings.Local.json" />
+	</ItemGroup>
 </Project>
