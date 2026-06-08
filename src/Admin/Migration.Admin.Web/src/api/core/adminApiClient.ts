@@ -1,4 +1,4 @@
-﻿import { AdminApiError } from './adminApiError';
+import { AdminApiError } from './adminApiError';
 
 const API_BASE_URL = (import.meta.env.VITE_ADMIN_API_BASE_URL ?? '').replace(/\/$/, '');
 
@@ -67,12 +67,15 @@ export async function apiRequest<TResponse = unknown>(
   path: string,
   options?: ApiRequestOptions,
 ): Promise<TResponse> {
+  const headers = new Headers(options?.headers ?? undefined);
+
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json');
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...(options ?? {}),
-    headers: {
-      Accept: 'application/json',
-      ...(options?.headers ?? {}),
-    },
+    headers,
   });
 
   const responseBody = await tryReadBody(response);

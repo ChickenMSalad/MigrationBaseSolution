@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../../../../api/client"; import { runProjectPreflight } from "../../../../api/preflight";
+import { api } from "../../../../api/client";
+import { runProjectPreflight } from "../api/preflight";
 import { Card, EmptyState, JsonBlock } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
 import type { ArtifactRecord, PreflightResult, ProjectRecord } from "../../../../types/api";
