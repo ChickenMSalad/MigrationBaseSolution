@@ -87,6 +87,30 @@ public static class PreflightEndpointExtensions
                     .RunAsync(new PreflightRequest(project.ProjectId, job, maxRows, validateSourceSample, sourceSampleSize), cancellationToken)
                     .ConfigureAwait(false);
 
+                if (string.Equals(result.Status, PreflightStatuses.Passed, StringComparison.OrdinalIgnoreCase))
+                {
+                    var now = DateTimeOffset.UtcNow;
+
+                    var preflightRun = new MigrationRunControlRecord
+                    {
+                        RunId = result.PreflightId,
+                        ProjectId = project.ProjectId,
+                        JobName = job.JobName,
+                        Job = job,
+                        Status = AdminRunStatuses.Completed,
+                        DryRun = true,
+                        CreatedUtc = result.StartedUtc,
+                        UpdatedUtc = result.CompletedUtc,
+                        CompletedUtc = result.CompletedUtc,
+                        ManifestArtifactId = resolvedRequest.ManifestArtifactId ?? project.ManifestArtifactId,
+                        MappingArtifactId = resolvedRequest.MappingArtifactId ?? project.MappingArtifactId
+                    };
+
+                    preflightRun.Job.Settings["PreflightOnly"] = "true";
+
+                    await store.SaveRunAsync(preflightRun, cancellationToken).ConfigureAwait(false);
+                }
+
                 return Results.Ok(result);
             })
             .WithTags("Preflight")

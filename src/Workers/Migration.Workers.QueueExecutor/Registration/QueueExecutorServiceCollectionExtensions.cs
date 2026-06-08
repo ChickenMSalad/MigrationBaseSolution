@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Migration.Application.Abstractions.OperationalStore;
 using Migration.ControlPlane.Registration;
 using Migration.GenericRuntime.Registration;
-using Migration.Infrastructure.DependencyInjection;
+using Migration.Infrastructure.Sql.Registration;
 using Migration.Workers.QueueExecutor.Options;
 using Migration.Workers.QueueExecutor.Services;
 
@@ -33,7 +33,7 @@ public static class QueueExecutorServiceCollectionExtensions
 
         // SQL operational store foundation and P3B execution-preparation services.
         // This only registers services; the worker execution path is not changed here.
-        services.AddOperationalStore();
+        services.AddSqlOperationalStore(configuration);
 
         // Replace the behavior-neutral default publisher with the QueueExecutor host's
         // Azure Queue implementation. Nothing publishes through this until callers

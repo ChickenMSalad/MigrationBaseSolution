@@ -12,11 +12,11 @@ public sealed class SqlOperationalRuntimeReadinessOptions
 
     public string ProjectsTableName { get; set; } = "MigrationProjects";
 
-    public string RunsTableName { get; set; } = "MigrationRuns";
+    public string RunsTableName { get; set; } = "Runs";
 
-    public string ManifestRowsTableName { get; set; } = "MigrationManifestRows";
+    public string ManifestRowsTableName { get; set; } = "ManifestRows";
 
-    public string WorkItemsTableName { get; set; } = "MigrationWorkItems";
+    public string WorkItemsTableName { get; set; } = "WorkItems";
 
     public string FailuresTableName { get; set; } = "MigrationFailures";
 

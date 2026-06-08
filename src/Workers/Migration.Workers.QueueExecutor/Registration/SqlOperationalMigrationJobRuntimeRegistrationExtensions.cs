@@ -1,6 +1,6 @@
 ﻿using Migration.ControlPlane.Registration;
 using Migration.GenericRuntime.Registration;
-using Migration.Infrastructure.DependencyInjection;
+using Migration.Infrastructure.Sql.Registration;
 using Migration.Workers.QueueExecutor.Services;
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace Migration.Workers.QueueExecutor.Registration
         {
             services.AddMigrationRuntime(configuration);
             services.AddMigrationControlPlane(configuration);
-            services.AddOperationalStore();
+            services.AddSqlOperationalStore(configuration);
 
             Migration.Connectors.Registration.ConnectorModuleRegistrationExtensions
                 .AddMigrationConnectorModules(services, configuration);

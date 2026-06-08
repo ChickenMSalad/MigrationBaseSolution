@@ -1,7 +1,8 @@
 using Dapper;
 using Microsoft.Extensions.Options;
-using Migration.Infrastructure.Sql.Connections;
+using Migration.Infrastructure.Sql.Connections; 
 using Migration.Infrastructure.Sql.Options;
+
 using Migration.Infrastructure.Sql.Records;
 
 namespace Migration.Infrastructure.Sql.Stores;
