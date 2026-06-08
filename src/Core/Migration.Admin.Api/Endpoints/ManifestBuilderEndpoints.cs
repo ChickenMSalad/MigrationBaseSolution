@@ -51,6 +51,13 @@ public static class ManifestBuilderEndpoints
                 {
                     return Results.BadRequest(new { error = ex.Message });
                 }
+                catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+                {
+                    return Results.Problem(
+                        title: "Manifest build timed out.",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status504GatewayTimeout);
+                }
 
                 var contentType = string.IsNullOrWhiteSpace(result.ContentType)
                     ? "application/octet-stream"

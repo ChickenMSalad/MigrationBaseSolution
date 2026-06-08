@@ -3,6 +3,7 @@ using Migration.Application.Abstractions;
 using Migration.Application.Models;
 using Migration.Domain.Enums;
 using Migration.Domain.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Migration.Orchestration.Preflight;
 
@@ -22,7 +23,7 @@ public sealed class MigrationPreflightService : IMigrationPreflightService
     };
 
     private readonly IEnumerable<IManifestProvider> _manifestProviders;
-    private readonly IEnumerable<IAssetSourceConnector> _sourceConnectors;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IMappingProfileLoader _mappingProfileLoader;
     private readonly IMapper _mapper;
     private readonly IEnumerable<ITransformStep> _transformSteps;
@@ -31,7 +32,7 @@ public sealed class MigrationPreflightService : IMigrationPreflightService
 
     public MigrationPreflightService(
         IEnumerable<IManifestProvider> manifestProviders,
-        IEnumerable<IAssetSourceConnector> sourceConnectors,
+        IServiceProvider serviceProvider,
         IMappingProfileLoader mappingProfileLoader,
         IMapper mapper,
         IEnumerable<ITransformStep> transformSteps,
@@ -39,7 +40,7 @@ public sealed class MigrationPreflightService : IMigrationPreflightService
         ILogger<MigrationPreflightService> logger)
     {
         _manifestProviders = manifestProviders;
-        _sourceConnectors = sourceConnectors;
+        _serviceProvider = serviceProvider;
         _mappingProfileLoader = mappingProfileLoader;
         _mapper = mapper;
         _transformSteps = transformSteps;
@@ -250,7 +251,18 @@ public sealed class MigrationPreflightService : IMigrationPreflightService
 
     private async Task ValidateSourceSampleAsync(MigrationJobDefinition job, MappingProfile profile, IReadOnlyList<ManifestRow> sampleRows, List<PreflightIssue> issues, CancellationToken cancellationToken)
     {
-        var sourceConnector = ResolveSingle(_sourceConnectors, x => x.Type, job.SourceType, "source connector");
+        var sourceConnector = _serviceProvider
+    .GetServices<IAssetSourceConnector>()
+    .SingleOrDefault(x =>
+        x.Type.Equals(
+            job.SourceType,
+            StringComparison.OrdinalIgnoreCase));
+
+        if (sourceConnector is null)
+        {
+            throw new InvalidOperationException(
+                $"No source connector registered for type '{job.SourceType}'.");
+        }
         foreach (var row in sampleRows)
         {
             try

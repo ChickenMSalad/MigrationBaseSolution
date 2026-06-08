@@ -29,13 +29,13 @@ public sealed class WebDamAuthClient
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _tokenStore = tokenStore ?? throw new ArgumentNullException(nameof(tokenStore));
 
-        //Console.WriteLine(
-        //    $"WebDam auth debug. BaseUrl={_options.BaseUrl}, " +
-        //    $"ClientIdLength={_options.ClientId?.Length}, " +
-        //    $"ClientSecretLength={_options.ClientSecret?.Length}, " +
-        //    $"UsernameLength={_options.Username?.Length}, " +
-        //    $"PasswordLength={_options.Password?.Length}, " +
-        //    $"UsernameFirst={_options.Username?.Substring(0, Math.Min(3, _options.Username.Length))}");
+        Console.WriteLine(
+            $"WebDam auth debug. BaseUrl={_options.BaseUrl}, " +
+            $"ClientIdLength={_options.ClientId?.Length}, " +
+            $"ClientSecretLength={_options.ClientSecret?.Length}, " +
+            $"UsernameLength={_options.Username?.Length}, " +
+            $"PasswordLength={_options.Password?.Length}, " +
+            $"UsernameFirst={_options.Username?.Substring(0, Math.Min(3, _options.Username.Length))}");
 
         if (_httpClient.BaseAddress is null)
         {
