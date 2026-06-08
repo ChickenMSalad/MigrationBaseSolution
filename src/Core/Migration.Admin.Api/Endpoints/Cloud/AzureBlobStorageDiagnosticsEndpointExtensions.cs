@@ -12,7 +12,18 @@ public static class AzureBlobStorageDiagnosticsEndpointExtensions
                 IConfiguration configuration,
                 CloudBinaryStorageProviderCapabilities capabilities) =>
             {
-                var storageRoot = configuration["ControlPlane:StorageRoot"] ?? ".migration-control-plane";
+                var storageRoot =
+                    configuration["ControlPlane:StorageRoot"];
+
+                if (string.IsNullOrWhiteSpace(storageRoot))
+                {
+                    return Results.Ok(new
+                    {
+                        status = "NotConfigured",
+                        message = "ControlPlane:StorageRoot is not configured."
+                    });
+                }
+
                 var selectedProvider = storageRoot.StartsWith("az://", StringComparison.OrdinalIgnoreCase) ||
                                        storageRoot.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
                     ? CloudStorageProviders.AzureBlob

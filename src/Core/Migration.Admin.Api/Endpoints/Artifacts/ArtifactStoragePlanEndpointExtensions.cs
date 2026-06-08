@@ -38,7 +38,7 @@ public static class ArtifactStoragePlanEndpointExtensions
 
         var controlPlaneRoot = FirstNonEmpty(
             configuration["ControlPlane:StorageRoot"],
-            ".migration-control-plane");
+            "Runtime/admin-api");
 
         var artifactMode = Read(
             configuration,

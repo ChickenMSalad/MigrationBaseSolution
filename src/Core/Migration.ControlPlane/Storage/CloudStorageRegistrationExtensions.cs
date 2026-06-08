@@ -12,7 +12,8 @@ public static class CloudStorageRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var root = configuration["ControlPlane:StorageRoot"] ?? ".migration-control-plane";
+
+        var root = configuration["ControlPlane:StorageRoot"] ?? "Runtime/admin-api";
 
         services.AddSingleton<ICloudStoragePathResolver>(_ => new CloudStoragePathResolver(root));
 

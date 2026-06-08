@@ -129,9 +129,18 @@ public sealed class MigrationPreflightService : IMigrationPreflightService
             issues.Add(Error("mapping.targetType.mismatch", $"Mapping targetType '{profile.TargetType}' does not match job targetType '{job.TargetType}'.", "targetType"));
         }
 
-        if (profile.FieldMappings.Count == 0)
+        var isIntermediateMapping =
+            string.Equals(
+                profile.MappingType,
+                "intermediate",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (!isIntermediateMapping && profile.FieldMappings.Count == 0)
         {
-            issues.Add(Error("mapping.empty", "Mapping profile contains no field mappings.", "fieldMappings"));
+            issues.Add(Error(
+                "mapping.empty",
+                "Mapping profile contains no field mappings.",
+                "fieldMappings"));
         }
     }
 

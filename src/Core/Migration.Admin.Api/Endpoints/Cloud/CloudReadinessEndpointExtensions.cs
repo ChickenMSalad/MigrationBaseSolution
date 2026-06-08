@@ -109,7 +109,7 @@ public static class CloudReadinessEndpointExtensions
         string workspaceId)
     {
         var warnings = new List<string>();
-        var root = FirstNonEmpty(configuration["ControlPlane:StorageRoot"], ".migration-control-plane");
+        var root = configuration["ControlPlane:StorageRoot"];
         var isBlob = root.StartsWith("az://", StringComparison.OrdinalIgnoreCase) ||
                      root.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
 

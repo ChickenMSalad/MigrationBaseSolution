@@ -11,9 +11,13 @@ public sealed class ManifestBuilderFileStore
     {
         var configuredRoot = configuration[$"{AdminApiOptions.SectionName}:StorageRoot"];
 
+
         if (string.IsNullOrWhiteSpace(configuredRoot))
         {
-            configuredRoot = Path.Combine(AppContext.BaseDirectory, ".migration-control-plane");
+            configuredRoot = Path.Combine(
+                AppContext.BaseDirectory,
+                "Runtime",
+                "admin-api");
         }
 
         _root = Path.Combine(configuredRoot, "manifest-builder");

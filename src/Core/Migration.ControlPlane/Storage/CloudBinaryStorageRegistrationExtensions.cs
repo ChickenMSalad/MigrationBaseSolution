@@ -12,7 +12,7 @@ public static class CloudBinaryStorageRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        var root = configuration["ControlPlane:StorageRoot"] ?? ".migration-control-plane";
+        var root = configuration["ControlPlane:StorageRoot"] ?? "Runtime/admin-api";
         var provider = IsBlobRoot(root)
             ? CloudStorageProviders.AzureBlob
             : CloudStorageProviders.LocalFileSystem;

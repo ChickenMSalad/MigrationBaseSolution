@@ -12,7 +12,7 @@ public sealed class CloudStoragePathResolver : ICloudStoragePathResolver
     public CloudStoragePathResolver(string root)
     {
         _root = string.IsNullOrWhiteSpace(root)
-            ? ".migration-control-plane"
+            ? "Runtime/admin-api"
             : root.Trim();
 
         _provider = IsBlobRoot(_root)

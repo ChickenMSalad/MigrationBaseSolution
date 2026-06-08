@@ -20,7 +20,7 @@ public static class WorkspaceStoragePlanEndpointExtensions
 
                 var controlPlaneRoot = FirstNonEmpty(
                     configuration["ControlPlane:StorageRoot"],
-                    ".migration-control-plane");
+                    "Runtime/admin-api");
 
                 var storageMode = InferStorageMode(controlPlaneRoot);
                 var plan = BuildPlan(workspaceId, controlPlaneRoot, storageMode, environment);

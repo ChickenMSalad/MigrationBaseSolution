@@ -18,6 +18,9 @@ public sealed class MappingProfile
 
     [JsonPropertyName("requiredTargetFields")]
     public List<string> RequiredTargetFields { get; init; } = new();
+
+    [JsonPropertyName("mappingType")]
+    public string MappingType { get; init; } = "target";
 }
 
 public sealed class FieldMap
