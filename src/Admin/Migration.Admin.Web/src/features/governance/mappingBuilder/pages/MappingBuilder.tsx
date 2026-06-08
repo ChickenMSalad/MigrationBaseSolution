@@ -86,7 +86,15 @@ const transforms = [
 ];
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  return apiRequest<T>(path, init);
+    return apiRequest<T>(path, {
+        ...init,
+        headers: init?.body instanceof FormData
+            ? init.headers
+            : {
+                "Content-Type": "application/json",
+                ...(init?.headers ?? {})
+            }
+    });
 }
 
 function artifactKind(a: ArtifactRecord): string {
@@ -818,7 +826,7 @@ export function MappingBuilder() {
         Boolean(selectedTargetArtifactId);
 
   return (
-    <div className="pageStack">
+    <div className="pageStack mappingBuilder">
       <div className="pageTitle">
         <div>
           <h1>Mapping Builder</h1>

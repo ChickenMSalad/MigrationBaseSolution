@@ -1,0 +1,4 @@
+.mappingBuilder .json-block {
+    max-height: 300px;
+    overflow-y: scroll;
+}
