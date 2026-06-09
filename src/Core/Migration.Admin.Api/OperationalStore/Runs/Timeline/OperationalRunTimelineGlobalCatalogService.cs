@@ -34,8 +34,8 @@ public sealed class OperationalRunTimelineGlobalCatalogService
 
         var sources = new[]
         {
-            "MigrationRuns",
-            "MigrationWorkItems",
+            "Runs",
+            "WorkItems",
             "MigrationCheckpoints",
             "MigrationFailures"
         };
@@ -99,3 +99,5 @@ public sealed class OperationalRunTimelineGlobalCatalogService
             : _options.Value.SchemaName;
     }
 }
+
+

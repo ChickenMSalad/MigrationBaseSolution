@@ -5,3 +5,5 @@ public interface IDispatcherExecutionHistoryMetricsService
     Task<DispatcherExecutionHistoryMetricsResponse> GetMetricsAsync(
         CancellationToken cancellationToken = default);
 }
+
+

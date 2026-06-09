@@ -14,3 +14,5 @@ public interface IOperationalMetricsService
     Task<OperationalDiagnosticsSummaryResponse> GetSummaryAsync(
         CancellationToken cancellationToken = default);
 }
+
+

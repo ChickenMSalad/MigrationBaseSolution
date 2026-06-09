@@ -22,3 +22,5 @@ public static class QueueExecutionObservabilityEndpointExtensions
         return api;
     }
 }
+
+

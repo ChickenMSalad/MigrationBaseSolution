@@ -8,3 +8,5 @@ public sealed class OperationalGlobalActivityRunMetric
 
     public DateTimeOffset? LastEventAt { get; init; }
 }
+
+

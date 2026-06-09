@@ -10,3 +10,5 @@ public sealed class OperationalRetentionActionResponse
     public string Message { get; init; } = string.Empty;
     public IReadOnlyCollection<Guid> RunIds { get; init; } = Array.Empty<Guid>();
 }
+
+

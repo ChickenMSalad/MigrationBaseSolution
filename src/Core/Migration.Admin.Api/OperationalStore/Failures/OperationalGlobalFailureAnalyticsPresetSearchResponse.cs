@@ -11,3 +11,5 @@ public sealed class OperationalGlobalFailureAnalyticsPresetSearchResponse
     public IReadOnlyCollection<OperationalGlobalFailureAnalyticsPreset> Presets { get; init; } =
         Array.Empty<OperationalGlobalFailureAnalyticsPreset>();
 }
+
+

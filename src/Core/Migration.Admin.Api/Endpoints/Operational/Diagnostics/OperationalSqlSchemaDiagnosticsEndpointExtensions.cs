@@ -29,3 +29,5 @@ public static class OperationalSqlSchemaDiagnosticsEndpointExtensions
         return app;
     }
 }
+
+

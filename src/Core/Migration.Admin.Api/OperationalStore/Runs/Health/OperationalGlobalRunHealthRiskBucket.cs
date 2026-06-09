@@ -14,3 +14,5 @@ public sealed class OperationalGlobalRunHealthRiskBucket
 
     public string Message { get; init; } = string.Empty;
 }
+
+

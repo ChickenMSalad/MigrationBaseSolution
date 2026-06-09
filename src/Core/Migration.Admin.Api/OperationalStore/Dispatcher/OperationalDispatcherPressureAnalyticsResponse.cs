@@ -22,3 +22,5 @@ public sealed class OperationalDispatcherPressureAnalyticsResponse
     public IReadOnlyCollection<string> Signals { get; init; } =
         Array.Empty<string>();
 }
+
+

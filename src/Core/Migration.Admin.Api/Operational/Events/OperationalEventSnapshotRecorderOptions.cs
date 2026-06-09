@@ -10,3 +10,5 @@ public sealed class OperationalEventSnapshotRecorderOptions
 
     public int StartupDelaySeconds { get; set; } = 30;
 }
+
+

@@ -93,8 +93,8 @@ public sealed class OperationalDispatcherDiagnosticsService
                      AND wi.CompletedAt IS NULL
                      AND wi.FailedAt IS NULL
                     THEN 1 ELSE 0 END)
-            FROM [{schema}].[MigrationWorkItems] wi
-            INNER JOIN [{schema}].[MigrationRuns] r
+            FROM [{schema}].[WorkItems] wi
+            INNER JOIN [{schema}].[Runs] r
                 ON r.RunId = wi.RunId;
             """;
 
@@ -135,8 +135,8 @@ public sealed class OperationalDispatcherDiagnosticsService
                 wi.CreatedAt,
                 m.SourceId,
                 m.SourceName
-            FROM [{schema}].[MigrationWorkItems] wi
-            INNER JOIN [{schema}].[MigrationRuns] r
+            FROM [{schema}].[WorkItems] wi
+            INNER JOIN [{schema}].[Runs] r
                 ON r.RunId = wi.RunId
             INNER JOIN [{schema}].[MigrationManifestRecords] m
                 ON m.ManifestRecordId = wi.ManifestRecordId
@@ -212,3 +212,5 @@ public sealed class OperationalDispatcherDiagnosticsService
         public int ExpiredLeaseCount { get; init; }
     }
 }
+
+

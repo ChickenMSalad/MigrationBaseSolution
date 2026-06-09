@@ -6,3 +6,5 @@ public interface IOperationalGlobalActivityFeedService
         int limit = 50,
         CancellationToken cancellationToken = default);
 }
+
+

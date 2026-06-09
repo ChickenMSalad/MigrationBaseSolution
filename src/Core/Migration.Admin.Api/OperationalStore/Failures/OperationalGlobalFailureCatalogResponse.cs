@@ -24,3 +24,5 @@ public sealed class OperationalGlobalFailureCatalogResponse
 
     public DateTimeOffset GeneratedAt { get; init; }
 }
+
+

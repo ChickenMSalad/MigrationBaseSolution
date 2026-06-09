@@ -6,3 +6,5 @@ public interface IOperationalGlobalFailureRunStatusMetricsService
         int sampleLimit = 500,
         CancellationToken cancellationToken = default);
 }
+
+

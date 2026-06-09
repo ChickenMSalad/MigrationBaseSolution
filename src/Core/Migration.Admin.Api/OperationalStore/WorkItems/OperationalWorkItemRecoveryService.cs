@@ -108,7 +108,7 @@ public sealed class OperationalWorkItemRecoveryService : IOperationalWorkItemRec
         var schema = GetSchemaName();
 
         var sql = $"""
-            UPDATE [{schema}].[MigrationWorkItems]
+            UPDATE [{schema}].[WorkItems]
                 SET {setClause}
             OUTPUT
                 inserted.WorkItemId,
@@ -178,3 +178,5 @@ public sealed class OperationalWorkItemRecoveryService : IOperationalWorkItemRec
             : reader.GetFieldValue<DateTimeOffset>(ordinal);
     }
 }
+
+

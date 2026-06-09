@@ -28,3 +28,5 @@ public static class DeploymentHostingModels
     public const string AzureFunctions = "azureFunctions";
     public const string Unknown = "unknown";
 }
+
+

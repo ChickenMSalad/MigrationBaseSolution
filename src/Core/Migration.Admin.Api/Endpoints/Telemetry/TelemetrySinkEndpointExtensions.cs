@@ -97,3 +97,5 @@ public static class TelemetrySinkEndpointExtensions
         return string.Empty;
     }
 }
+
+

@@ -4,3 +4,5 @@ public interface ISqlOperationalMetricsReader
 {
     Task<SqlOperationalMetricsSnapshot> ReadSnapshotAsync(CancellationToken cancellationToken);
 }
+
+

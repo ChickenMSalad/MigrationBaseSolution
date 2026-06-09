@@ -12,3 +12,5 @@ public sealed class OperationalRunCompletionReadinessResponse
     public int FailedWorkItemCount { get; init; }
     public string Message { get; init; } = string.Empty;
 }
+
+

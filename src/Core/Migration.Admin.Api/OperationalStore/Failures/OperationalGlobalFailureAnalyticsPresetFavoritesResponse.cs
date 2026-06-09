@@ -9,3 +9,5 @@ public sealed class OperationalGlobalFailureAnalyticsPresetFavoritesResponse
     public IReadOnlyCollection<OperationalGlobalFailureAnalyticsPresetFavorite> Favorites { get; init; } =
         Array.Empty<OperationalGlobalFailureAnalyticsPresetFavorite>();
 }
+
+

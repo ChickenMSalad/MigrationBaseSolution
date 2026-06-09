@@ -11,3 +11,5 @@ public sealed class OperationalGlobalRecentFailuresResponse
     public IReadOnlyCollection<OperationalGlobalFailureItem> Failures { get; init; } =
         Array.Empty<OperationalGlobalFailureItem>();
 }
+
+

@@ -50,7 +50,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
     public async Task CreateRunAsync(SqlMigrationRunRecord run, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            INSERT INTO dbo.MigrationRuns
+            INSERT INTO migration.Runs
             (
                 RunId,
                 ProjectId,
@@ -90,7 +90,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
                 UpdatedAtUtc,
                 StartedAtUtc,
                 CompletedAtUtc
-            FROM dbo.MigrationRuns
+            FROM migration.Runs
             WHERE RunId = @RunId;
             """;
 
@@ -107,7 +107,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
         }
 
         const string sql = """
-            MERGE dbo.MigrationManifestRows AS target
+            MERGE migration.ManifestRows AS target
             USING
             (
                 SELECT
@@ -169,7 +169,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
         }
 
         const string sql = """
-            INSERT INTO dbo.MigrationWorkItems
+            INSERT INTO migration.WorkItems
             (
                 WorkItemId,
                 RunId,
@@ -214,7 +214,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
             ;WITH candidates AS
             (
                 SELECT TOP (@MaxItems) *
-                FROM dbo.MigrationWorkItems WITH (UPDLOCK, READPAST, ROWLOCK)
+                FROM migration.WorkItems WITH (UPDLOCK, READPAST, ROWLOCK)
                 WHERE RunId = @RunId
                   AND Status IN ('Pending', 'RetryPending')
                   AND (AvailableAtUtc IS NULL OR AvailableAtUtc <= @Now)
@@ -263,7 +263,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
     public async Task CompleteWorkItemAsync(long workItemId, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            UPDATE dbo.MigrationWorkItems
+            UPDATE migration.WorkItems
             SET
                 Status = 'Completed',
                 LeasedUntilUtc = NULL,
@@ -279,7 +279,7 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
     public async Task FailWorkItemAsync(long workItemId, SqlMigrationFailureRecord failure, CancellationToken cancellationToken = default)
     {
         const string updateSql = """
-            UPDATE dbo.MigrationWorkItems
+            UPDATE migration.WorkItems
             SET
                 Status = 'Failed',
                 LeasedUntilUtc = NULL,
@@ -404,3 +404,5 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
         await connection.ExecuteAsync(new CommandDefinition(sql, mapping, commandTimeout: _options.CommandTimeoutSeconds, cancellationToken: cancellationToken)).ConfigureAwait(false);
     }
 }
+
+

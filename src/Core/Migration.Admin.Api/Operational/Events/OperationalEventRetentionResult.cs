@@ -4,3 +4,5 @@ public sealed record OperationalEventRetentionResult(
     int RetentionDays,
     int DeletedEvents,
     DateTimeOffset CutoffUtc);
+
+

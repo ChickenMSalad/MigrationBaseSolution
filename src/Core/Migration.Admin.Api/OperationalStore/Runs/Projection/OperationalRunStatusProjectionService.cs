@@ -106,10 +106,10 @@ public sealed class OperationalRunStatusProjectionService
 
                 FailureCount = COUNT(DISTINCT f.FailureId),
                 CheckpointCount = COUNT(DISTINCT c.CheckpointId)
-            FROM [{schema}].[MigrationRuns] r
+            FROM [{schema}].[Runs] r
             LEFT JOIN [{schema}].[MigrationManifestRecords] m
                 ON m.RunId = r.RunId
-            LEFT JOIN [{schema}].[MigrationWorkItems] w
+            LEFT JOIN [{schema}].[WorkItems] w
                 ON w.RunId = r.RunId
             LEFT JOIN [{schema}].[MigrationFailures] f
                 ON f.RunId = r.RunId
@@ -228,3 +228,5 @@ public sealed class OperationalRunStatusProjectionService
             : reader.GetFieldValue<DateTimeOffset>(ordinal);
     }
 }
+
+

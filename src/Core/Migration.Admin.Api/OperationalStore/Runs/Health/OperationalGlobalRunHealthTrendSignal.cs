@@ -10,3 +10,5 @@ public sealed class OperationalGlobalRunHealthTrendSignal
 
     public int Weight { get; init; }
 }
+
+

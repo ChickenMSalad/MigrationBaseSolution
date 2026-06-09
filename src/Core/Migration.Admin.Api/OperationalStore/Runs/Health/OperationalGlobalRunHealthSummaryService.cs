@@ -98,7 +98,7 @@ public sealed class OperationalGlobalRunHealthSummaryService
             SELECT
                 Status,
                 Count = CAST(COUNT_BIG(1) AS BIGINT)
-            FROM [{schema}].[MigrationRuns]
+            FROM [{schema}].[Runs]
             GROUP BY Status
             ORDER BY COUNT_BIG(1) DESC, Status;
             """;
@@ -133,7 +133,7 @@ public sealed class OperationalGlobalRunHealthSummaryService
                 LockedWorkItemCount = CAST(COALESCE(SUM(CASE WHEN Status = N'Locked' THEN 1 ELSE 0 END), 0) AS BIGINT),
                 CompletedWorkItemCount = CAST(COALESCE(SUM(CASE WHEN Status = N'Completed' THEN 1 ELSE 0 END), 0) AS BIGINT),
                 FailedWorkItemCount = CAST(COALESCE(SUM(CASE WHEN Status = N'Failed' THEN 1 ELSE 0 END), 0) AS BIGINT)
-            FROM [{schema}].[MigrationWorkItems];
+            FROM [{schema}].[WorkItems];
             """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -238,3 +238,5 @@ public sealed class OperationalGlobalRunHealthSummaryService
         public int FailedWorkItemCount { get; init; }
     }
 }
+
+

@@ -123,3 +123,5 @@ public static class OperationalConnectorConfigurationEndpointExtensions
         IReadOnlyList<string> Errors,
         DateTimeOffset ValidatedAtUtc);
 }
+
+

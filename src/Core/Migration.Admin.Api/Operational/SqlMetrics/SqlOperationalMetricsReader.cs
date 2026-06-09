@@ -29,12 +29,12 @@ public sealed class SqlOperationalMetricsReader : ISqlOperationalMetricsReader
 
             var activeRuns = await ExecuteCountAsync(
                 connection,
-                "SELECT COUNT(1) FROM dbo.MigrationRuns;",
+                "SELECT COUNT(1) FROM dbo.Runs;",
                 cancellationToken);
 
             var queueDepth = await ExecuteCountAsync(
                 connection,
-                "SELECT COUNT(1) FROM dbo.MigrationWorkItems;",
+                "SELECT COUNT(1) FROM dbo.WorkItems;",
                 cancellationToken);
 
             var failureCount = await ExecuteCountAsync(
@@ -85,3 +85,5 @@ public sealed class SqlOperationalMetricsReader : ISqlOperationalMetricsReader
             Message: message);
     }
 }
+
+

@@ -14,3 +14,5 @@ public sealed class DispatcherWorkerExecutionMetric
 
     public DateTimeOffset? LastStartedAt { get; init; }
 }
+
+

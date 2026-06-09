@@ -54,3 +54,5 @@ public static class OperationalGlobalFailureAnalyticsPresetFavoriteEndpointExten
         return api;
     }
 }
+
+

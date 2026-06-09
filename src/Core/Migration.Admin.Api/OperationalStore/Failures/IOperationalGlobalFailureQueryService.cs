@@ -6,3 +6,5 @@ public interface IOperationalGlobalFailureQueryService
         OperationalGlobalFailureQuery query,
         CancellationToken cancellationToken = default);
 }
+
+

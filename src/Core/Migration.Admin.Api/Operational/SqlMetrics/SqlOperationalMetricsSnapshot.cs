@@ -10,3 +10,5 @@ public sealed record SqlOperationalMetricsSnapshot(
     decimal EstimatedHoursRemaining,
     decimal EstimatedMonthlyCost,
     string? Message);
+
+

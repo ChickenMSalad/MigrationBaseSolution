@@ -8,3 +8,5 @@ public sealed class DispatcherExecutionHistoryQuery
 
     public int Limit { get; init; } = 50;
 }
+
+

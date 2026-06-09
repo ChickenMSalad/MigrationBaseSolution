@@ -34,7 +34,7 @@ public sealed class OperationalMirrorWriteVerificationService
         var runCount = await CountAsync(
             connection,
             schemaName,
-            "MigrationRuns",
+            "Runs",
             cancellationToken);
 
         var manifestRecordCount = await CountAsync(
@@ -46,7 +46,7 @@ public sealed class OperationalMirrorWriteVerificationService
         var workItemCount = await CountAsync(
             connection,
             schemaName,
-            "MigrationWorkItems",
+            "WorkItems",
             cancellationToken);
 
         var checkpointCount = await CountAsync(
@@ -115,3 +115,5 @@ public sealed class OperationalMirrorWriteVerificationService
         return Convert.ToInt32(result);
     }
 }
+
+

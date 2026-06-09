@@ -20,3 +20,5 @@ public sealed class OperationalMirrorManifestRecordItem
 
     public DateTimeOffset? UpdatedAt { get; init; }
 }
+
+

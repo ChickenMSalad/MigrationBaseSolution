@@ -6,3 +6,5 @@ public sealed class OperationalGlobalActivitySourceMetric
 
     public int Count { get; init; }
 }
+
+

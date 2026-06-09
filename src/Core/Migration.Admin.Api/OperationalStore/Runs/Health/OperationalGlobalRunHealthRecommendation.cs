@@ -14,3 +14,5 @@ public sealed class OperationalGlobalRunHealthRecommendation
 
     public string RelatedSignal { get; init; } = string.Empty;
 }
+
+

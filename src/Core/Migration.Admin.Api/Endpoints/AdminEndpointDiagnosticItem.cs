@@ -9,3 +9,5 @@ public sealed class AdminEndpointDiagnosticItem
     public IReadOnlyCollection<string> Methods { get; init; } =
         Array.Empty<string>();
 }
+
+

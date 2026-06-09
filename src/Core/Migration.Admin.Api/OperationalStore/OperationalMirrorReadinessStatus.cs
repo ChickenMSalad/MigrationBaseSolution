@@ -15,3 +15,5 @@ public sealed class OperationalMirrorReadinessStatus
     public IReadOnlyCollection<string> Messages { get; init; } =
         Array.Empty<string>();
 }
+
+

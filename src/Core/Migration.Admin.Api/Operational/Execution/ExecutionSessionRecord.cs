@@ -11,3 +11,5 @@ public sealed record ExecutionSessionRecord(
     DateTimeOffset? StartedUtc,
     DateTimeOffset? CompletedUtc,
     string? Notes);
+
+

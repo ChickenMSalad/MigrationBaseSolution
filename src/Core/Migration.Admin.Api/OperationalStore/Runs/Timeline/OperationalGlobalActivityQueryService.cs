@@ -86,3 +86,5 @@ public sealed class OperationalGlobalActivityQueryService
                value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+

@@ -6,3 +6,5 @@ public sealed class OperationalWorkItemFailRequest
 
     public string FailureReason { get; init; } = string.Empty;
 }
+
+

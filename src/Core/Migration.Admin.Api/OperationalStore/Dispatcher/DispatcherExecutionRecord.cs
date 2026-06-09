@@ -24,3 +24,5 @@ public sealed class DispatcherExecutionRecord
 
     public string Message { get; init; } = string.Empty;
 }
+
+

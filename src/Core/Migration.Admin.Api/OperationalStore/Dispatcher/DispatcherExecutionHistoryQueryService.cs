@@ -123,3 +123,5 @@ public sealed class DispatcherExecutionHistoryQueryService
             : _sqlOptions.Value.SchemaName;
     }
 }
+
+

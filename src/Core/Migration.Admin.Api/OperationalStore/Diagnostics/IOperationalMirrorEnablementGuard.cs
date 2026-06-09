@@ -5,3 +5,5 @@ public interface IOperationalMirrorEnablementGuard
     Task<OperationalMirrorEnablementGuardResult> EvaluateAsync(
         CancellationToken cancellationToken = default);
 }
+
+

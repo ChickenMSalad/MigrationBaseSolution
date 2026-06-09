@@ -26,3 +26,5 @@ public static class CloudConfigurationMaturityLevels
     public const string CloudReady = "cloudReady";
     public const string Unknown = "unknown";
 }
+
+

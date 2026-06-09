@@ -165,3 +165,5 @@ public static class CloudPlatformEndpointExtensions
     private static string? EmptyToNull(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
+
+

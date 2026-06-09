@@ -8,3 +8,5 @@ public sealed class OperationalGlobalRunHealthDashboardResponse
     public DateTimeOffset GeneratedAt { get; init; }
     public IReadOnlyCollection<string> Messages { get; init; } = Array.Empty<string>();
 }
+
+

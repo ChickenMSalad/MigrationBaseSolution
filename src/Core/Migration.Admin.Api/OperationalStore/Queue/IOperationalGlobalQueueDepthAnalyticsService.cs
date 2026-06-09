@@ -5,3 +5,5 @@ public interface IOperationalGlobalQueueDepthAnalyticsService
     Task<OperationalGlobalQueueDepthAnalyticsResponse> GetAnalyticsAsync(
         CancellationToken cancellationToken = default);
 }
+
+

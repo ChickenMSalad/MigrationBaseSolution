@@ -10,3 +10,5 @@ public sealed class OperationalLeaseWorkerMetric
 
     public DateTimeOffset? NewestLockedAt { get; init; }
 }
+
+

@@ -7,3 +7,5 @@ public interface IOperationalRunTimelineSearchService
         OperationalRunTimelineSearchQuery query,
         CancellationToken cancellationToken = default);
 }
+
+

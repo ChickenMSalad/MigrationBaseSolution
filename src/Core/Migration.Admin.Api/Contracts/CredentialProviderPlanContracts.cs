@@ -29,3 +29,5 @@ public static class CredentialProviderKinds
     public const string ManagedIdentityKeyVault = "managedIdentityKeyVault";
     public const string Unknown = "unknown";
 }
+
+

@@ -7,3 +7,5 @@ public sealed class OperationalGlobalFailureAnalyticsPresetCatalogResponse
     public IReadOnlyCollection<OperationalGlobalFailureAnalyticsPreset> Presets { get; init; } =
         Array.Empty<OperationalGlobalFailureAnalyticsPreset>();
 }
+
+

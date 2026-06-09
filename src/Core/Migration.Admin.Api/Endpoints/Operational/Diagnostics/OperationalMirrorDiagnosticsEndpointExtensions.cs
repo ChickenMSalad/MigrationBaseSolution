@@ -95,3 +95,5 @@ public static class OperationalMirrorDiagnosticsEndpointExtensions
         return app;
     }
 }
+
+

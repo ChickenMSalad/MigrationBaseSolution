@@ -26,3 +26,5 @@ public sealed class OperationalGlobalQueueDepthAnalyticsResponse
     public IReadOnlyCollection<string> Messages { get; init; } =
         Array.Empty<string>();
 }
+
+

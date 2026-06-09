@@ -16,3 +16,5 @@ public sealed class OperationalGlobalFailureQuery
 
     public int Limit { get; init; } = 50;
 }
+
+

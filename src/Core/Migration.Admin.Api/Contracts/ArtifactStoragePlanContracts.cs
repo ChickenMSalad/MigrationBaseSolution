@@ -37,3 +37,5 @@ public static class ArtifactStorageKinds
     public const string Taxonomy = "taxonomy";
     public const string Other = "other";
 }
+
+

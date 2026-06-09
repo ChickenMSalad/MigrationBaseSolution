@@ -15,3 +15,5 @@ public sealed class OperationalWorkItemLeaseResponse
     public IReadOnlyCollection<OperationalWorkItemLeaseItem> WorkItems { get; init; } =
         Array.Empty<OperationalWorkItemLeaseItem>();
 }
+
+

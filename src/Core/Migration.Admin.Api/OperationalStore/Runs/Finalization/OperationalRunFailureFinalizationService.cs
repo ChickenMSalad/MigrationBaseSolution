@@ -53,8 +53,8 @@ public sealed class OperationalRunFailureFinalizationService
                 CompletedWorkItemCount = SUM(CASE WHEN w.Status = N'Completed' THEN 1 ELSE 0 END),
                 FailedWorkItemCount = SUM(CASE WHEN w.Status = N'Failed' THEN 1 ELSE 0 END),
                 FailureReason = MAX(w.LastFailureReason)
-            FROM [{schema}].[MigrationRuns] r
-            LEFT JOIN [{schema}].[MigrationWorkItems] w
+            FROM [{schema}].[Runs] r
+            LEFT JOIN [{schema}].[WorkItems] w
                 ON w.RunId = r.RunId
             WHERE r.RunId = @RunId
             GROUP BY r.RunId, r.Status;
@@ -183,7 +183,7 @@ public sealed class OperationalRunFailureFinalizationService
         CancellationToken cancellationToken)
     {
         var sql = $"""
-            UPDATE [{schema}].[MigrationRuns]
+            UPDATE [{schema}].[Runs]
                 SET
                     Status = N'Failed',
                     FailedAt = COALESCE(FailedAt, SYSDATETIMEOFFSET()),
@@ -227,3 +227,5 @@ public sealed class OperationalRunFailureFinalizationService
             : reader.GetString(ordinal);
     }
 }
+
+

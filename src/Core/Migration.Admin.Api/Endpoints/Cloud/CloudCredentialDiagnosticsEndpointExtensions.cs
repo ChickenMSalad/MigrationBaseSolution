@@ -56,3 +56,5 @@ public static class CloudCredentialDiagnosticsEndpointExtensions
         return string.Empty;
     }
 }
+
+

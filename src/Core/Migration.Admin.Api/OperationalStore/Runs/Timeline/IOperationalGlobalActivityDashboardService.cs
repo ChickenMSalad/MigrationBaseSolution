@@ -7,3 +7,5 @@ public interface IOperationalGlobalActivityDashboardService
         int metricsSampleLimit = 500,
         CancellationToken cancellationToken = default);
 }
+
+

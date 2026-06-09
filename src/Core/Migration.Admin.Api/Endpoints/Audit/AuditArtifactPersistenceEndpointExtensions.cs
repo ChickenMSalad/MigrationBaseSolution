@@ -27,3 +27,5 @@ public static class AuditArtifactPersistenceEndpointExtensions
         return api;
     }
 }
+
+

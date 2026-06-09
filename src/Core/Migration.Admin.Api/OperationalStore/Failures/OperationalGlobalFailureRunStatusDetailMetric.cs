@@ -17,3 +17,5 @@ public sealed class OperationalGlobalFailureRunStatusDetailMetric
     public IReadOnlyCollection<OperationalGlobalFailureTypeMetric> FailureTypes { get; init; } =
         Array.Empty<OperationalGlobalFailureTypeMetric>();
 }
+
+

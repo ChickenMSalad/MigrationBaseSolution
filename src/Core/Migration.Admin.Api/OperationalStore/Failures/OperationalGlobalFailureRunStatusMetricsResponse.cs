@@ -11,3 +11,5 @@ public sealed class OperationalGlobalFailureRunStatusMetricsResponse
     public IReadOnlyCollection<OperationalGlobalFailureRunStatusDetailMetric> RunStatuses { get; init; } =
         Array.Empty<OperationalGlobalFailureRunStatusDetailMetric>();
 }
+
+

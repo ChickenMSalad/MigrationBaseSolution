@@ -10,3 +10,5 @@ public sealed class OperationalRunAutoFinalizationStatusResponse
 
     public string Mode { get; init; } = string.Empty;
 }
+
+

@@ -13,3 +13,5 @@ public sealed class OperationalMirrorEnablementGuardResult
     public IReadOnlyCollection<string> Messages { get; init; } =
         Array.Empty<string>();
 }
+
+

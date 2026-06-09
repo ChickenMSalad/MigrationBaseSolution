@@ -6,3 +6,5 @@ public interface IOperationalGlobalFailureCatalogService
         int sampleLimit = 500,
         CancellationToken cancellationToken = default);
 }
+
+

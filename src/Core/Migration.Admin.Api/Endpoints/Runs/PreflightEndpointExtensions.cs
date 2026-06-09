@@ -142,3 +142,5 @@ public static class PreflightEndpointExtensions
     private static int GetInt(Dictionary<string, string?> settings, string key, int fallback) =>
         settings.TryGetValue(key, out var raw) && int.TryParse(raw, out var parsed) ? parsed : fallback;
 }
+
+

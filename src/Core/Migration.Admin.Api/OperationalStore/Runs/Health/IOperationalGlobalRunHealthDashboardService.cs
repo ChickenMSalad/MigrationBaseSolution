@@ -8,3 +8,5 @@ public interface IOperationalGlobalRunHealthDashboardService
         int metricsSampleLimit = 100,
         CancellationToken cancellationToken = default);
 }
+
+

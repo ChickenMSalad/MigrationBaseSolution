@@ -513,3 +513,5 @@ internal sealed record MappingBuilderArtifactPreview(
     string FileName,
     IReadOnlyList<string> Columns,
     IReadOnlyList<IReadOnlyDictionary<string, string>> SampleRows);
+
+

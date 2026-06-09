@@ -10,3 +10,5 @@ public sealed class OperationalDiagnosticsSummaryResponse
 
     public DateTimeOffset GeneratedAt { get; init; }
 }
+
+

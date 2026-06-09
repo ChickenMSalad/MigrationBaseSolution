@@ -140,3 +140,5 @@ public sealed class DispatcherExecutionHistoryRetentionService
             : _sqlOptions.Value.SchemaName;
     }
 }
+
+

@@ -7,3 +7,5 @@ public interface IOperationalGlobalRunHealthTrendSummaryService
         int metricsSampleLimit = 500,
         CancellationToken cancellationToken = default);
 }
+
+

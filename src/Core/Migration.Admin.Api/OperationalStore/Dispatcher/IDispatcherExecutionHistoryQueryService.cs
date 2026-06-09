@@ -6,3 +6,5 @@ public interface IDispatcherExecutionHistoryQueryService
         DispatcherExecutionHistoryQuery query,
         CancellationToken cancellationToken = default);
 }
+
+

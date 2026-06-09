@@ -47,3 +47,5 @@ internal sealed record SqlOperationalBackboneCapabilitiesResponse(
     bool SupportsFailures,
     bool SupportsCheckpoints,
     bool SupportsIdentifierMappings);
+
+

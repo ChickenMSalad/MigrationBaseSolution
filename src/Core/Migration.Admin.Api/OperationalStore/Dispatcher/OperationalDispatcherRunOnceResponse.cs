@@ -17,3 +17,5 @@ public sealed class OperationalDispatcherRunOnceResponse
     public IReadOnlyCollection<long> WorkItemIds { get; init; } =
         Array.Empty<long>();
 }
+
+

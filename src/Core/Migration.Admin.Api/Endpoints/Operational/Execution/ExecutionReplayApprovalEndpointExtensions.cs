@@ -47,3 +47,5 @@ public static class ExecutionReplayApprovalEndpointExtensions
 public sealed record ExecutionReplayApprovalHistoryResponse(
     Guid SourceExecutionSessionId,
     IReadOnlyList<ExecutionReplayApprovalRecord> Approvals);
+
+

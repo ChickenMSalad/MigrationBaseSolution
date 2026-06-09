@@ -23,3 +23,5 @@ public sealed class OperationalSqlSchemaSmokeTestResult
     public IReadOnlyCollection<string> Messages { get; init; } =
         Array.Empty<string>();
 }
+
+

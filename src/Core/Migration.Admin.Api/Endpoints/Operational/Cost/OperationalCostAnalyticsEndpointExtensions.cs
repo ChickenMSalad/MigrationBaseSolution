@@ -32,3 +32,5 @@ public static class OperationalCostAnalyticsEndpointExtensions
         return endpoints;
     }
 }
+
+

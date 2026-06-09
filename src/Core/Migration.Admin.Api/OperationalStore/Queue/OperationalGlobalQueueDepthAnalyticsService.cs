@@ -76,7 +76,7 @@ public sealed class OperationalGlobalQueueDepthAnalyticsService
             SELECT
                 Status,
                 Count = CAST(COUNT_BIG(1) AS BIGINT)
-            FROM [{schema}].[MigrationWorkItems]
+            FROM [{schema}].[WorkItems]
             GROUP BY Status
             ORDER BY COUNT_BIG(1) DESC, Status;
             """;
@@ -196,3 +196,5 @@ public sealed class OperationalGlobalQueueDepthAnalyticsService
             : _options.Value.SchemaName;
     }
 }
+
+

@@ -28,3 +28,5 @@ public sealed class OperationalGlobalFailureItem
 
     public string? WorkItemStatus { get; init; }
 }
+
+

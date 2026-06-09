@@ -43,13 +43,13 @@ public sealed class OperationalGlobalActivityFeedService
                     r.RunId,
                     OccurredAt = r.CreatedAt,
                     EventType = CAST(N'RunCreated' AS NVARCHAR(200)),
-                    Source = CAST(N'MigrationRuns' AS NVARCHAR(200)),
+                    Source = CAST(N'Runs' AS NVARCHAR(200)),
                     WorkItemId = CAST(NULL AS UNIQUEIDENTIFIER),
                     ManifestRecordId = CAST(NULL AS UNIQUEIDENTIFIER),
                     CheckpointId = CAST(NULL AS UNIQUEIDENTIFIER),
                     FailureId = CAST(NULL AS UNIQUEIDENTIFIER),
                     Message = CAST(N'Operational run created with status ' + r.Status + N'.' AS NVARCHAR(4000))
-                FROM [{schema}].[MigrationRuns] r
+                FROM [{schema}].[Runs] r
 
                 UNION ALL
 
@@ -57,13 +57,13 @@ public sealed class OperationalGlobalActivityFeedService
                     r.RunId,
                     OccurredAt = r.CompletedAt,
                     EventType = CAST(N'RunCompleted' AS NVARCHAR(200)),
-                    Source = CAST(N'MigrationRuns' AS NVARCHAR(200)),
+                    Source = CAST(N'Runs' AS NVARCHAR(200)),
                     WorkItemId = CAST(NULL AS UNIQUEIDENTIFIER),
                     ManifestRecordId = CAST(NULL AS UNIQUEIDENTIFIER),
                     CheckpointId = CAST(NULL AS UNIQUEIDENTIFIER),
                     FailureId = CAST(NULL AS UNIQUEIDENTIFIER),
                     Message = CAST(N'Operational run completed.' AS NVARCHAR(4000))
-                FROM [{schema}].[MigrationRuns] r
+                FROM [{schema}].[Runs] r
                 WHERE r.CompletedAt IS NOT NULL
 
                 UNION ALL
@@ -72,13 +72,13 @@ public sealed class OperationalGlobalActivityFeedService
                     r.RunId,
                     OccurredAt = r.FailedAt,
                     EventType = CAST(N'RunFailed' AS NVARCHAR(200)),
-                    Source = CAST(N'MigrationRuns' AS NVARCHAR(200)),
+                    Source = CAST(N'Runs' AS NVARCHAR(200)),
                     WorkItemId = CAST(NULL AS UNIQUEIDENTIFIER),
                     ManifestRecordId = CAST(NULL AS UNIQUEIDENTIFIER),
                     CheckpointId = CAST(NULL AS UNIQUEIDENTIFIER),
                     FailureId = CAST(NULL AS UNIQUEIDENTIFIER),
                     Message = CAST(COALESCE(r.FailureReason, N'Operational run failed.') AS NVARCHAR(4000))
-                FROM [{schema}].[MigrationRuns] r
+                FROM [{schema}].[Runs] r
                 WHERE r.FailedAt IS NOT NULL
 
                 UNION ALL
@@ -87,13 +87,13 @@ public sealed class OperationalGlobalActivityFeedService
                     w.RunId,
                     OccurredAt = w.CreatedAt,
                     EventType = CAST(N'WorkItemCreated' AS NVARCHAR(200)),
-                    Source = CAST(N'MigrationWorkItems' AS NVARCHAR(200)),
+                    Source = CAST(N'WorkItems' AS NVARCHAR(200)),
                     WorkItemId = w.WorkItemId,
                     ManifestRecordId = w.ManifestRecordId,
                     CheckpointId = CAST(NULL AS UNIQUEIDENTIFIER),
                     FailureId = CAST(NULL AS UNIQUEIDENTIFIER),
                     Message = CAST(N'Work item created with status ' + w.Status + N'.' AS NVARCHAR(4000))
-                FROM [{schema}].[MigrationWorkItems] w
+                FROM [{schema}].[WorkItems] w
 
                 UNION ALL
 
@@ -101,7 +101,7 @@ public sealed class OperationalGlobalActivityFeedService
                     w.RunId,
                     OccurredAt = w.LockedAt,
                     EventType = CAST(N'WorkItemLocked' AS NVARCHAR(200)),
-                    Source = CAST(N'MigrationWorkItems' AS NVARCHAR(200)),
+                    Source = CAST(N'WorkItems' AS NVARCHAR(200)),
                     WorkItemId = w.WorkItemId,
                     ManifestRecordId = w.ManifestRecordId,
                     CheckpointId = CAST(NULL AS UNIQUEIDENTIFIER),
@@ -110,7 +110,7 @@ public sealed class OperationalGlobalActivityFeedService
                         WHEN w.LockedBy IS NULL THEN N'Work item locked.'
                         ELSE N'Work item locked by ' + w.LockedBy + N'.'
                     END AS NVARCHAR(4000))
-                FROM [{schema}].[MigrationWorkItems] w
+                FROM [{schema}].[WorkItems] w
                 WHERE w.LockedAt IS NOT NULL
 
                 UNION ALL
@@ -119,13 +119,13 @@ public sealed class OperationalGlobalActivityFeedService
                     w.RunId,
                     OccurredAt = w.CompletedAt,
                     EventType = CAST(N'WorkItemCompleted' AS NVARCHAR(200)),
-                    Source = CAST(N'MigrationWorkItems' AS NVARCHAR(200)),
+                    Source = CAST(N'WorkItems' AS NVARCHAR(200)),
                     WorkItemId = w.WorkItemId,
                     ManifestRecordId = w.ManifestRecordId,
                     CheckpointId = CAST(NULL AS UNIQUEIDENTIFIER),
                     FailureId = CAST(NULL AS UNIQUEIDENTIFIER),
                     Message = CAST(N'Work item completed.' AS NVARCHAR(4000))
-                FROM [{schema}].[MigrationWorkItems] w
+                FROM [{schema}].[WorkItems] w
                 WHERE w.CompletedAt IS NOT NULL
 
                 UNION ALL
@@ -212,3 +212,5 @@ public sealed class OperationalGlobalActivityFeedService
         return reader.IsDBNull(ordinal) ? null : reader.GetGuid(ordinal);
     }
 }
+
+

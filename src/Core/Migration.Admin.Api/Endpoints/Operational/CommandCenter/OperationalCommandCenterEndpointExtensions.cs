@@ -50,3 +50,5 @@ public sealed record OperationalCommandCenterSummaryResponse(
     decimal EstimatedMonthlyCost,
     DateTimeOffset LastUpdatedUtc,
     string? Message);
+
+

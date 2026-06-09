@@ -148,3 +148,5 @@ ORDER BY LastHeartbeatUtc DESC;
         return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
     }
 }
+
+

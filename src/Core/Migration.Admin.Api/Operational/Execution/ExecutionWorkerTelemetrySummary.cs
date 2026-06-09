@@ -7,3 +7,5 @@ public sealed record ExecutionWorkerTelemetrySummary(
     int StaleWorkers,
     DateTimeOffset GeneratedUtc,
     IReadOnlyList<ExecutionWorkerHeartbeatRecord> Workers);
+
+

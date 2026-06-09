@@ -20,3 +20,5 @@ public sealed class OperationalGlobalActivityEvent
 
     public string Message { get; init; } = string.Empty;
 }
+
+

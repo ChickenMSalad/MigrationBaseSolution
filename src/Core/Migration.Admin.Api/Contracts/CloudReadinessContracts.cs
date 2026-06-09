@@ -23,3 +23,5 @@ public static class CloudReadinessStatuses
     public const string Warning = "warning";
     public const string NotReady = "notReady";
 }
+
+

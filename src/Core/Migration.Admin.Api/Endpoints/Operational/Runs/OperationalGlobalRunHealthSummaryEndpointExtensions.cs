@@ -29,3 +29,5 @@ public static class OperationalGlobalRunHealthSummaryEndpointExtensions
         return api;
     }
 }
+
+

@@ -40,7 +40,7 @@ public static class OperationalSlaSloEndpointExtensions
                     new OperationalSlaSloPolicyResponse(
                         PolicyId: "queue-depth-warning",
                         Name: "Queue depth warning",
-                        Metric: "MigrationWorkItems",
+                        Metric: "WorkItems",
                         Threshold: "> 0",
                         Severity: "warning",
                         Enabled: true,
@@ -72,7 +72,7 @@ public static class OperationalSlaSloEndpointExtensions
                     BreachId: "queue-depth-warning",
                     DetectedUtc: DateTimeOffset.UtcNow,
                     Severity: "warning",
-                    Metric: "MigrationWorkItems",
+                    Metric: "WorkItems",
                     Threshold: "> 0",
                     ObservedValue: snapshot.QueueDepth.ToString(),
                     Scope: "OperationalSql",
@@ -145,3 +145,5 @@ public sealed record OperationalSlaSloBreachPreviewItemResponse(
     string ObservedValue,
     string Scope,
     string Message);
+
+

@@ -11,3 +11,5 @@ public interface IOperationalGlobalFailureAnalyticsPresetService
         int limit = 50,
         CancellationToken cancellationToken = default);
 }
+
+

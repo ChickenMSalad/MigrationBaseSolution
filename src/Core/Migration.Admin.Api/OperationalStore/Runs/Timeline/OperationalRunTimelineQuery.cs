@@ -8,3 +8,5 @@ public sealed class OperationalRunTimelineQuery
 
     public int Limit { get; init; } = 100;
 }
+
+

@@ -40,8 +40,8 @@ public sealed class OperationalRunAutoFinalizationService
                     TotalWorkItemCount = COUNT(w.WorkItemId),
                     OutstandingWorkItemCount = SUM(CASE WHEN w.Status IN (N'Created', N'Locked', N'Processing') THEN 1 ELSE 0 END),
                     FailedWorkItemCount = SUM(CASE WHEN w.Status = N'Failed' THEN 1 ELSE 0 END)
-                FROM [{schema}].[MigrationRuns] r
-                LEFT JOIN [{schema}].[MigrationWorkItems] w
+                FROM [{schema}].[Runs] r
+                LEFT JOIN [{schema}].[WorkItems] w
                     ON w.RunId = r.RunId
                 WHERE r.Status NOT IN (N'Completed', N'Failed', N'Aborted', N'Canceled', N'CancelRequested')
                 GROUP BY r.RunId, r.Status, r.CreatedAt
@@ -68,7 +68,7 @@ public sealed class OperationalRunAutoFinalizationService
                         THEN COALESCE(r.FailureReason, N'Operational run auto-finalized as failed because one or more work items failed.')
                         ELSE r.FailureReason
                     END
-            FROM [{schema}].[MigrationRuns] r
+            FROM [{schema}].[Runs] r
             INNER JOIN RunRollups rr
                 ON rr.RunId = r.RunId;
 
@@ -101,3 +101,5 @@ public sealed class OperationalRunAutoFinalizationService
             : _sqlOptions.Value.SchemaName;
     }
 }
+
+

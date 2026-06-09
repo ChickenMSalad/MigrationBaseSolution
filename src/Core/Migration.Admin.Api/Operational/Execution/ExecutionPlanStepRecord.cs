@@ -15,3 +15,5 @@ public sealed record ExecutionPlanStepRecord(
     DateTimeOffset? StartedUtc,
     DateTimeOffset? CompletedUtc,
     string? ErrorMessage);
+
+

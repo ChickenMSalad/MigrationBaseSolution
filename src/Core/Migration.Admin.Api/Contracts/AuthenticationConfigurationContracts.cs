@@ -25,3 +25,5 @@ public static class AuthenticationModes
     public const string OpenIdConnect = "openIdConnect";
     public const string Unknown = "unknown";
 }
+
+

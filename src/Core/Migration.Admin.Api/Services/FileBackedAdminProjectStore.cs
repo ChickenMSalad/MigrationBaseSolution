@@ -98,3 +98,5 @@ public sealed class FileBackedAdminProjectStore : IAdminProjectStore
         return new string(value.Select(c => invalid.Contains(c) ? '-' : c).ToArray());
     }
 }
+
+

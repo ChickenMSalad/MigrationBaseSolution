@@ -41,9 +41,9 @@ public sealed class OperationalGlobalFailureService : IOperationalGlobalFailureS
                 r.TargetSystem,
                 WorkItemStatus = wi.Status
             FROM [{schema}].[MigrationFailures] f
-            INNER JOIN [{schema}].[MigrationRuns] r
+            INNER JOIN [{schema}].[Runs] r
                 ON r.RunId = f.RunId
-            LEFT JOIN [{schema}].[MigrationWorkItems] wi
+            LEFT JOIN [{schema}].[WorkItems] wi
                 ON wi.WorkItemId = f.WorkItemId
             ORDER BY f.CreatedAt DESC, f.FailureId DESC;
             """;
@@ -107,3 +107,5 @@ public sealed class OperationalGlobalFailureService : IOperationalGlobalFailureS
         return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
     }
 }
+
+

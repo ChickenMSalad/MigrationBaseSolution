@@ -12,3 +12,5 @@ public sealed class OperationalRetentionStatusResponse
     public int EligiblePurgeRunCount { get; init; }
     public string Mode { get; init; } = string.Empty;
 }
+
+

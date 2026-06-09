@@ -6,3 +6,5 @@ public sealed class OperationalRunTimelineSearchQuery
 
     public int Limit { get; init; } = 100;
 }
+
+

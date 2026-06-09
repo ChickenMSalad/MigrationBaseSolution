@@ -5,3 +5,5 @@ public interface IOperationalDispatcherDashboardSummaryService
     Task<OperationalDispatcherDashboardSummaryResponse> GetSummaryAsync(
         CancellationToken cancellationToken = default);
 }
+
+

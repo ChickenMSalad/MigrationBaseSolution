@@ -113,3 +113,5 @@ public static class ManifestBuilderEndpoints
         return new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content), writable: false);
     }
 }
+
+

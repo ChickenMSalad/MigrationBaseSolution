@@ -7,3 +7,5 @@ public interface IOperationalGlobalFailureAnalyticsDashboardService
         int metricsSampleLimit = 500,
         CancellationToken cancellationToken = default);
 }
+
+

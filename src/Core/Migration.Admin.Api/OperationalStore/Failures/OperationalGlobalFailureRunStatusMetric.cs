@@ -6,3 +6,5 @@ public sealed class OperationalGlobalFailureRunStatusMetric
 
     public int Count { get; init; }
 }
+
+

@@ -86,3 +86,5 @@ public static class QueueTelemetryEventEndpointExtensions
         return string.Empty;
     }
 }
+
+

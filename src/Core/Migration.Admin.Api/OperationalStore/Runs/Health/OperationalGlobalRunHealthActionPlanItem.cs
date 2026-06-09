@@ -20,3 +20,5 @@ public sealed class OperationalGlobalRunHealthActionPlanItem
 
     public string SourceRecommendationKey { get; init; } = string.Empty;
 }
+
+

@@ -236,3 +236,5 @@ ORDER BY COALESCE(UpdatedAtUtc, CreatedAtUtc) DESC,
         return value is DBNull ? null : value;
     }
 }
+
+

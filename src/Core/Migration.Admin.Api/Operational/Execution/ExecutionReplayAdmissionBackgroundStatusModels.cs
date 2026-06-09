@@ -9,3 +9,5 @@ public sealed record ExecutionReplayAdmissionBackgroundStatus(
     int AllowedStartHourUtc,
     int AllowedEndHourUtc,
     DateTimeOffset GeneratedUtc);
+
+

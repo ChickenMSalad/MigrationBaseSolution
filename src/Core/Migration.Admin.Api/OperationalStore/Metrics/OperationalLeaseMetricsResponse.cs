@@ -17,3 +17,5 @@ public sealed class OperationalLeaseMetricsResponse
     public IReadOnlyCollection<OperationalLeaseWorkerMetric> Workers { get; init; } =
         Array.Empty<OperationalLeaseWorkerMetric>();
 }
+
+

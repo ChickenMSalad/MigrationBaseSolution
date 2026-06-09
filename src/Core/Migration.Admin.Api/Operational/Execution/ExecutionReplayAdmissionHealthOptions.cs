@@ -8,3 +8,5 @@ public sealed class ExecutionReplayAdmissionHealthOptions
 
     public int Take { get; set; } = 50;
 }
+
+

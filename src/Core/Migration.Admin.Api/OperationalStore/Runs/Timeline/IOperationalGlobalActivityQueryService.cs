@@ -6,3 +6,5 @@ public interface IOperationalGlobalActivityQueryService
         OperationalGlobalActivityQuery query,
         CancellationToken cancellationToken = default);
 }
+
+
