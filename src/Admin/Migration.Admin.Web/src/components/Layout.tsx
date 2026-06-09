@@ -16,7 +16,7 @@ import { NavLink, Outlet } from "react-router-dom";
 const nav = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
   { to: "/projects", label: "Projects", icon: Workflow },
-  { to: "/runtime-dashboard", label: "Runtime Dashboard", icon: Gauge },
+  { to: "/runs", label: "Runs", icon: Gauge },
   { to: "/execution-sessions", label: "Execution Sessions", icon: Workflow },
   { to: "/failure-retry", label: "Failure Retry", icon: RefreshCcw },
   { to: "/manifest-builder", label: "Manifest Builder", icon: FileSpreadsheet },
