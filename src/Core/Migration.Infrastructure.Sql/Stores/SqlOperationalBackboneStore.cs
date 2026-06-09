@@ -23,25 +23,25 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
     public async Task CreateProjectAsync(SqlMigrationProjectRecord project, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            INSERT INTO dbo.MigrationProjects
-            (
-                ProjectId,
-                ProjectKey,
-                DisplayName,
-                Status,
-                CreatedAtUtc,
-                UpdatedAtUtc
-            )
-            VALUES
-            (
-                @ProjectId,
-                @ProjectKey,
-                @DisplayName,
-                @Status,
-                @CreatedAtUtc,
-                @UpdatedAtUtc
-            );
-            """;
+                           INSERT INTO migration.MigrationProjects
+                           (
+                               ProjectId,
+                               ProjectKey,
+                               ProjectName,
+                               Status,
+                               CreatedAtUtc,
+                               UpdatedAtUtc
+                           )
+                           VALUES
+                           (
+                               @ProjectId,
+                               @ProjectKey,
+                               @DisplayName,
+                               @Status,
+                               @CreatedAtUtc,
+                               @UpdatedAtUtc
+                           );
+                           """;
 
         using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
         await connection.ExecuteAsync(new CommandDefinition(sql, project, commandTimeout: _options.CommandTimeoutSeconds, cancellationToken: cancellationToken)).ConfigureAwait(false);
@@ -289,31 +289,31 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
             """;
 
         const string insertSql = """
-            INSERT INTO dbo.MigrationFailures
-            (
-                FailureId,
-                RunId,
-                WorkItemId,
-                ManifestRowId,
-                FailureType,
-                FailureCode,
-                Message,
-                DetailsJson,
-                CreatedAtUtc
-            )
-            VALUES
-            (
-                @FailureId,
-                @RunId,
-                @WorkItemId,
-                @ManifestRowId,
-                @FailureType,
-                @FailureCode,
-                @Message,
-                @DetailsJson,
-                @CreatedAtUtc
-            );
-            """;
+                                 INSERT INTO migration.WorkItemFailures
+                                 (
+                                     WorkItemId,
+                                     RunId,
+                                     AttemptNumber,
+                                     ErrorCode,
+                                     ErrorMessage,
+                                     ExceptionType,
+                                     IsRetryable,
+                                     FailureJson,
+                                     CreatedAtUtc
+                                 )
+                                 VALUES
+                                 (
+                                     @WorkItemId,
+                                     @RunId,
+                                     1,
+                                     @FailureCode,
+                                     @Message,
+                                     @FailureType,
+                                     CAST(0 AS bit),
+                                     @DetailsJson,
+                                     @CreatedAtUtc
+                                 );
+                                 """;
 
         using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
         await connection.ExecuteAsync(new CommandDefinition(updateSql, new { WorkItemId = workItemId }, commandTimeout: _options.CommandTimeoutSeconds, cancellationToken: cancellationToken)).ConfigureAwait(false);
@@ -323,25 +323,41 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
     public async Task SaveCheckpointAsync(SqlMigrationCheckpointRecord checkpoint, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            INSERT INTO dbo.MigrationRunCheckpoints
-            (
-                CheckpointId,
-                RunId,
-                CheckpointName,
-                CheckpointValue,
-                PayloadJson,
-                CreatedAtUtc
-            )
-            VALUES
-            (
-                @CheckpointId,
-                @RunId,
-                @CheckpointName,
-                @CheckpointValue,
-                @PayloadJson,
-                @CreatedAtUtc
-            );
-            """;
+                           MERGE migration.ExecutionCheckpoints AS target
+                           USING
+                           (
+                               SELECT
+                                   @RunId AS RunId,
+                                   @CheckpointName AS CheckpointName,
+                                   @CheckpointValue AS CheckpointValue,
+                                   @PayloadJson AS CheckpointJson,
+                                   SYSUTCDATETIME() AS UpdatedAtUtc
+                           ) AS source
+                           ON target.RunId = source.RunId
+                              AND target.CheckpointName = source.CheckpointName
+                           WHEN MATCHED THEN
+                               UPDATE SET
+                                   CheckpointValue = source.CheckpointValue,
+                                   CheckpointJson = source.CheckpointJson,
+                                   UpdatedAtUtc = source.UpdatedAtUtc
+                           WHEN NOT MATCHED THEN
+                               INSERT
+                               (
+                                   RunId,
+                                   CheckpointName,
+                                   CheckpointValue,
+                                   CheckpointJson,
+                                   UpdatedAtUtc
+                               )
+                               VALUES
+                               (
+                                   source.RunId,
+                                   source.CheckpointName,
+                                   source.CheckpointValue,
+                                   source.CheckpointJson,
+                                   source.UpdatedAtUtc
+                               );
+                           """;
 
         using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
         await connection.ExecuteAsync(new CommandDefinition(sql, checkpoint, commandTimeout: _options.CommandTimeoutSeconds, cancellationToken: cancellationToken)).ConfigureAwait(false);
@@ -350,55 +366,55 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
     public async Task UpsertAssetMappingAsync(SqlMigrationAssetMappingRecord mapping, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            MERGE dbo.MigrationAssetMappings AS target
-            USING
-            (
-                SELECT
-                    @AssetMappingId AS AssetMappingId,
-                    @RunId AS RunId,
-                    @SourceSystem AS SourceSystem,
-                    @SourceIdentifier AS SourceIdentifier,
-                    @TargetSystem AS TargetSystem,
-                    @TargetIdentifier AS TargetIdentifier,
-                    @PayloadJson AS PayloadJson,
-                    @CreatedAtUtc AS CreatedAtUtc,
-                    @UpdatedAtUtc AS UpdatedAtUtc
-            ) AS source
-            ON target.RunId = source.RunId
-               AND target.SourceSystem = source.SourceSystem
-               AND target.SourceIdentifier = source.SourceIdentifier
-               AND target.TargetSystem = source.TargetSystem
-            WHEN MATCHED THEN
-                UPDATE SET
-                    TargetIdentifier = source.TargetIdentifier,
-                    PayloadJson = source.PayloadJson,
-                    UpdatedAtUtc = source.UpdatedAtUtc
-            WHEN NOT MATCHED THEN
-                INSERT
-                (
-                    AssetMappingId,
-                    RunId,
-                    SourceSystem,
-                    SourceIdentifier,
-                    TargetSystem,
-                    TargetIdentifier,
-                    PayloadJson,
-                    CreatedAtUtc,
-                    UpdatedAtUtc
-                )
-                VALUES
-                (
-                    source.AssetMappingId,
-                    source.RunId,
-                    source.SourceSystem,
-                    source.SourceIdentifier,
-                    source.TargetSystem,
-                    source.TargetIdentifier,
-                    source.PayloadJson,
-                    source.CreatedAtUtc,
-                    source.UpdatedAtUtc
-                );
-            """;
+                           MERGE migration.IdentifierMappings AS target
+                           USING
+                           (
+                               SELECT
+                                   @RunId AS RunId,
+                                   @SourceSystem AS SourceSystem,
+                                   @TargetSystem AS TargetSystem,
+                                   @SourceIdentifier AS SourceIdentifier,
+                                   @TargetIdentifier AS TargetIdentifier,
+                                   CAST(NULL AS nvarchar(200)) AS EntityType,
+                                   @PayloadJson AS MappingJson,
+                                   SYSUTCDATETIME() AS CreatedAtUtc,
+                                   SYSUTCDATETIME() AS UpdatedAtUtc
+                           ) AS source
+                           ON target.RunId = source.RunId
+                              AND target.SourceSystem = source.SourceSystem
+                              AND target.SourceIdentifier = source.SourceIdentifier
+                              AND target.TargetSystem = source.TargetSystem
+                           WHEN MATCHED THEN
+                               UPDATE SET
+                                   TargetIdentifier = source.TargetIdentifier,
+                                   MappingJson = source.MappingJson,
+                                   UpdatedAtUtc = source.UpdatedAtUtc
+                           WHEN NOT MATCHED THEN
+                               INSERT
+                               (
+                                   RunId,
+                                   SourceSystem,
+                                   TargetSystem,
+                                   SourceIdentifier,
+                                   TargetIdentifier,
+                                   EntityType,
+                                   MappingJson,
+                                   CreatedAtUtc,
+                                   UpdatedAtUtc
+                               )
+                               VALUES
+                               (
+                                   source.RunId,
+                                   source.SourceSystem,
+                                   source.TargetSystem,
+                                   source.SourceIdentifier,
+                                   source.TargetIdentifier,
+                                   source.EntityType,
+                                   source.MappingJson,
+                                   source.CreatedAtUtc,
+                                   source.UpdatedAtUtc
+                               );
+                           """;
 
         using var connection = await _connectionFactory.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
         await connection.ExecuteAsync(new CommandDefinition(sql, mapping, commandTimeout: _options.CommandTimeoutSeconds, cancellationToken: cancellationToken)).ConfigureAwait(false);

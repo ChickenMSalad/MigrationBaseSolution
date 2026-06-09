@@ -1,6 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
 using Migration.Application.Abstractions.OperationalStore;
 using Migration.Application.OperationalStore;
-
+using Microsoft.AspNetCore.Mvc;
 namespace Migration.Admin.Api.Endpoints;
 
 public static class OperationalDispatchEndpointExtensions
@@ -13,7 +14,7 @@ public static class OperationalDispatchEndpointExtensions
         api.MapGet(
                 "/operational/runs/dispatch/sample",
                 (
-                    IOperationalRunDispatchSampleRequestFactory sampleRequestFactory,
+                    [FromServices] IOperationalRunDispatchSampleRequestFactory sampleRequestFactory,
                     int? count) =>
                 {
                     var request = sampleRequestFactory.CreateSample(
@@ -31,8 +32,8 @@ public static class OperationalDispatchEndpointExtensions
         api.MapPost(
                 "/operational/runs/dispatch",
                 async (
-                    OperationalRunDispatchRequest request,
-                    IOperationalRunDispatchRequestHandler handler,
+                    [FromBody] OperationalRunDispatchRequest request,
+                    [FromServices] IOperationalRunDispatchRequestHandler handler,
                     CancellationToken cancellationToken) =>
                 {
                     try
