@@ -1,24 +1,19 @@
-using Migration.Application.Abstractions.OperationalStore;
-using Migration.Application.Models.OperationalStore;
-using Migration.Application.Models.OperationalStore.Statuses;
+
 using Migration.ControlPlane.Models;
 
 namespace Migration.Admin.Api.OperationalStore;
 
 public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirrorService
 {
-    private readonly IOperationalStore _operationalStore;
     private readonly IOperationalMirrorEnablementGuard _enablementGuard;
     private readonly OperationalMirrorInvocationState _invocationState;
     private readonly ILogger<AdminOperationalRunMirrorService> _logger;
 
     public AdminOperationalRunMirrorService(
-        IOperationalStore operationalStore,
         IOperationalMirrorEnablementGuard enablementGuard,
         OperationalMirrorInvocationState invocationState,
         ILogger<AdminOperationalRunMirrorService> logger)
     {
-        _operationalStore = operationalStore;
         _enablementGuard = enablementGuard;
         _invocationState = invocationState;
         _logger = logger;
@@ -84,104 +79,107 @@ public sealed class AdminOperationalRunMirrorService : IAdminOperationalRunMirro
         }
     }
 
-    private async Task<Guid> MirrorRunCoreAsync(
+    private Task<Guid> MirrorRunCoreAsync(
         MigrationProjectRecord project,
         MigrationRunControlRecord run,
         CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
 
-        var operationalRunId = OperationalMirrorIdFactory.CreateGuid(
-            $"legacy-run:{run.RunId}");
+        var operationalRunId = OperationalMirrorIdFactory.CreateGuid(run.RunId);
+        return Task.FromResult(operationalRunId);
 
-        var existingRun = await _operationalStore.Runs.GetAsync(
-            operationalRunId,
-            cancellationToken);
+        //var operationalRunId = OperationalMirrorIdFactory.CreateGuid(
+        //$"legacy-run:{run.RunId}");
 
-        if (existingRun is null)
-        {
-            await _operationalStore.Runs.CreateAsync(
-                new MigrationRunRecord
-                {
-                    RunId = operationalRunId,
-                    SourceSystem = project.SourceType,
-                    TargetSystem = project.TargetType,
-                    Status = MigrationRunStatuses.Created,
-                    CreatedAt = now
-                },
-                cancellationToken);
-        }
+        //var existingRun = await _operationalStore.Runs.GetAsync(
+        //    operationalRunId,
+        //    cancellationToken);
+
+        //if (existingRun is null)
+        //{
+        //    await _operationalStore.Runs.CreateAsync(
+        //        new MigrationRunRecord
+        //        {
+        //            RunId = operationalRunId,
+        //            SourceSystem = project.SourceType,
+        //            TargetSystem = project.TargetType,
+        //            Status = MigrationRunStatuses.Created,
+        //            CreatedAt = now
+        //        },
+        //        cancellationToken);
+        //}
 
 
 
-            await _operationalStore.ManifestRecords.AddAsync(
-                new MigrationManifestRecord
-                {
-                    RunId = operationalRunId,
-                    SequenceNumber = 1,
-                    SourceId = run.Job.ManifestPath,
-                    SourcePath = run.Job.ManifestPath,
-                    SourceName = Path.GetFileName(run.Job.ManifestPath),
-                    Status = MigrationManifestStatuses.Created,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                },
-                cancellationToken);
+        //    await _operationalStore.ManifestRecords.AddAsync(
+        //        new MigrationManifestRecord
+        //        {
+        //            RunId = operationalRunId,
+        //            SequenceNumber = 1,
+        //            SourceId = run.Job.ManifestPath,
+        //            SourcePath = run.Job.ManifestPath,
+        //            SourceName = Path.GetFileName(run.Job.ManifestPath),
+        //            Status = MigrationManifestStatuses.Created,
+        //            CreatedAt = now,
+        //            UpdatedAt = now
+        //        },
+        //        cancellationToken);
         
 
 
 
-            await _operationalStore.WorkItems.AddAsync(
-                new MigrationWorkItemRecord
-                {
-                    RunId = operationalRunId,
-                    Status = MigrationWorkItemStatuses.Created,
-                    AttemptCount = 0,
-                    CreatedAt = now
-                },
-                cancellationToken);
+        //    await _operationalStore.WorkItems.AddAsync(
+        //        new MigrationWorkItemRecord
+        //        {
+        //            RunId = operationalRunId,
+        //            Status = MigrationWorkItemStatuses.Created,
+        //            AttemptCount = 0,
+        //            CreatedAt = now
+        //        },
+        //        cancellationToken);
         
 
-        await _operationalStore.Checkpoints.UpsertAsync(
-            new MigrationCheckpointRecord
-            {
-                CheckpointId = OperationalMirrorIdFactory.CreateGuid(
-                    $"legacy-run:{run.RunId}:checkpoint:legacy-run-id"),
-                RunId = operationalRunId,
-                CheckpointName = "LegacyRunId",
-                CheckpointValue = run.RunId,
-                CreatedAt = now,
-                UpdatedAt = now
-            },
-            cancellationToken);
+        //await _operationalStore.Checkpoints.UpsertAsync(
+        //    new MigrationCheckpointRecord
+        //    {
+        //        CheckpointId = OperationalMirrorIdFactory.CreateGuid(
+        //            $"legacy-run:{run.RunId}:checkpoint:legacy-run-id"),
+        //        RunId = operationalRunId,
+        //        CheckpointName = "LegacyRunId",
+        //        CheckpointValue = run.RunId,
+        //        CreatedAt = now,
+        //        UpdatedAt = now
+        //    },
+        //    cancellationToken);
 
-        await _operationalStore.Checkpoints.UpsertAsync(
-            new MigrationCheckpointRecord
-            {
-                CheckpointId = OperationalMirrorIdFactory.CreateGuid(
-                    $"legacy-run:{run.RunId}:checkpoint:legacy-job-name"),
-                RunId = operationalRunId,
-                CheckpointName = "LegacyJobName",
-                CheckpointValue = run.JobName,
-                CreatedAt = now,
-                UpdatedAt = now
-            },
-            cancellationToken);
+        //await _operationalStore.Checkpoints.UpsertAsync(
+        //    new MigrationCheckpointRecord
+        //    {
+        //        CheckpointId = OperationalMirrorIdFactory.CreateGuid(
+        //            $"legacy-run:{run.RunId}:checkpoint:legacy-job-name"),
+        //        RunId = operationalRunId,
+        //        CheckpointName = "LegacyJobName",
+        //        CheckpointValue = run.JobName,
+        //        CreatedAt = now,
+        //        UpdatedAt = now
+        //    },
+        //    cancellationToken);
 
-        await _operationalStore.Checkpoints.UpsertAsync(
-            new MigrationCheckpointRecord
-            {
-                CheckpointId = OperationalMirrorIdFactory.CreateGuid(
-                    $"legacy-run:{run.RunId}:checkpoint:legacy-project-id"),
-                RunId = operationalRunId,
-                CheckpointName = "LegacyProjectId",
-                CheckpointValue = project.ProjectId,
-                CreatedAt = now,
-                UpdatedAt = now
-            },
-            cancellationToken);
+        //await _operationalStore.Checkpoints.UpsertAsync(
+        //    new MigrationCheckpointRecord
+        //    {
+        //        CheckpointId = OperationalMirrorIdFactory.CreateGuid(
+        //            $"legacy-run:{run.RunId}:checkpoint:legacy-project-id"),
+        //        RunId = operationalRunId,
+        //        CheckpointName = "LegacyProjectId",
+        //        CheckpointValue = project.ProjectId,
+        //        CreatedAt = now,
+        //        UpdatedAt = now
+        //    },
+        //    cancellationToken);
 
-        return operationalRunId;
+        //return operationalRunId;
     }
 }
 
