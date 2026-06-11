@@ -22,15 +22,14 @@ public static class DeleteEndpointExtensions
         //    .WithSummary("Deletes a file-backed project record. Pass includeRuns=true to also delete related run/progress/state records.");
 
         api.MapDelete("/runs/{runId}", async (
-                string runId,
-                ControlPlaneDeleteService deleteService,
-                CancellationToken cancellationToken) =>
-            {
-                var result = await deleteService.DeleteRunAsync(runId, cancellationToken);
-                return Results.Ok(result);
-            })
+                    string runId,
+                    IAdminProjectStore store,
+                    CancellationToken cancellationToken) =>
+                await store.DeleteRunAsync(runId, cancellationToken).ConfigureAwait(false)
+                    ? Results.NoContent()
+                    : Results.NotFound())
             .WithName("DeleteRun")
-            .WithSummary("Deletes a file-backed run record and associated local monitoring/state files.");
+            .WithSummary("Deletes a SQL-backed control-plane run record.");
 
         //api.MapDelete("/credentials/{credentialId}", async (
         //        string credentialId,

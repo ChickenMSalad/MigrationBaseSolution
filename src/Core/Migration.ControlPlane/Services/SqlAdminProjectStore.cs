@@ -208,4 +208,15 @@ public sealed class SqlAdminProjectStore : IAdminProjectStore
         command.Parameters.AddWithValue("@UpdatedUtc", run.UpdatedUtc);
         command.Parameters.AddWithValue("@CompletedUtc", (object?)run.CompletedUtc ?? DBNull.Value);
     }
+
+    public async Task<bool> DeleteRunAsync(string runId, CancellationToken cancellationToken = default)
+    {
+        const string sql = "DELETE FROM dbo.AdminRuns WHERE RunId = @RunId;";
+
+        await using var connection = await OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@RunId", runId);
+
+        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+    }
 }

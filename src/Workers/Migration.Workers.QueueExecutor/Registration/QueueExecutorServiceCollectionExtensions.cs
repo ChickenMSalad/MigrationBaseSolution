@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Migration.Application.Abstractions.OperationalStore;
+using Migration.Application.OperationalStore;
 using Migration.ControlPlane.Registration;
 using Migration.GenericRuntime.Registration;
 using Migration.Infrastructure.Sql.Registration;
@@ -23,6 +24,8 @@ public static class QueueExecutorServiceCollectionExtensions
 
         services.Configure<OperationalQueuePublisherOptions>(
             configuration.GetSection(OperationalQueuePublisherOptions.SectionName));
+
+        services.AddSingleton<IOperationalQueueMessageSerializer, OperationalQueueMessageSerializer>();
 
         // Shared execution/runtime path used by API and worker hosts.
         services.AddMigrationRuntime(configuration);

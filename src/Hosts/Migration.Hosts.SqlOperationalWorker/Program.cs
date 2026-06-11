@@ -7,8 +7,10 @@ using Migration.GenericRuntime.Registration;
 using Migration.Connectors.Registration;
 using Migration.ControlPlane.Registration;
 using Migration.Application.Operational.Telemetry;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.Sources.Clear();
 builder.Configuration
@@ -21,6 +23,7 @@ builder.Configuration
 
 Migration.Connectors.Registration.ConnectorModuleRegistrationExtensions
     .AddMigrationConnectorModules(builder.Services, builder.Configuration);
+
 builder.Services.AddMigrationRuntime(builder.Configuration);
 builder.Services.AddMigrationControlPlane(builder.Configuration);
 
@@ -28,12 +31,26 @@ builder.Services.AddSingleton<Migration.Workers.QueueExecutor.Services.ProjectCr
 
 builder.Services.AddSqlOperationalRuntimeReadiness(builder.Configuration);
 builder.Services.AddSqlOperationalQueueExecutor(builder.Configuration);
-
 builder.Services.AddSqlOperationalMigrationJobWorkItemExecutor(builder.Configuration);
 builder.Services.AddHostedService<SqlOperationalWorkerStartupProbe>();
 builder.Services.AddOperationalOpenTelemetry(builder.Configuration);
 
-await builder.Build().RunAsync().ConfigureAwait(false);
+var app = builder.Build();
+
+app.MapGet("/", () => Results.Ok(new
+{
+    service = "Migration SQL Operational Worker",
+    status = "Running",
+    utc = DateTimeOffset.UtcNow
+}));
+
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "Healthy",
+    utc = DateTimeOffset.UtcNow
+}));
+
+await app.RunAsync().ConfigureAwait(false);
 
 internal sealed class SqlOperationalWorkerStartupProbe : BackgroundService
 {

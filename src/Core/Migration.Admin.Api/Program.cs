@@ -11,6 +11,7 @@ using Migration.Admin.Api.Endpoints;
 using Migration.Infrastructure.Sql.Registration;
 using Migration.Admin.Api.Endpoints.Operational.Connectors;
 using Migration.Admin.Api.Operational;
+using Migration.Application.Registration;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAdminApiOperationalRuntimeReadiness(builder.Configuration);
@@ -23,7 +24,9 @@ Migration.Admin.Api.Configuration.AdminApiConfigurationExtensions.LogAdminApiCon
 
 AdminApiOpenApiServiceCollectionExtensions.AddMigrationAdminApiOpenApi(builder.Services);
 builder.Services.AddMigrationAdminApiRuntime(builder.Configuration);
+
 builder.Services.AddSqlOperationalStore(builder.Configuration);
+
 builder.Services.AddMigrationAdminApiOperationalRunMirror(builder.Configuration);
 builder.Services.AddMigrationAdminApiAuthentication(builder.Configuration, builder.Environment);
 AdminApiCloudStartupExtensions.AddMigrationAdminApiCloudServices(builder.Services, builder.Configuration);

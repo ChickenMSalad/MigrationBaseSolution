@@ -12,4 +12,5 @@ public interface IAdminProjectStore
     Task<IReadOnlyList<MigrationRunControlRecord>> ListRunsAsync(CancellationToken cancellationToken = default);
     Task<MigrationRunControlRecord?> GetRunAsync(string runId, CancellationToken cancellationToken = default);
     Task<MigrationRunControlRecord> SaveRunAsync(MigrationRunControlRecord run, CancellationToken cancellationToken = default);
+    Task<bool> DeleteRunAsync(string runId, CancellationToken cancellationToken = default);
 }

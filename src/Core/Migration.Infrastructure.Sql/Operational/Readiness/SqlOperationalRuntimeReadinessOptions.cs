@@ -18,9 +18,9 @@ public sealed class SqlOperationalRuntimeReadinessOptions
 
     public string WorkItemsTableName { get; set; } = "WorkItems";
 
-    public string FailuresTableName { get; set; } = "MigrationFailures";
+    public string FailuresTableName { get; set; } = "WorkItemFailures";
 
-    public string CheckpointsTableName { get; set; } = "MigrationRunCheckpoints";
+    public string CheckpointsTableName { get; set; } = "ExecutionCheckpoints";
 
     public string IdentifierMappingsTableName { get; set; } = "MigrationAssetMappings";
 }

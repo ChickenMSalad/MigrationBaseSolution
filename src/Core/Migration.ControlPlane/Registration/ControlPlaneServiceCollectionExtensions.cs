@@ -24,7 +24,8 @@ public static class ControlPlaneServiceCollectionExtensions
         services.AddSingleton<AdminRunFactory>();
         services.AddSingleton<RunPreflightGateService>();
         services.AddSingleton<IArtifactStore, FileBackedArtifactStore>();
-        services.AddScoped<IAdminProjectStore, SqlAdminProjectStore>();
+        //services.AddScoped<IAdminProjectStore, SqlAdminProjectStore>();
+        services.AddSingleton<IAdminProjectStore, SqlAdminProjectStore>();
         services.AddSingleton<ArtifactPathResolver>();
         //services.AddSingleton<IAdminProjectStore, FileBackedAdminProjectStore>();
         services.AddSingleton<IRunMonitoringStore, FileBackedRunMonitoringStore>();

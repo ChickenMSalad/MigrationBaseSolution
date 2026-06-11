@@ -46,6 +46,18 @@ public sealed class FileBackedAdminProjectStore : IAdminProjectStore
         finally { _gate.Release(); }
     }
 
+    public async Task<bool> DeleteRunAsync(string runId, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var path = Path.Combine(_runsDirectory, SafeFileName(runId) + ".json");
+            if (!File.Exists(path)) return false;
+            File.Delete(path);
+            return true;
+        }
+        finally { _gate.Release(); }
+    }
     public async Task<IReadOnlyList<MigrationRunControlRecord>> ListRunsAsync(CancellationToken cancellationToken = default)
     {
         var runs = await ReadAllAsync<MigrationRunControlRecord>(_runsDirectory, cancellationToken).ConfigureAwait(false);
