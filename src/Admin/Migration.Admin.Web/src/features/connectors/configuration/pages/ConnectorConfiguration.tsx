@@ -27,12 +27,12 @@ const emptySummary: ConnectorConfigurationSummary = {
 };
 
 function formatNumber(value: number | undefined | null) {
-  return value === undefined || value === null ? "â€”" : value.toLocaleString();
+  return value === undefined || value === null ? "—" : value.toLocaleString();
 }
 
 function formatDate(value?: string | null) {
   if (!value) {
-    return "â€”";
+    return "—";
   }
 
   const date = new Date(value);

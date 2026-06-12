@@ -24,11 +24,11 @@ public sealed class GenericMigrationRuntimeOptions
     /// Backward-compatible default. If no Enabled* list is supplied, register every known connector/provider.
     /// Set this to false in worker/API smoke tests or narrowly scoped deployments.
     /// </summary>
-    public bool RegisterAllWhenEmpty { get; init; } = true;
+    public bool RegisterAllWhenEmpty { get; init; } = false;
 
-    public List<string> EnabledSources { get; init; } = new();
+    public List<string> EnabledSources { get; set; } = new();
 
-    public List<string> EnabledTargets { get; init; } = new();
+    public List<string> EnabledTargets { get; set; } = new();
 
-    public List<string> EnabledManifests { get; init; } = new();
+    public List<string> EnabledManifests { get; set; } = new();
 }

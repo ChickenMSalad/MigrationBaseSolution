@@ -6,7 +6,7 @@ public sealed class SqlOperationalRunCoordinatorOptions
 
     public string ConnectionStringName { get; set; } = "MigrationOperationalStore";
 
-    public string SchemaName { get; set; } = "dbo";
+    public string SchemaName { get; set; } = "migration";
 
     public string RunsTableName { get; set; } = "Runs";
 

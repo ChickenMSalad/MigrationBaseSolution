@@ -7,7 +7,7 @@ import type { RuntimeDashboardRunDetail } from "../types/runtimeDashboard";
 
 function formatDate(value?: string | null) {
   if (!value) {
-    return "â€”";
+    return "—";
   }
 
   const date = new Date(value);
@@ -15,7 +15,7 @@ function formatDate(value?: string | null) {
 }
 
 function formatNumber(value?: number | null) {
-  return value === undefined || value === null ? "â€”" : value.toLocaleString();
+  return value === undefined || value === null ? "—" : value.toLocaleString();
 }
 
 export function RuntimeRunDetail() {
@@ -96,9 +96,9 @@ export function RuntimeRunDetail() {
           <dt>Run ID</dt>
           <dd>{run.runId}</dd>
           <dt>Run key</dt>
-          <dd>{run.runKey ?? "â€”"}</dd>
+          <dd>{run.runKey ?? "—"}</dd>
           <dt>Environment</dt>
-          <dd>{run.environmentName ?? "â€”"}</dd>
+          <dd>{run.environmentName ?? "—"}</dd>
           <dt>Requested</dt>
           <dd>{formatDate(run.requestedAtUtc)}</dd>
           <dt>Created</dt>
@@ -128,10 +128,10 @@ export function RuntimeRunDetail() {
                 <tr key={item.workItemId}>
                   <td>{item.workItemId}</td>
                   <td><StatusPill status={item.status ?? undefined} /></td>
-                  <td>{item.workType ?? "â€”"}</td>
+                  <td>{item.workType ?? "—"}</td>
                   <td>{formatNumber(item.attemptCount)}</td>
                   <td>{formatDate(item.updatedAtUtc)}</td>
-                  <td>{item.lastErrorMessage ?? "â€”"}</td>
+                  <td>{item.lastErrorMessage ?? "—"}</td>
                 </tr>
               ))}
             </tbody>

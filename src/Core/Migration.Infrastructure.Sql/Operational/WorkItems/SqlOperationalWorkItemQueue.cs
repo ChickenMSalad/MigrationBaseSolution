@@ -85,6 +85,7 @@ values (
 )
 update Claimable
 set Status = 'Leased',
+    StartedAtUtc = coalesce(StartedAtUtc, @NowUtc),
     LeaseOwner = @WorkerId,
     LeaseExpiresUtc = @LeaseExpiresUtc,
     AttemptCount = AttemptCount + 1,
@@ -105,6 +106,8 @@ output inserted.WorkItemId,
        inserted.ResultJson,
        inserted.LastErrorCode,
        inserted.LastErrorMessage,
+        inserted.StartedAtUtc,
+        inserted.CompletedAtUtc,
        inserted.CreatedUtc,
        inserted.UpdatedUtc;";
 
@@ -127,7 +130,9 @@ output inserted.WorkItemId,
         var sql = $@"
 select WorkItemId, RunId, ManifestRowId, WorkItemType, Status, PartitionKey, Priority,
        AttemptCount, MaxAttempts, LeaseOwner, LeaseExpiresUtc, NotBeforeUtc,
-       PayloadJson, ResultJson, LastErrorCode, LastErrorMessage, CreatedUtc, UpdatedUtc
+       PayloadJson, ResultJson, LastErrorCode, LastErrorMessage,
+       StartedAtUtc, CompletedAtUtc,
+       CreatedUtc, UpdatedUtc
 from {TableName}
 where WorkItemId = @WorkItemId;";
 
@@ -171,6 +176,7 @@ set Status = 'Completed',
     ResultJson = @ResultJson,
     LeaseOwner = null,
     LeaseExpiresUtc = null,
+    CompletedAtUtc = SYSUTCDATETIME(),
     UpdatedUtc = @UpdatedUtc
 where WorkItemId = @WorkItemId;";
 
@@ -189,6 +195,7 @@ set Status = case when @IsRetryable = 1 and AttemptCount < MaxAttempts then 'Fai
     LeaseOwner = null,
     LeaseExpiresUtc = null,
     NotBeforeUtc = @NextAttemptUtc,
+    CompletedAtUtc = case when @IsRetryable = 1 and AttemptCount < MaxAttempts then CompletedAtUtc else SYSUTCDATETIME() end,
     UpdatedUtc = @UpdatedUtc
 where WorkItemId = @WorkItemId;";
 

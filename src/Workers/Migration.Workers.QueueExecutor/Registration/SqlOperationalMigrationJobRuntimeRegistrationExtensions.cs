@@ -21,9 +21,6 @@ namespace Migration.Workers.QueueExecutor.Registration
             services.AddMigrationControlPlane(configuration);
             services.AddSqlOperationalStore(configuration);
 
-            Migration.Connectors.Registration.ConnectorModuleRegistrationExtensions
-                .AddMigrationConnectorModules(services, configuration);
-
             services.AddSingleton<ProjectCredentialJobSettingsHydrator>();
 
             return services;

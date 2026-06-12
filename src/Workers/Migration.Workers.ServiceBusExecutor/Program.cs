@@ -5,7 +5,6 @@ using Migration.Application.Abstractions;
 using Migration.Application.Operational.Telemetry;
 using Migration.Infrastructure.Mapping;
 using Migration.Infrastructure.Profiles;
-using Migration.Infrastructure.Sql.Operational.WorkItems;
 using Migration.Orchestration.Extensions;
 using Migration.Workers.QueueExecutor.Registration;
 using Migration.Workers.QueueExecutor.Services;
@@ -15,13 +14,14 @@ using Migration.Workers.ServiceBusExecutor.Runtime;
 using Migration.ControlPlane.Registration;
 
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddOptions<SqlServiceBusExecutorOptions>()
     .Bind(builder.Configuration.GetSection(SqlServiceBusExecutorOptions.SectionName))
     .Validate(options => !string.IsNullOrWhiteSpace(options.QueueName), "SqlServiceBusExecutor:QueueName is required.")
     .ValidateOnStart();
+
 
 builder.Services.AddSqlOperationalMigrationJobRuntime(builder.Configuration);
 builder.Services.AddSqlOperationalWorkItemQueue();
@@ -36,7 +36,13 @@ builder.Services.AddSingleton<IMapper, CanonicalMapper>();
 builder.Services.AddSingleton<ProjectCredentialJobSettingsHydrator>();
 builder.Services.AddMigrationControlPlane(builder.Configuration);
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+
+app.MapGet("/", () => Results.Text("OK", "text/plain"));
+
+app.MapGet("/health", () => Results.Text("Healthy", "text/plain"));
+
+await app.RunAsync().ConfigureAwait(false);
 
 
 

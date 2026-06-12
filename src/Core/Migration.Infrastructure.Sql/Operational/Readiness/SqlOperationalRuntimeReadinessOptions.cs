@@ -8,7 +8,7 @@ public sealed class SqlOperationalRuntimeReadinessOptions
 
     public string? ConnectionStringName { get; set; } = "MigrationOperationalStore";
 
-    public string SchemaName { get; set; } = "dbo";
+    public string SchemaName { get; set; } = "migration";
 
     public string ProjectsTableName { get; set; } = "MigrationProjects";
 
@@ -22,5 +22,5 @@ public sealed class SqlOperationalRuntimeReadinessOptions
 
     public string CheckpointsTableName { get; set; } = "ExecutionCheckpoints";
 
-    public string IdentifierMappingsTableName { get; set; } = "MigrationAssetMappings";
+    public string IdentifierMappingsTableName { get; set; } = "IdentifierMappings";
 }

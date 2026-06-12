@@ -5,7 +5,7 @@ using Migration.Connectors.Sources.Aem.Registration;
 using Migration.Connectors.Sources.AzureBlob;
 using Migration.Connectors.Sources.LocalStorage.Registration;
 using Migration.Connectors.Sources.S3;
-using Migration.Connectors.Sources.SharePoint;
+using Migration.Connectors.Sources.SharePoint.Registration;
 using Migration.Connectors.Sources.Sitecore;
 using Migration.Connectors.Sources.WebDam.Registration;
 using Migration.Connectors.Targets.Aprimo;
@@ -22,6 +22,7 @@ using Migration.Manifest.Excel;
 using Migration.Manifest.Sql;
 using Migration.Manifest.Sqlite;
 using Migration.Orchestration.Extensions;
+
 
 namespace Migration.GenericRuntime.Registration;
 
@@ -52,9 +53,28 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
     {
         services.Configure<GenericMigrationRuntimeOptions>(configuration.GetSection(GenericMigrationRuntimeOptions.SectionName));
 
+        //var options = configuration
+        //    .GetSection(GenericMigrationRuntimeOptions.SectionName)
+        //    .Get<GenericMigrationRuntimeOptions>() ?? new GenericMigrationRuntimeOptions();
+
         var options = configuration
             .GetSection(GenericMigrationRuntimeOptions.SectionName)
             .Get<GenericMigrationRuntimeOptions>() ?? new GenericMigrationRuntimeOptions();
+
+        options.EnabledSources = NormalizeEnabledList(
+            configuration,
+            $"{GenericMigrationRuntimeOptions.SectionName}:EnabledSources",
+            options.EnabledSources);
+
+        options.EnabledTargets = NormalizeEnabledList(
+            configuration,
+            $"{GenericMigrationRuntimeOptions.SectionName}:EnabledTargets",
+            options.EnabledTargets);
+
+        options.EnabledManifests = NormalizeEnabledList(
+            configuration,
+            $"{GenericMigrationRuntimeOptions.SectionName}:EnabledManifests",
+            options.EnabledManifests);
 
         services.AddMigrationOrchestration(configuration);
 
@@ -70,6 +90,30 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
         services.AddMigrationPreflight();
 
         return services;
+    }
+
+    private static List<string> NormalizeEnabledList(
+        IConfiguration configuration,
+        string key,
+        IReadOnlyCollection<string>? current)
+    {
+        var values = new List<string>();
+
+        if (current is not null)
+        {
+            values.AddRange(current.Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        var raw = configuration[key];
+        if (!string.IsNullOrWhiteSpace(raw))
+        {
+            values.AddRange(
+                raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        }
+
+        return values
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static void AddManifestProviders(IServiceCollection services, GenericMigrationRuntimeOptions options)
@@ -129,7 +173,9 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
 
         if (IsEnabled(options.EnabledSources, "SharePoint", options.RegisterAllWhenEmpty))
         {
-            services.AddSingleton<IAssetSourceConnector, SharePointSourceConnector>();
+            Migration.Connectors.Sources.SharePoint.Registration.SharePointSourceConnectorRegistration
+                .AddSharePointSourceConnector(services, configuration); 
+
         }
 
         if (IsEnabled(options.EnabledSources, "LocalStorage", options.RegisterAllWhenEmpty))

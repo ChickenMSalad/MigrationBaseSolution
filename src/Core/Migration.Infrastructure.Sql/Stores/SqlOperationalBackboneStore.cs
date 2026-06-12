@@ -278,62 +278,48 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
             (
                 RunId,
                 ManifestRowId,
-                WorkType,
+                WorkItemType,
                 Status,
                 Priority,
                 AttemptCount,
                 MaxAttempts,
                 AvailableAtUtc,
-                ClaimedBy,
-                ClaimedAtUtc,
-                LeaseExpiresAtUtc,
-                StartedAtUtc,
-                CompletedAtUtc,
-                IdempotencyKey,
+                LeaseOwner,
+                LeaseExpiresUtc,
+                NotBeforeUtc,
+                PartitionKey,
                 PayloadJson,
                 ResultJson,
                 LastErrorCode,
                 LastErrorMessage,
-                CreatedAtUtc,
-                UpdatedAtUtc,
-                PartitionKey,
-                NotBeforeUtc,
-                LeaseExpiresUtc,
+                StartedAtUtc,
+                CompletedAtUtc,
                 CreatedUtc,
-                LeaseOwner,
                 UpdatedUtc,
-                WorkItemType,
                 DispatchedAtUtc
             )
             VALUES
             (
                 @RunId,
                 @ManifestRowId,
-                @WorkType,
+                @WorkItemType,
                 @Status,
                 @Priority,
                 @AttemptCount,
                 @MaxAttempts,
                 @AvailableAtUtc,
-                @ClaimedBy,
-                @ClaimedAtUtc,
-                @LeaseExpiresAtUtc,
-                @StartedAtUtc,
-                @CompletedAtUtc,
-                @IdempotencyKey,
+                @LeaseOwner,
+                @LeaseExpiresUtc,
+                @NotBeforeUtc,
+                @PartitionKey,
                 @PayloadJson,
                 @ResultJson,
                 @LastErrorCode,
                 @LastErrorMessage,
-                @CreatedAtUtc,
-                @UpdatedAtUtc,
-                @PartitionKey,
-                @NotBeforeUtc,
-                @LeaseExpiresUtc,
+                @StartedAtUtc,
+                @CompletedAtUtc,
                 @CreatedUtc,
-                @LeaseOwner,
                 @UpdatedUtc,
-                @WorkItemType,
                 @DispatchedAtUtc
             );
             """;
@@ -357,51 +343,41 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
                 SELECT TOP (@MaxItems) *
                 FROM migration.WorkItems WITH (UPDLOCK, READPAST, ROWLOCK)
                 WHERE RunId = @RunId
-                  AND Status IN ('Queued', 'Pending', 'RetryPending', 'FailedRetryable')
-                  AND (AvailableAtUtc IS NULL OR AvailableAtUtc <= @Now)
-                  AND (LeaseExpiresAtUtc IS NULL OR LeaseExpiresAtUtc <= @Now)
-                ORDER BY Priority DESC, CreatedAtUtc, WorkItemId
+                  AND Status IN ('Pending', 'FailedRetryable')
+                  AND (NotBeforeUtc IS NULL OR NotBeforeUtc <= @Now)
+                  AND (LeaseExpiresUtc IS NULL OR LeaseExpiresUtc <= @Now)
+                  AND AttemptCount < MaxAttempts
+                ORDER BY Priority DESC, CreatedUtc ASC, WorkItemId ASC
             )
             UPDATE candidates
             SET
                 Status = 'Leased',
-                ClaimedBy = @LeaseOwner,
-                ClaimedAtUtc = @Now,
-                LeaseExpiresAtUtc = @LeaseUntil,
                 LeaseOwner = @LeaseOwner,
                 LeaseExpiresUtc = @LeaseUntil,
                 AttemptCount = AttemptCount + 1,
-                UpdatedAtUtc = @Now,
                 UpdatedUtc = @Now
             OUTPUT
                 inserted.WorkItemId,
                 inserted.RunId,
                 inserted.ManifestRowId,
-                inserted.WorkType,
+                inserted.WorkItemType,
                 inserted.Status,
                 inserted.Priority,
                 inserted.AttemptCount,
                 inserted.MaxAttempts,
                 inserted.AvailableAtUtc,
-                inserted.ClaimedBy,
-                inserted.ClaimedAtUtc,
-                inserted.LeaseExpiresAtUtc,
-                inserted.StartedAtUtc,
-                inserted.CompletedAtUtc,
-                inserted.IdempotencyKey,
+                inserted.LeaseOwner,
+                inserted.LeaseExpiresUtc,
+                inserted.NotBeforeUtc,
+                inserted.PartitionKey,
                 inserted.PayloadJson,
                 inserted.ResultJson,
                 inserted.LastErrorCode,
                 inserted.LastErrorMessage,
-                inserted.CreatedAtUtc,
-                inserted.UpdatedAtUtc,
-                inserted.PartitionKey,
-                inserted.NotBeforeUtc,
-                inserted.LeaseExpiresUtc,
+                inserted.StartedAtUtc,
+                inserted.CompletedAtUtc,
                 inserted.CreatedUtc,
-                inserted.LeaseOwner,
                 inserted.UpdatedUtc,
-                inserted.WorkItemType,
                 inserted.DispatchedAtUtc;
             """;
 
@@ -428,13 +404,9 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
             UPDATE migration.WorkItems
             SET
                 Status = 'Completed',
-                ClaimedBy = NULL,
-                ClaimedAtUtc = NULL,
-                LeaseExpiresAtUtc = NULL,
                 LeaseOwner = NULL,
                 LeaseExpiresUtc = NULL,
                 CompletedAtUtc = SYSUTCDATETIME(),
-                UpdatedAtUtc = SYSUTCDATETIME(),
                 UpdatedUtc = SYSUTCDATETIME()
             WHERE WorkItemId = @WorkItemId;
             """;
@@ -452,14 +424,10 @@ public sealed class SqlOperationalBackboneStore : ISqlOperationalBackboneStore
             UPDATE migration.WorkItems
             SET
                 Status = 'Failed',
-                ClaimedBy = NULL,
-                ClaimedAtUtc = NULL,
-                LeaseExpiresAtUtc = NULL,
                 LeaseOwner = NULL,
                 LeaseExpiresUtc = NULL,
                 LastErrorCode = @FailureCode,
                 LastErrorMessage = @Message,
-                UpdatedAtUtc = SYSUTCDATETIME(),
                 UpdatedUtc = SYSUTCDATETIME()
             WHERE WorkItemId = @WorkItemId;
             """;

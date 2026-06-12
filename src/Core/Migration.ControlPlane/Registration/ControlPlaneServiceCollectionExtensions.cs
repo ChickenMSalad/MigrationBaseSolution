@@ -5,6 +5,7 @@ using Migration.ControlPlane.Options;
 using Migration.ControlPlane.Progress;
 using Migration.ControlPlane.Queues;
 using Migration.ControlPlane.Services;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Migration.Orchestration.Preflight;
 using Migration.Orchestration.Progress;
 using Migration.ControlPlane.ManifestBuilder;
@@ -42,9 +43,20 @@ public static class ControlPlaneServiceCollectionExtensions
         services.AddSingleton<ISourceManifestService, BynderExportAssetsSourceManifestService>();
         services.AddSingleton<ISourceManifestService, ContentHubTaxonomiesSourceManifestService>();
 
-        // Credential management is additive. Legacy hosts continue to use existing appsettings/user-secrets binding.
+        // Credential metadata is shared through SQL when a runtime SQL connection is configured.
+        // Secret values may still live in Key Vault; the SQL store persists only credential-set
+        // metadata and secret references such as kv://secret-name. File-backed storage remains
+        // a local/dev fallback and a one-time migration source for existing file records.
         services.AddSingleton<CredentialSetFactory>();
-        services.AddSingleton<ICredentialSetStore, FileBackedCredentialSetStore>();
+        services.AddSingleton<FileBackedCredentialSetStore>();
+        services.AddSingleton<SqlCredentialSetStore>();
+        services.AddSingleton<ICredentialSetStore>(sp =>
+        {
+            var sqlStore = sp.GetRequiredService<SqlCredentialSetStore>();
+            return sqlStore.IsConfigured
+                ? sqlStore
+                : sp.GetRequiredService<FileBackedCredentialSetStore>();
+        });
         services.AddSingleton<ICredentialResolver, FileBackedCredentialResolver>();
         services.AddSingleton<CredentialTestService>();
 
