@@ -48,3 +48,5 @@ public static class AuthorizationScopeNames
     public const string Admin = "migration.admin";
     public const string Audit = "migration.audit";
 }
+
+

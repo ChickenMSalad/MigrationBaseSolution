@@ -1,6 +1,7 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
+using Migration.Infrastructure.Sql.Connections; 
 using Migration.Infrastructure.Sql.Options;
 
 namespace Migration.Infrastructure.Sql.Connections;
@@ -24,6 +25,13 @@ public sealed class SqlConnectionFactory : ISqlConnectionFactory
         }
 
         var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        return connection;
+    }
+
+    public async Task<SqlConnection> CreateOpenConnectionAsync(CancellationToken cancellationToken = default)
+    {
+        var connection = new SqlConnection(_options.Value.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         return connection;
     }

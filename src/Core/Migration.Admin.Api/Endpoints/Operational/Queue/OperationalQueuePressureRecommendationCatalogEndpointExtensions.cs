@@ -138,3 +138,5 @@ public static class OperationalQueuePressureRecommendationCatalogEndpointExtensi
         string Recommendation,
         string Rationale);
 }
+
+

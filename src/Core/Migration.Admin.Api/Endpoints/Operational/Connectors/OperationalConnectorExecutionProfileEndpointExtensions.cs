@@ -152,3 +152,5 @@ public static class OperationalConnectorExecutionProfileEndpointExtensions
         bool IsValid,
         IReadOnlyList<string> Findings);
 }
+
+

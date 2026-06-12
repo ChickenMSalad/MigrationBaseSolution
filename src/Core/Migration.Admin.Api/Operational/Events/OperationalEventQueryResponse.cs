@@ -5,3 +5,5 @@ public sealed record OperationalEventQueryResponse(
     int Take,
     int Returned,
     IReadOnlyList<OperationalEventRecord> Events);
+
+

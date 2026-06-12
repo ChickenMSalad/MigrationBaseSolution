@@ -11,3 +11,5 @@ public sealed class OperationalGlobalActivityFeedResponse
     public IReadOnlyCollection<OperationalGlobalActivityEvent> Events { get; init; } =
         Array.Empty<OperationalGlobalActivityEvent>();
 }
+
+

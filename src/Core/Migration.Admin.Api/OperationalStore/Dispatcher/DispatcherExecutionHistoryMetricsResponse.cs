@@ -25,3 +25,5 @@ public sealed class DispatcherExecutionHistoryMetricsResponse
     public IReadOnlyCollection<DispatcherWorkerExecutionMetric> Workers { get; init; } =
         Array.Empty<DispatcherWorkerExecutionMetric>();
 }
+
+

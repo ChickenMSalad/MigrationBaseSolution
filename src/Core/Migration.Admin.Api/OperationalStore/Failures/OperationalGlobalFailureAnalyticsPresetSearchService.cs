@@ -57,3 +57,5 @@ public sealed class OperationalGlobalFailureAnalyticsPresetSearchService
                value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+

@@ -20,3 +20,5 @@ public static class AdminApiOperationalHealthProbeRegistrationExtensions
         return services;
     }
 }
+
+

@@ -18,3 +18,5 @@ public sealed class OperationalMirrorRunSummary
 
     public int CheckpointCount { get; init; }
 }
+
+

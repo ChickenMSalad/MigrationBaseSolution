@@ -16,3 +16,5 @@ public static class AdminApiOperationalRuntimeReadinessRegistrationExtensions
         return services;
     }
 }
+
+

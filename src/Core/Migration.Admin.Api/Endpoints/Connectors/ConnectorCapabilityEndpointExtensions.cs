@@ -118,3 +118,5 @@ public static class ConnectorCapabilityEndpointExtensions
         return role;
     }
 }
+
+

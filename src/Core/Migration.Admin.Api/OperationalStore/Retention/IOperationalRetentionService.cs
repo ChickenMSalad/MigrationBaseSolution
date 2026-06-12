@@ -11,3 +11,5 @@ public interface IOperationalRetentionService
     Task<OperationalRetentionActionResponse> PurgeArchivedAsync(
         CancellationToken cancellationToken = default);
 }
+
+

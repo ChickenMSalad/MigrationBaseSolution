@@ -23,3 +23,5 @@ public static class AdminApiOpenApiExtensions
         return services;
     }
 }
+
+

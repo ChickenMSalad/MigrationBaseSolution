@@ -41,3 +41,5 @@ public static class AdminEndpointDiagnosticsExtensions
         return app;
     }
 }
+
+

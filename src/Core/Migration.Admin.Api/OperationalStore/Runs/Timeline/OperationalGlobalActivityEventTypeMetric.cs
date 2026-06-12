@@ -6,3 +6,5 @@ public sealed class OperationalGlobalActivityEventTypeMetric
 
     public int Count { get; init; }
 }
+
+

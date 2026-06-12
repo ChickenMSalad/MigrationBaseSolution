@@ -176,3 +176,5 @@ public static class AuthenticationConfigurationEndpointExtensions
     private static string? IsConfiguredFlag(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : "<configured>";
 }
+
+

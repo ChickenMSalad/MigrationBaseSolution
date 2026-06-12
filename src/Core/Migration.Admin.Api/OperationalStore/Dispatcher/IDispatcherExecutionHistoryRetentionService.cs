@@ -8,3 +8,5 @@ public interface IDispatcherExecutionHistoryRetentionService
     Task<DispatcherExecutionHistoryRetentionPurgeResponse> PurgeEligibleAsync(
         CancellationToken cancellationToken = default);
 }
+
+

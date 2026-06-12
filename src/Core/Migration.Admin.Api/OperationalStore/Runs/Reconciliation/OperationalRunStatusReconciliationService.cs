@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -45,8 +46,8 @@ public sealed class OperationalRunStatusReconciliationService : IOperationalRunS
                 ProcessingWorkItemCount = SUM(CASE WHEN w.Status = N'Processing' THEN 1 ELSE 0 END),
                 CompletedWorkItemCount = SUM(CASE WHEN w.Status = N'Completed' THEN 1 ELSE 0 END),
                 FailedWorkItemCount = SUM(CASE WHEN w.Status = N'Failed' THEN 1 ELSE 0 END)
-            FROM [{schema}].[MigrationRuns] r
-            LEFT JOIN [{schema}].[MigrationWorkItems] w
+            FROM [{schema}].[Runs] r
+            LEFT JOIN [{schema}].[WorkItems] w
                 ON w.RunId = r.RunId
             WHERE r.RunId = @RunId
             GROUP BY r.RunId, r.Status;
@@ -131,7 +132,7 @@ public sealed class OperationalRunStatusReconciliationService : IOperationalRunS
     private static async Task ApplyStatusAsync(SqlConnection connection, string schema, Guid runId, string status, CancellationToken cancellationToken)
     {
         var sql = $"""
-            UPDATE [{schema}].[MigrationRuns]
+            UPDATE [{schema}].[Runs]
                 SET
                     Status = @Status,
                     CompletedAt = CASE
@@ -161,3 +162,5 @@ public sealed class OperationalRunStatusReconciliationService : IOperationalRunS
         return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
     }
 }
+
+

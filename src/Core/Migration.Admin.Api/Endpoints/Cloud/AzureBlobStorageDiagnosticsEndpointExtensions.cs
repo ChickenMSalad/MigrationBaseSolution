@@ -109,3 +109,5 @@ public static class AzureBlobStorageDiagnosticsEndpointExtensions
             : withoutScheme[..firstSlash];
     }
 }
+
+

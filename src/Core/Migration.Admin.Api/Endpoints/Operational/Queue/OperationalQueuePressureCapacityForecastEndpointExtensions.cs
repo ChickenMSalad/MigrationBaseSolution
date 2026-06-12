@@ -99,3 +99,5 @@ public static class OperationalQueuePressureCapacityForecastEndpointExtensions
         string Guidance,
         string SuggestedEndpoint);
 }
+
+

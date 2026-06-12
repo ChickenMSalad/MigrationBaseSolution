@@ -19,3 +19,5 @@ public sealed class OperationalGlobalFailureSystemPairDetailMetric
     public IReadOnlyCollection<OperationalGlobalFailureTypeMetric> FailureTypes { get; init; } =
         Array.Empty<OperationalGlobalFailureTypeMetric>();
 }
+
+

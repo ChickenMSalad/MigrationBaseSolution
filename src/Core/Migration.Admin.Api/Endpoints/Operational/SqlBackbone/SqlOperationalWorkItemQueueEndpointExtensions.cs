@@ -106,3 +106,5 @@ public static class SqlOperationalWorkItemQueueEndpointExtensions
 
     public sealed record ReleaseSqlOperationalWorkItemRequest(string WorkerId, DateTimeOffset? NextAttemptUtc);
 }
+
+

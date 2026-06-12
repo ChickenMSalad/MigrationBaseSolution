@@ -6,3 +6,5 @@ public interface IOperationalGlobalFailureService
         int limit = 50,
         CancellationToken cancellationToken = default);
 }
+
+

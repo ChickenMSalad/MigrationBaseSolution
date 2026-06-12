@@ -13,3 +13,5 @@ public sealed class OperationalMirrorRunDetailResponse
     public IReadOnlyCollection<OperationalMirrorCheckpointItem> Checkpoints { get; init; } =
         Array.Empty<OperationalMirrorCheckpointItem>();
 }
+
+

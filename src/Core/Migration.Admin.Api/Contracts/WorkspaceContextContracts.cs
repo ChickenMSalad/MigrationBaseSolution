@@ -21,3 +21,5 @@ public static class WorkspaceTenantModes
     public const string MultiTenant = "multiTenant";
     public const string Development = "development";
 }
+
+

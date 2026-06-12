@@ -72,3 +72,5 @@ public static class OperationalEventQueryEndpointExtensions
             : value.Trim();
     }
 }
+
+

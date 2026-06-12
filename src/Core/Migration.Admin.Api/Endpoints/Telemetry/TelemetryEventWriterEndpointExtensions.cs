@@ -62,3 +62,5 @@ public static class TelemetryEventWriterEndpointExtensions
         return string.Empty;
     }
 }
+
+

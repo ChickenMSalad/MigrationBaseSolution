@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -66,7 +67,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
     {
         var sql = $"""
             SELECT COUNT(1)
-            FROM [{schema}].[MigrationRuns]
+            FROM [{schema}].[Runs]
             WHERE RunId = @RunId;
             """;
 
@@ -92,7 +93,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
                 CompletedAt,
                 FailedAt,
                 FailureReason
-            FROM [{schema}].[MigrationRuns]
+            FROM [{schema}].[Runs]
             WHERE RunId = @RunId;
             """;
 
@@ -115,7 +116,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
         {
             OccurredAt = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("CreatedAt")),
             EventType = "RunCreated",
-            Source = "MigrationRuns",
+            Source = "Runs",
             RunId = runId,
             Message = $"Operational run created with status {status}."
         });
@@ -127,7 +128,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
             {
                 OccurredAt = startedAt.Value,
                 EventType = "RunStarted",
-                Source = "MigrationRuns",
+                Source = "Runs",
                 RunId = runId,
                 Message = "Operational run started."
             });
@@ -140,7 +141,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
             {
                 OccurredAt = completedAt.Value,
                 EventType = "RunCompleted",
-                Source = "MigrationRuns",
+                Source = "Runs",
                 RunId = runId,
                 Message = "Operational run completed."
             });
@@ -153,7 +154,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
             {
                 OccurredAt = failedAt.Value,
                 EventType = "RunFailed",
-                Source = "MigrationRuns",
+                Source = "Runs",
                 RunId = runId,
                 Message = string.IsNullOrWhiteSpace(failureReason)
                     ? "Operational run failed."
@@ -181,7 +182,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
                 FailedAt,
                 LockedBy,
                 LastFailureReason
-            FROM [{schema}].[MigrationWorkItems]
+            FROM [{schema}].[WorkItems]
             WHERE RunId = @RunId;
             """;
 
@@ -204,7 +205,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
             {
                 OccurredAt = reader.GetFieldValue<DateTimeOffset>(reader.GetOrdinal("CreatedAt")),
                 EventType = "WorkItemCreated",
-                Source = "MigrationWorkItems",
+                Source = "WorkItems",
                 RunId = runId,
                 WorkItemId = workItemId,
                 ManifestRecordId = manifestRecordId,
@@ -218,7 +219,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
                 {
                     OccurredAt = lockedAt.Value,
                     EventType = "WorkItemLocked",
-                    Source = "MigrationWorkItems",
+                    Source = "WorkItems",
                     RunId = runId,
                     WorkItemId = workItemId,
                     ManifestRecordId = manifestRecordId,
@@ -235,7 +236,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
                 {
                     OccurredAt = completedAt.Value,
                     EventType = "WorkItemCompleted",
-                    Source = "MigrationWorkItems",
+                    Source = "WorkItems",
                     RunId = runId,
                     WorkItemId = workItemId,
                     ManifestRecordId = manifestRecordId,
@@ -250,7 +251,7 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
                 {
                     OccurredAt = failedAt.Value,
                     EventType = "WorkItemFailed",
-                    Source = "MigrationWorkItems",
+                    Source = "WorkItems",
                     RunId = runId,
                     WorkItemId = workItemId,
                     ManifestRecordId = manifestRecordId,
@@ -389,3 +390,5 @@ public sealed class OperationalRunTimelineService : IOperationalRunTimelineServi
         return reader.IsDBNull(ordinal) ? null : reader.GetGuid(ordinal);
     }
 }
+
+

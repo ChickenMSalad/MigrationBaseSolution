@@ -26,3 +26,5 @@ public interface IOperationalEventStore
         int take,
         CancellationToken cancellationToken);
 }
+
+

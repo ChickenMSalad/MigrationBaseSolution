@@ -6,3 +6,5 @@ public sealed class OperationalMirrorStatusResponse
 
     public bool MirrorServiceRegistered { get; init; }
 }
+
+

@@ -39,3 +39,5 @@ public static class AuditEventTypes
     public const string ArtifactDeleted = "artifact.deleted";
     public const string WorkspaceContextResolved = "workspace.contextResolved";
 }
+
+

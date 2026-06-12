@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -32,25 +33,25 @@ public sealed class OperationalRunControlService : IOperationalRunControlService
                 r.Status,
                 ActiveLeaseCount = (
                     SELECT COUNT(1)
-                    FROM [{schema}].[MigrationWorkItems]
+                    FROM [{schema}].[WorkItems]
                     WHERE RunId = r.RunId AND Status = N'Locked'
                 ),
                 OutstandingWorkItemCount = (
                     SELECT COUNT(1)
-                    FROM [{schema}].[MigrationWorkItems]
+                    FROM [{schema}].[WorkItems]
                     WHERE RunId = r.RunId AND Status IN (N'Created', N'Locked', N'Processing')
                 ),
                 CompletedWorkItemCount = (
                     SELECT COUNT(1)
-                    FROM [{schema}].[MigrationWorkItems]
+                    FROM [{schema}].[WorkItems]
                     WHERE RunId = r.RunId AND Status = N'Completed'
                 ),
                 FailedWorkItemCount = (
                     SELECT COUNT(1)
-                    FROM [{schema}].[MigrationWorkItems]
+                    FROM [{schema}].[WorkItems]
                     WHERE RunId = r.RunId AND Status = N'Failed'
                 )
-            FROM [{schema}].[MigrationRuns] r
+            FROM [{schema}].[Runs] r
             WHERE r.RunId = @RunId;
             """;
 
@@ -113,11 +114,11 @@ public sealed class OperationalRunControlService : IOperationalRunControlService
         var schema = GetSchemaName();
 
         var sql = $"""
-            UPDATE [{schema}].[MigrationRuns]
+            UPDATE [{schema}].[Runs]
                 SET Status = N'Aborted'
             WHERE RunId = @RunId;
 
-            UPDATE [{schema}].[MigrationWorkItems]
+            UPDATE [{schema}].[WorkItems]
                 SET Status = N'Created',
                     LockedAt = NULL,
                     LockedBy = NULL
@@ -195,7 +196,7 @@ public sealed class OperationalRunControlService : IOperationalRunControlService
         var schema = GetSchemaName();
 
         var sql = $"""
-            UPDATE [{schema}].[MigrationRuns]
+            UPDATE [{schema}].[Runs]
                 SET Status = @Status
             WHERE RunId = @RunId;
             """;
@@ -236,3 +237,5 @@ public sealed class OperationalRunControlService : IOperationalRunControlService
         };
     }
 }
+
+

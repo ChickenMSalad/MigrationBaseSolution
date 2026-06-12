@@ -147,7 +147,7 @@ public static class OperationalAuditTrailEndpointExtensions
                 Category: "runtime",
                 Action: "QueueDepthObserved",
                 Actor: "system",
-                ResourceType: "MigrationWorkItems",
+                ResourceType: "WorkItems",
                 ResourceId: "default",
                 Outcome: "observed",
                 Message: $"{snapshot.QueueDepth} operational work item(s) currently exist."));
@@ -193,3 +193,5 @@ public sealed record OperationalAuditTrailEventResponse(
     string ResourceId,
     string Outcome,
     string? Message);
+
+

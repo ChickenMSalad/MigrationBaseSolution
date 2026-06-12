@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -48,8 +49,8 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
             (
                 SELECT TOP (@Count)
                     wi.WorkItemId
-                FROM [{schema}].[MigrationWorkItems] wi WITH (UPDLOCK, READPAST, ROWLOCK)
-                INNER JOIN [{schema}].[MigrationRuns] r
+                FROM [{schema}].[WorkItems] wi WITH (UPDLOCK, READPAST, ROWLOCK)
+                INNER JOIN [{schema}].[Runs] r
                     ON r.RunId = wi.RunId
                 WHERE wi.Status = N'Created'
                   AND wi.LockedBy IS NULL
@@ -72,7 +73,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
                     inserted.LockedBy,
                     inserted.LockedAt
                 INTO @Leased
-            FROM [{schema}].[MigrationWorkItems] wi
+            FROM [{schema}].[WorkItems] wi
             INNER JOIN CandidateWorkItems c
                 ON c.WorkItemId = wi.WorkItemId;
 
@@ -204,7 +205,7 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
         var schema = GetSchemaName();
 
         var sql = $"""
-            UPDATE [{schema}].[MigrationWorkItems]
+            UPDATE [{schema}].[WorkItems]
                 SET {setClause}
             OUTPUT
                 inserted.WorkItemId,
@@ -299,3 +300,5 @@ public sealed class OperationalWorkItemLeaseService : IOperationalWorkItemLeaseS
             : reader.GetFieldValue<DateTimeOffset>(ordinal);
     }
 }
+
+

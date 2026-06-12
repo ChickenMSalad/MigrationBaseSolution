@@ -56,7 +56,7 @@ SELECT TOP (1)
     r.CreatedAtUtc,
     r.UpdatedAtUtc,
     COUNT_BIG(w.WorkItemId) AS WorkItemCount,
-    SUM(CASE WHEN w.Status = N'Queued' THEN 1 ELSE 0 END) AS QueuedWorkItemCount,
+    SUM(CASE WHEN w.Status IN (N'Pending', N'Queued') THEN 1 ELSE 0 END) AS QueuedWorkItemCount,
     SUM(CASE WHEN w.Status = N'Dispatched' THEN 1 ELSE 0 END) AS DispatchedWorkItemCount,
     SUM(CASE WHEN w.Status = N'Completed' THEN 1 ELSE 0 END) AS CompletedWorkItemCount,
     SUM(CASE WHEN w.Status LIKE N'Failed%' THEN 1 ELSE 0 END) AS FailedWorkItemCount
@@ -152,34 +152,34 @@ GROUP BY
 SELECT TOP (@Take)
     WorkItemId,
     RunId,
-    WorkType,
+    WorkItemType,
     Status,
     AttemptCount,
-    ClaimedBy,
-    CreatedAtUtc,
-    UpdatedAtUtc,
+    LeaseOwner,
+    CreatedUtc,
+    UpdatedUtc,
     CompletedAtUtc,
     LastErrorMessage
 FROM migration.WorkItems
 WHERE RunId = @RunId
   AND (Status LIKE N'Failed%' OR LastErrorMessage IS NOT NULL)
-ORDER BY COALESCE(UpdatedAtUtc, CreatedAtUtc) DESC,
+ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC,
          WorkItemId DESC;"
             : @"
 SELECT TOP (@Take)
     WorkItemId,
     RunId,
-    WorkType,
+    WorkItemType,
     Status,
     AttemptCount,
-    ClaimedBy,
-    CreatedAtUtc,
-    UpdatedAtUtc,
+    LeaseOwner,
+    CreatedUtc,
+    UpdatedUtc,
     CompletedAtUtc,
     LastErrorMessage
 FROM migration.WorkItems
 WHERE RunId = @RunId
-ORDER BY COALESCE(UpdatedAtUtc, CreatedAtUtc) DESC,
+ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC,
          WorkItemId DESC;";
         command.Parameters.Add(new SqlParameter("@RunId", SqlDbType.UniqueIdentifier) { Value = runId });
         command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = rowLimit });
@@ -192,12 +192,12 @@ ORDER BY COALESCE(UpdatedAtUtc, CreatedAtUtc) DESC,
             {
                 workItemId = Convert.ToInt64(reader["WorkItemId"]),
                 runId = reader["RunId"],
-                workType = ToNullableString(reader["WorkType"]),
+                workType = ToNullableString(reader["WorkItemType"]),
                 status = ToNullableString(reader["Status"]),
                 attemptCount = Convert.ToInt32(reader["AttemptCount"]),
-                claimedBy = ToNullableString(reader["ClaimedBy"]),
-                createdAtUtc = ToNullableValue(reader["CreatedAtUtc"]),
-                updatedAtUtc = ToNullableValue(reader["UpdatedAtUtc"]),
+                claimedBy = ToNullableString(reader["LeaseOwner"]),
+                createdAtUtc = ToNullableValue(reader["CreatedUtc"]),
+                updatedAtUtc = ToNullableValue(reader["UpdatedUtc"]),
                 completedAtUtc = ToNullableValue(reader["CompletedAtUtc"]),
                 lastErrorMessage = ToNullableString(reader["LastErrorMessage"])
             });
@@ -236,3 +236,5 @@ ORDER BY COALESCE(UpdatedAtUtc, CreatedAtUtc) DESC,
         return value is DBNull ? null : value;
     }
 }
+
+

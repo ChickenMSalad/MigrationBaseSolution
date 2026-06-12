@@ -63,3 +63,5 @@ public static class ProjectCredentialBindingEndpoints
 public sealed record ProjectCredentialBindingRequest(
     string? SourceCredentialSetId,
     string? TargetCredentialSetId);
+
+

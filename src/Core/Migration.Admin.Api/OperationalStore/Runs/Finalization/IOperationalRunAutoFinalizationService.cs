@@ -5,3 +5,5 @@ public interface IOperationalRunAutoFinalizationService
     Task<int> FinalizeEligibleRunsAsync(
         CancellationToken cancellationToken = default);
 }
+
+

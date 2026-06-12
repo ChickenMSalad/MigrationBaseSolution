@@ -11,3 +11,5 @@ public sealed class OperationalGlobalFailureSystemPairMetricsResponse
     public IReadOnlyCollection<OperationalGlobalFailureSystemPairDetailMetric> SystemPairs { get; init; } =
         Array.Empty<OperationalGlobalFailureSystemPairDetailMetric>();
 }
+
+

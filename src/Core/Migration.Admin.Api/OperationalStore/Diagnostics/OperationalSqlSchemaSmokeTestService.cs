@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -31,16 +32,16 @@ public sealed class OperationalSqlSchemaSmokeTestService
             await using var connection =
                 await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
-            var runsExists = await TableExistsAsync(connection, schemaName, "MigrationRuns", cancellationToken);
+            var runsExists = await TableExistsAsync(connection, schemaName, "Runs", cancellationToken);
             var manifestExists = await TableExistsAsync(connection, schemaName, "MigrationManifestRecords", cancellationToken);
-            var workItemsExists = await TableExistsAsync(connection, schemaName, "MigrationWorkItems", cancellationToken);
+            var workItemsExists = await TableExistsAsync(connection, schemaName, "WorkItems", cancellationToken);
             var failuresExists = await TableExistsAsync(connection, schemaName, "MigrationFailures", cancellationToken);
             var checkpointsExists = await TableExistsAsync(connection, schemaName, "MigrationCheckpoints", cancellationToken);
             var identifierMapsExists = await TableExistsAsync(connection, schemaName, "MigrationIdentifierMaps", cancellationToken);
 
             if (!runsExists)
             {
-                messages.Add($"{schemaName}.MigrationRuns table missing.");
+                messages.Add($"{schemaName}.Runs table missing.");
             }
 
             if (!manifestExists)
@@ -50,7 +51,7 @@ public sealed class OperationalSqlSchemaSmokeTestService
 
             if (!workItemsExists)
             {
-                messages.Add($"{schemaName}.MigrationWorkItems table missing.");
+                messages.Add($"{schemaName}.WorkItems table missing.");
             }
 
             if (!failuresExists)
@@ -146,3 +147,5 @@ public sealed class OperationalSqlSchemaSmokeTestService
         return result is bool value && value;
     }
 }
+
+

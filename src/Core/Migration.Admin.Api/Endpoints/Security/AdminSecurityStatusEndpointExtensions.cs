@@ -53,3 +53,5 @@ public static class AdminSecurityStatusEndpointExtensions
 
     private sealed record AdminSecurityClaimDto(string Type, string Value);
 }
+
+

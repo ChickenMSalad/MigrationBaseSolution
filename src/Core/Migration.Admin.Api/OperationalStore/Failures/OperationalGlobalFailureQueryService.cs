@@ -99,3 +99,5 @@ public sealed class OperationalGlobalFailureQueryService
                value.Contains(searchText, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+

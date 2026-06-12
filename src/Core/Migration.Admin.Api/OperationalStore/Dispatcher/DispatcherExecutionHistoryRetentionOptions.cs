@@ -10,3 +10,5 @@ public sealed class DispatcherExecutionHistoryRetentionOptions
 
     public int BatchSize { get; init; } = 1000;
 }
+
+

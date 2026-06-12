@@ -33,3 +33,5 @@ public static class OperationalGlobalRunHealthTrendSummaryEndpointExtensions
         return api;
     }
 }
+
+

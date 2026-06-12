@@ -19,3 +19,5 @@ public sealed class OperationalGlobalActivityMetricsResponse
     public IReadOnlyCollection<OperationalGlobalActivityRunMetric> Runs { get; init; } =
         Array.Empty<OperationalGlobalActivityRunMetric>();
 }
+
+

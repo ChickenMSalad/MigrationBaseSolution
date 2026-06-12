@@ -24,3 +24,5 @@ public sealed class OperationalMirrorInvocationSnapshot
 
     public DateTimeOffset? RecordedAt { get; init; }
 }
+
+

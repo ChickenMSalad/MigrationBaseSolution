@@ -13,3 +13,5 @@ public sealed class OperationalGlobalRunHealthActionPlanResponse
     public IReadOnlyCollection<OperationalGlobalRunHealthActionPlanItem> Actions { get; init; } =
         Array.Empty<OperationalGlobalRunHealthActionPlanItem>();
 }
+
+

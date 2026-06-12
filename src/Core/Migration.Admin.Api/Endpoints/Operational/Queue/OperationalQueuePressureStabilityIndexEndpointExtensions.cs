@@ -110,3 +110,5 @@ public static class OperationalQueuePressureStabilityIndexEndpointExtensions
         string OperatorMeaning,
         string SuggestedEndpoint);
 }
+
+

@@ -17,3 +17,5 @@ public sealed class OperationalGlobalRunHealthOperationsCenterResponse
     public IReadOnlyCollection<string> SummaryMessages { get; init; } =
         Array.Empty<string>();
 }
+
+

@@ -37,3 +37,4 @@ public static class OperationalGlobalFailureAnalyticsPresetDashboardEndpointExte
         return api;
     }
 }
+

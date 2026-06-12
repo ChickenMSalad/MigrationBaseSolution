@@ -8,3 +8,5 @@ public sealed record ExecutionWorkerHeartbeatRecord(
     int ActiveLeaseCount,
     string? Message,
     DateTimeOffset CreatedUtc);
+
+

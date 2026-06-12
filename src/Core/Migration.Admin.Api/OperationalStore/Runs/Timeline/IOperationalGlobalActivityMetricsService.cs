@@ -6,3 +6,5 @@ public interface IOperationalGlobalActivityMetricsService
         int sampleLimit = 500,
         CancellationToken cancellationToken = default);
 }
+
+

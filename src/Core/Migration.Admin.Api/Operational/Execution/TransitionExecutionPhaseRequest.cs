@@ -4,3 +4,5 @@ public sealed record TransitionExecutionPhaseRequest(
     Guid ExecutionSessionId,
     string NewPhase,
     string? Reason);
+
+

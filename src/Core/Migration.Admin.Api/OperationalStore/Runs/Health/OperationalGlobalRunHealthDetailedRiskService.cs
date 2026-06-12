@@ -187,3 +187,5 @@ public sealed class OperationalGlobalRunHealthDetailedRiskService
         return "Healthy.";
     }
 }
+
+

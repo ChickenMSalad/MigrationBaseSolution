@@ -5,7 +5,6 @@ using Migration.Connectors.Sources.Aem.Registration;
 using Migration.Connectors.Sources.AzureBlob;
 using Migration.Connectors.Sources.LocalStorage.Registration;
 using Migration.Connectors.Sources.S3;
-using Migration.Connectors.Sources.SharePoint;
 using Migration.Connectors.Sources.Sitecore;
 using Migration.Connectors.Sources.WebDam.Registration;
 using Migration.Connectors.Targets.Aprimo;
@@ -30,31 +29,33 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
     /// <summary>
     /// Registers the concrete runtime services required by the generic migration execution path.
     /// </summary>
-    /// <remarks>
-    /// This intentionally lives outside the GenericMigration console host so non-console processes
-    /// such as Migration.Admin.Api and Migration.Workers.QueueExecutor can run or validate generic
-    /// jobs without depending on a console host project.
-    ///
-    /// Connector/provider registration can be narrowed by configuration:
-    ///
-    /// GenericMigrationRuntime:RegisterAllWhenEmpty = false
-    /// GenericMigrationRuntime:EnabledSources = [ "LocalStorage" ]
-    /// GenericMigrationRuntime:EnabledTargets = [ "LocalStorage" ]
-    /// GenericMigrationRuntime:EnabledManifests = [ "Csv" ]
-    ///
-    /// This is important for workers and API hosts because they should not require Bynder/WebDam/etc.
-    /// secrets just to start when the current run only uses LocalStorage.
-    /// </remarks>
     public static IServiceCollection AddGenericMigrationRuntime(
         this IServiceCollection services,
         IConfiguration configuration,
         bool includeConsoleProgress = false)
     {
-        services.Configure<GenericMigrationRuntimeOptions>(configuration.GetSection(GenericMigrationRuntimeOptions.SectionName));
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
 
-        var options = configuration
-            .GetSection(GenericMigrationRuntimeOptions.SectionName)
-            .Get<GenericMigrationRuntimeOptions>() ?? new GenericMigrationRuntimeOptions();
+        var section = configuration.GetSection(GenericMigrationRuntimeOptions.SectionName);
+        services.Configure<GenericMigrationRuntimeOptions>(section);
+
+        var options = section.Get<GenericMigrationRuntimeOptions>() ?? new GenericMigrationRuntimeOptions();
+
+        var enabledSources = NormalizeEnabledList(
+            configuration,
+            $"{GenericMigrationRuntimeOptions.SectionName}:EnabledSources",
+            options.EnabledSources);
+
+        var enabledTargets = NormalizeEnabledList(
+            configuration,
+            $"{GenericMigrationRuntimeOptions.SectionName}:EnabledTargets",
+            options.EnabledTargets);
+
+        var enabledManifests = NormalizeEnabledList(
+            configuration,
+            $"{GenericMigrationRuntimeOptions.SectionName}:EnabledManifests",
+            options.EnabledManifests);
 
         services.AddMigrationOrchestration(configuration);
 
@@ -63,104 +64,142 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
             services.AddConsoleMigrationProgress();
         }
 
-        AddManifestProviders(services, options);
-        AddSourceConnectors(services, configuration, options);
-        AddTargetConnectors(services, configuration, options);
+        AddManifestProviders(services, enabledManifests, options.RegisterAllWhenEmpty);
+        AddSourceConnectors(services, configuration, enabledSources, options.RegisterAllWhenEmpty);
+        AddTargetConnectors(services, configuration, enabledTargets, options.RegisterAllWhenEmpty);
         AddMappingAndValidation(services);
         services.AddMigrationPreflight();
 
         return services;
     }
 
-    private static void AddManifestProviders(IServiceCollection services, GenericMigrationRuntimeOptions options)
+    private static List<string> NormalizeEnabledList(
+        IConfiguration configuration,
+        string key,
+        IReadOnlyCollection<string>? current)
     {
-        if (IsEnabled(options.EnabledManifests, "Csv", options.RegisterAllWhenEmpty))
+        var values = new List<string>();
+
+        if (current is not null)
+        {
+            values.AddRange(current.Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        var raw = configuration[key];
+        if (!string.IsNullOrWhiteSpace(raw))
+        {
+            values.AddRange(
+                raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        }
+
+        return values
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AddManifestProviders(
+        IServiceCollection services,
+        IReadOnlyCollection<string> enabledManifests,
+        bool registerAllWhenEmpty)
+    {
+        if (IsEnabled(enabledManifests, "Csv", registerAllWhenEmpty))
         {
             services.AddSingleton<IManifestProvider, CsvManifestProvider>();
         }
 
-        if (IsEnabled(options.EnabledManifests, "Excel", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledManifests, "Excel", registerAllWhenEmpty))
         {
             services.AddSingleton<IManifestProvider, ExcelManifestProvider>();
         }
 
-        if (IsEnabled(options.EnabledManifests, "Sql", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledManifests, "Sql", registerAllWhenEmpty))
         {
             services.AddSingleton<IManifestProvider, SqlManifestProvider>();
         }
 
-        if (IsEnabled(options.EnabledManifests, "Sqlite", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledManifests, "Sqlite", registerAllWhenEmpty))
         {
             services.AddSingleton<IManifestProvider, SqliteManifestProvider>();
         }
     }
 
-    private static void AddSourceConnectors(IServiceCollection services, IConfiguration configuration, GenericMigrationRuntimeOptions options)
+    private static void AddSourceConnectors(
+        IServiceCollection services,
+        IConfiguration configuration,
+        IReadOnlyCollection<string> enabledSources,
+        bool registerAllWhenEmpty)
     {
-        if (IsEnabled(options.EnabledSources, "Aem", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledSources, "Aem", registerAllWhenEmpty))
         {
             services.AddAemSourceConnector(configuration);
         }
 
-        if (IsEnabled(options.EnabledSources, "Sitecore", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledSources, "Sitecore", registerAllWhenEmpty))
         {
             services.AddSingleton<IAssetSourceConnector, SitecoreSourceConnector>();
         }
 
-        if (IsEnabled(options.EnabledSources, "Bynder", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledSources, "Bynder", registerAllWhenEmpty))
         {
             services.AddBynderSourceConnector(configuration);
         }
 
-        if (IsEnabled(options.EnabledSources, "WebDam", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledSources, "WebDam", registerAllWhenEmpty))
         {
             services.AddWebDamSourceConnector(configuration);
         }
 
-        if (IsEnabled(options.EnabledSources, "AzureBlob", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledSources, "AzureBlob", registerAllWhenEmpty))
         {
             services.AddSingleton<IAssetSourceConnector, AzureBlobSourceConnector>();
         }
 
-        if (IsEnabled(options.EnabledSources, "S3", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledSources, "S3", registerAllWhenEmpty))
         {
             services.AddSingleton<IAssetSourceConnector, S3SourceConnector>();
         }
 
-        if (IsEnabled(options.EnabledSources, "SharePoint", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledSources, "SharePoint", registerAllWhenEmpty))
         {
-            services.AddSingleton<IAssetSourceConnector, SharePointSourceConnector>();
+            Migration.Connectors.Sources.SharePoint.Registration.SharePointSourceConnectorRegistration
+                .AddSharePointSourceConnector(services, configuration);
         }
 
-        if (IsEnabled(options.EnabledSources, "LocalStorage", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledSources, "LocalStorage", registerAllWhenEmpty))
         {
             services.AddLocalStorageSourceConnector(configuration);
         }
     }
 
-    private static void AddTargetConnectors(IServiceCollection services, IConfiguration configuration, GenericMigrationRuntimeOptions options)
+    private static void AddTargetConnectors(
+        IServiceCollection services,
+        IConfiguration configuration,
+        IReadOnlyCollection<string> enabledTargets,
+        bool registerAllWhenEmpty)
     {
-        if (IsEnabled(options.EnabledTargets, "Bynder", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledTargets, "Bynder", registerAllWhenEmpty))
         {
             services.AddBynderTargetConnector(configuration);
         }
 
-        if (IsEnabled(options.EnabledTargets, "Aprimo", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledTargets, "Aprimo", registerAllWhenEmpty))
         {
             services.AddSingleton<IAssetTargetConnector, AprimoTargetConnector>();
         }
 
-        if (IsEnabled(options.EnabledTargets, "AzureBlob", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledTargets, "AzureBlob", registerAllWhenEmpty))
         {
             services.AddAzureBlobTargetConnector(configuration);
         }
 
-        if (IsEnabled(options.EnabledTargets, "Cloudinary", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledTargets, "Cloudinary", registerAllWhenEmpty))
         {
             services.AddSingleton<IAssetTargetConnector, CloudinaryTargetConnector>();
         }
 
-        if (IsEnabled(options.EnabledTargets, "LocalStorage", options.RegisterAllWhenEmpty))
+        if (IsEnabled(enabledTargets, "LocalStorage", registerAllWhenEmpty))
         {
             services.AddLocalStorageTargetConnector(configuration);
         }
@@ -171,9 +210,6 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
         services.AddSingleton<IMappingProfileLoader, JsonMappingProfileLoader>();
         services.AddSingleton<IMappingValueTransformer, DefaultMappingValueTransformer>();
         services.AddSingleton<IMapper, CanonicalMapper>();
-
-        // This is the legacy/shared application validation step.
-        // Orchestration-specific validation steps are registered by AddMigrationOrchestration(...).
         services.AddSingleton<IValidationStep, RequiredFieldValidationStep>();
     }
 

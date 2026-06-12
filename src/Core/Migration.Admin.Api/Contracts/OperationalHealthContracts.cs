@@ -23,3 +23,5 @@ public static class OperationalHealthStatuses
     public const string Degraded = "degraded";
     public const string Unhealthy = "unhealthy";
 }
+
+

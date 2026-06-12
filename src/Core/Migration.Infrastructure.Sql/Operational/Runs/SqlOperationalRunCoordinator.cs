@@ -86,7 +86,7 @@ set Status = 'Running',
     StartedAtUtc = coalesce(StartedAtUtc, @StartedAtUtc),
     UpdatedAtUtc = @UpdatedAtUtc
 where RunId = @RunId
-  and Status in ('Created', 'Pending', 'Ready', 'Paused', 'RetryRequested', 'Running');", new
+  and Status in ('Queued', 'Created', 'Pending', 'Ready', 'Paused', 'RetryRequested', 'Running');", new
         {
             request.RunId,
             CoordinatorOwner = request.CoordinatorId,
@@ -108,8 +108,8 @@ select top (@BatchSize) ManifestRowId,
        PayloadJson
 from {ManifestRowsTableName}
 where RunId = @RunId
-  and Status in ('Pending', 'Ready', 'Validated')
-order by RowNumber asc;", new
+  and ManifestStatus in ('Pending', 'Ready', 'Validated')
+order by SourceRowNumber asc;", new
         {
             request.RunId,
             BatchSize = batchSize

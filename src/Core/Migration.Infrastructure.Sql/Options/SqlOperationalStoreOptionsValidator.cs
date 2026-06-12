@@ -6,12 +6,6 @@ public sealed class SqlOperationalStoreOptionsValidator : IValidateOptions<SqlOp
 {
     public ValidateOptionsResult Validate(string? name, SqlOperationalStoreOptions options)
     {
-        if (string.IsNullOrWhiteSpace(options.ConnectionString))
-        {
-            return ValidateOptionsResult.Fail(
-                $"{SqlOperationalStoreOptions.SectionName}:ConnectionString is required.");
-        }
-
         if (options.CommandTimeoutSeconds <= 0)
         {
             return ValidateOptionsResult.Fail(

@@ -549,3 +549,5 @@ public sealed record BuildTaxonomyArtifactResponse(
 internal sealed record TaxonomySnapshot(string TargetType, List<TaxonomyField> Fields, List<TaxonomyOption> Options, string RawJson);
 internal sealed record TaxonomyField(string FieldId, string Name, string Label, string Type, bool Required, bool MultiValue, string Description, string RawJson);
 internal sealed record TaxonomyOption(string FieldId, string OptionId, string Name, string Label, bool Active, string RawJson);
+
+

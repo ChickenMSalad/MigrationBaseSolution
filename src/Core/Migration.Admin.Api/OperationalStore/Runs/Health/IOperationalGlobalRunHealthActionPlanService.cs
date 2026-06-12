@@ -7,3 +7,5 @@ public interface IOperationalGlobalRunHealthActionPlanService
         int metricsSampleLimit = 500,
         CancellationToken cancellationToken = default);
 }
+
+

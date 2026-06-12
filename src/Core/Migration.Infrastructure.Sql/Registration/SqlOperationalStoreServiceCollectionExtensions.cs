@@ -27,4 +27,20 @@ public static class SqlOperationalStoreServiceCollectionExtensions
 
         return services;
     }
+
+    public static IServiceCollection AddSqlOperationalStore(
+        this IServiceCollection services)
+    {
+        services
+            .AddOptions<SqlOperationalStoreOptions>()
+            .ValidateOnStart();
+
+        services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IValidateOptions<SqlOperationalStoreOptions>, SqlOperationalStoreOptionsValidator>());
+
+        services.TryAddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
+        services.TryAddScoped<ISqlOperationalBackboneStore, SqlOperationalBackboneStore>();
+
+        return services;
+    }
 }

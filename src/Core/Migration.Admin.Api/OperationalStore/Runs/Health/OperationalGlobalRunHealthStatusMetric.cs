@@ -6,3 +6,5 @@ public sealed class OperationalGlobalRunHealthStatusMetric
 
     public int Count { get; init; }
 }
+
+

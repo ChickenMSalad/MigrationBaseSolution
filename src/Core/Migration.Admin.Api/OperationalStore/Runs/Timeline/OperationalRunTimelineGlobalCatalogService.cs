@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -33,8 +34,8 @@ public sealed class OperationalRunTimelineGlobalCatalogService
 
         var sources = new[]
         {
-            "MigrationRuns",
-            "MigrationWorkItems",
+            "Runs",
+            "WorkItems",
             "MigrationCheckpoints",
             "MigrationFailures"
         };
@@ -98,3 +99,5 @@ public sealed class OperationalRunTimelineGlobalCatalogService
             : _options.Value.SchemaName;
     }
 }
+
+

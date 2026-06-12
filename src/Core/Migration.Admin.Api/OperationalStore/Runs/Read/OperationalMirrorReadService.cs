@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -36,7 +37,7 @@ public sealed class OperationalMirrorReadService : IOperationalMirrorReadService
                 ),
                 WorkItemCount = (
                     SELECT COUNT(1)
-                    FROM [{schema}].[MigrationWorkItems] w
+                    FROM [{schema}].[WorkItems] w
                     WHERE w.RunId = r.RunId
                 ),
                 CheckpointCount = (
@@ -44,7 +45,7 @@ public sealed class OperationalMirrorReadService : IOperationalMirrorReadService
                     FROM [{schema}].[MigrationCheckpoints] c
                     WHERE c.RunId = r.RunId
                 )
-            FROM [{schema}].[MigrationRuns] r
+            FROM [{schema}].[Runs] r
             ORDER BY r.CreatedAt DESC;
             """;
 
@@ -188,7 +189,7 @@ public sealed class OperationalMirrorReadService : IOperationalMirrorReadService
                 AttemptCount,
                 LockedBy,
                 CreatedAt
-            FROM [{schema}].[MigrationWorkItems]
+            FROM [{schema}].[WorkItems]
             WHERE RunId = @RunId
             ORDER BY CreatedAt;
             """;
@@ -281,3 +282,5 @@ public sealed class OperationalMirrorReadService : IOperationalMirrorReadService
             : reader.GetFieldValue<DateTimeOffset>(ordinal);
     }
 }
+
+

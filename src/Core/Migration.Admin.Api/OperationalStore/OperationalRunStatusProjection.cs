@@ -50,3 +50,5 @@ public sealed class OperationalRunStatusProjection
 
     public string ProjectionStatus { get; init; } = string.Empty;
 }
+
+

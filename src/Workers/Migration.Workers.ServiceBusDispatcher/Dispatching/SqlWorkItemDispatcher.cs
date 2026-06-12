@@ -126,7 +126,7 @@ SELECT TOP (@BatchSize)
     wi.PayloadJson
 FROM migration.WorkItems wi WITH (READPAST, ROWLOCK)
 WHERE wi.Status IN ('Pending', 'Ready', 'Queued')
-ORDER BY wi.Priority DESC, wi.WorkItemId ASC, wi.CreatedAtUtc ASC;
+ORDER BY wi.Priority DESC, wi.WorkItemId ASC, wi.CreatedUtc ASC;
 """;
 
         await using SqlConnection connection = new(_options.SqlConnectionString);
@@ -151,9 +151,9 @@ ORDER BY wi.Priority DESC, wi.WorkItemId ASC, wi.CreatedAtUtc ASC;
 UPDATE migration.WorkItems
 SET
     Status = 'Dispatching',
-    ClaimedBy = @WorkerId,
-    ClaimedAtUtc = SYSUTCDATETIME(),
-    UpdatedAtUtc = SYSUTCDATETIME()
+    LeaseOwner = @WorkerId,
+    LeaseExpiresUtc = NULL,
+    UpdatedUtc = SYSUTCDATETIME()
 WHERE WorkItemId = @WorkItemId;
 """,
                     new
@@ -172,8 +172,9 @@ WHERE WorkItemId = @WorkItemId;
 UPDATE migration.WorkItems
 SET
     Status = 'Dispatched',
+    StartedAtUtc = coalesce(StartedAtUtc, SYSUTCDATETIME()),
     DispatchedAtUtc = SYSUTCDATETIME(),
-    UpdatedAtUtc = SYSUTCDATETIME()
+    UpdatedUtc = SYSUTCDATETIME()
 WHERE WorkItemId = @WorkItemId;
 """;
 

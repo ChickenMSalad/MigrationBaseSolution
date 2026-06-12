@@ -21,14 +21,14 @@ public sealed class GenericMigrationRuntimeOptions
     public const string SectionName = "GenericMigrationRuntime";
 
     /// <summary>
-    /// Backward-compatible default. If no Enabled* list is supplied, register every known connector/provider.
-    /// Set this to false in worker/API smoke tests or narrowly scoped deployments.
+    /// If no Enabled* list is supplied, register every known connector/provider.
+    /// Keep this false for worker/API hosts unless the host is intentionally validating all connector modules.
     /// </summary>
-    public bool RegisterAllWhenEmpty { get; init; } = true;
+    public bool RegisterAllWhenEmpty { get; set; } = false;
 
-    public List<string> EnabledSources { get; init; } = new();
+    public List<string> EnabledSources { get; set; } = new();
 
-    public List<string> EnabledTargets { get; init; } = new();
+    public List<string> EnabledTargets { get; set; } = new();
 
-    public List<string> EnabledManifests { get; init; } = new();
+    public List<string> EnabledManifests { get; set; } = new();
 }

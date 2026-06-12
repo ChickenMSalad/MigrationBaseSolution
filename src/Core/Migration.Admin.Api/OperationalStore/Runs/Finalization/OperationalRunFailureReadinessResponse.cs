@@ -13,3 +13,5 @@ public sealed class OperationalRunFailureReadinessResponse
     public string? FailureReason { get; init; }
     public string Message { get; init; } = string.Empty;
 }
+
+

@@ -232,7 +232,7 @@ function CompactColumnPreview({
       title={title}
       subtitle={
         subtitle ??
-        `${preview.fileName} â€” ${preview.columns.length} columns detected`
+        `${preview.fileName} — ${preview.columns.length} columns detected`
       }
     >
       <div
@@ -924,7 +924,7 @@ export function MappingBuilder() {
         <CompactColumnPreview
           preview={preview}
           title="Source manifest preview"
-          subtitle={`${preview.fileName} â€” ${preview.columns.length} source columns detected`}
+          subtitle={`${preview.fileName} — ${preview.columns.length} source columns detected`}
         />
       )}
 
@@ -932,7 +932,7 @@ export function MappingBuilder() {
         <CompactColumnPreview
           preview={targetPreview}
           title="Target taxonomy/manifest preview"
-          subtitle={`${targetPreview.fileName} â€” ${targetPreview.columns.length} target columns detected`}
+          subtitle={`${targetPreview.fileName} — ${targetPreview.columns.length} target columns detected`}
         />
       )}
 

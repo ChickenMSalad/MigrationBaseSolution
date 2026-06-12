@@ -6,11 +6,11 @@ public sealed class SqlOperationalRunCoordinatorOptions
 
     public string ConnectionStringName { get; set; } = "MigrationOperationalStore";
 
-    public string SchemaName { get; set; } = "dbo";
+    public string SchemaName { get; set; } = "migration";
 
-    public string RunsTableName { get; set; } = "MigrationRuns";
+    public string RunsTableName { get; set; } = "Runs";
 
-    public string ManifestRowsTableName { get; set; } = "MigrationManifestRows";
+    public string ManifestRowsTableName { get; set; } = "ManifestRows";
 
     public int DefaultFanOutBatchSize { get; set; } = 500;
 

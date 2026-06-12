@@ -56,3 +56,5 @@ public static class OperationalGlobalFailureAnalyticsPresetEndpointExtensions
         return api;
     }
 }
+
+

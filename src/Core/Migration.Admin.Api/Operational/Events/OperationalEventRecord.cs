@@ -11,3 +11,5 @@ public sealed record OperationalEventRecord(
     DateTimeOffset CreatedUtc,
     Guid? ExecutionSessionId = null,
     Guid? MigrationRunId = null);
+
+

@@ -7,3 +7,5 @@ public sealed class OperationalGlobalFailureAnalyticsPreset
     public string Description { get; init; } = string.Empty;
     public OperationalGlobalFailureQuery Query { get; init; } = new();
 }
+
+

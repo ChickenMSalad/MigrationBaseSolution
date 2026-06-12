@@ -12,3 +12,5 @@ public sealed class OperationalGlobalActivityQuery
 
     public int Limit { get; init; } = 50;
 }
+
+

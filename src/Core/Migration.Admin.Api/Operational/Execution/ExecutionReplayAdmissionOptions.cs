@@ -14,3 +14,5 @@ public sealed class ExecutionReplayAdmissionOptions
 
     public int Take { get; set; } = 25;
 }
+
+

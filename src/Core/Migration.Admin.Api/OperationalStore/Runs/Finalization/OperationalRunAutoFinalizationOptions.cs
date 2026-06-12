@@ -10,3 +10,5 @@ public sealed class OperationalRunAutoFinalizationOptions
 
     public int BatchSize { get; init; } = 100;
 }
+
+

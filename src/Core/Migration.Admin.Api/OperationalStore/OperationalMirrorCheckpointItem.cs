@@ -14,3 +14,5 @@ public sealed class OperationalMirrorCheckpointItem
 
     public DateTimeOffset? UpdatedAt { get; init; }
 }
+
+

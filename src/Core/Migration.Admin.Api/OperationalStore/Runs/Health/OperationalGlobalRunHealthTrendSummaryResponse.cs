@@ -27,3 +27,5 @@ public sealed class OperationalGlobalRunHealthTrendSummaryResponse
     public IReadOnlyCollection<OperationalGlobalRunHealthTrendSignal> Signals { get; init; } =
         Array.Empty<OperationalGlobalRunHealthTrendSignal>();
 }
+
+

@@ -83,3 +83,5 @@ public sealed record OperationalEventSnapshotResponse(
 public sealed record OperationalRecentEventsResponse(
     int Take,
     IReadOnlyList<OperationalEventRecord> Events);
+
+

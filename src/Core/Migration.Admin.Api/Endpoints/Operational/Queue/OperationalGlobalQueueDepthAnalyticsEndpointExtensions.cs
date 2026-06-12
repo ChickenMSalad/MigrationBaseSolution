@@ -29,3 +29,5 @@ public static class OperationalGlobalQueueDepthAnalyticsEndpointExtensions
         return api;
     }
 }
+
+

@@ -6,3 +6,5 @@ public interface IExecutionReplayAdmissionHealthService
         EvaluateExecutionReplayAdmissionHealthRequest request,
         CancellationToken cancellationToken);
 }
+
+

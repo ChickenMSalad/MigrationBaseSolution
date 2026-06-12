@@ -11,3 +11,5 @@ public interface IOperationalEventQueryService
         DateTimeOffset? toUtc,
         CancellationToken cancellationToken);
 }
+
+

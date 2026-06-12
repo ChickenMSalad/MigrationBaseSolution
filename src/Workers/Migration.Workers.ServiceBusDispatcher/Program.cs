@@ -5,7 +5,7 @@ using Migration.Workers.ServiceBusDispatcher.Options;
 using Migration.Workers.ServiceBusDispatcher.Runtime;
 using Migration.Application.Operational.Telemetry;
 
-HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddOptions<SqlServiceBusDispatcherOptions>()
@@ -17,4 +17,11 @@ builder.Services.AddSingleton<SqlWorkItemDispatcher>();
 builder.Services.AddHostedService<SqlServiceBusDispatcherWorker>();
 builder.Services.AddOperationalOpenTelemetry(builder.Configuration);
 
-await builder.Build().RunAsync().ConfigureAwait(false);
+var app = builder.Build();
+
+
+app.MapGet("/", () => Results.Text("OK", "text/plain"));
+
+app.MapGet("/health", () => Results.Text("Healthy", "text/plain"));
+
+await app.RunAsync().ConfigureAwait(false);

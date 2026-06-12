@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -139,3 +140,5 @@ public sealed class DispatcherExecutionHistoryRetentionService
             : _sqlOptions.Value.SchemaName;
     }
 }
+
+

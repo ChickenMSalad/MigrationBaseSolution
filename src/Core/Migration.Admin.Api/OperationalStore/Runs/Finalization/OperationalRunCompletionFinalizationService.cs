@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -51,8 +52,8 @@ public sealed class OperationalRunCompletionFinalizationService
                 OutstandingWorkItemCount = SUM(CASE WHEN w.Status IN (N'Created', N'Locked', N'Processing') THEN 1 ELSE 0 END),
                 CompletedWorkItemCount = SUM(CASE WHEN w.Status = N'Completed' THEN 1 ELSE 0 END),
                 FailedWorkItemCount = SUM(CASE WHEN w.Status = N'Failed' THEN 1 ELSE 0 END)
-            FROM [{schema}].[MigrationRuns] r
-            LEFT JOIN [{schema}].[MigrationWorkItems] w
+            FROM [{schema}].[Runs] r
+            LEFT JOIN [{schema}].[WorkItems] w
                 ON w.RunId = r.RunId
             WHERE r.RunId = @RunId
             GROUP BY r.RunId, r.Status;
@@ -153,7 +154,7 @@ public sealed class OperationalRunCompletionFinalizationService
         CancellationToken cancellationToken)
     {
         var sql = $"""
-            UPDATE [{schema}].[MigrationRuns]
+            UPDATE [{schema}].[Runs]
                 SET
                     Status = N'Completed',
                     CompletedAt = COALESCE(CompletedAt, SYSDATETIMEOFFSET())
@@ -178,3 +179,5 @@ public sealed class OperationalRunCompletionFinalizationService
         return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
     }
 }
+
+

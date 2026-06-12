@@ -11,3 +11,5 @@ public sealed class OperationalGlobalFailureAnalyticsPresetFavoriteDashboardResp
 
     public DateTimeOffset GeneratedAt { get; init; }
 }
+
+

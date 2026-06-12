@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -42,7 +43,7 @@ public sealed class OperationalRetentionService : IOperationalRetentionService
                      AND CompletedAt IS NOT NULL
                      AND CompletedAt < @PurgeBefore
                     THEN 1 ELSE 0 END)
-            FROM [{schema}].[MigrationRuns];
+            FROM [{schema}].[Runs];
             """;
 
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -93,7 +94,7 @@ public sealed class OperationalRetentionService : IOperationalRetentionService
             ;WITH EligibleRuns AS
             (
                 SELECT TOP (@BatchSize) RunId
-                FROM [{schema}].[MigrationRuns] WITH (UPDLOCK, READPAST, ROWLOCK)
+                FROM [{schema}].[Runs] WITH (UPDLOCK, READPAST, ROWLOCK)
                 WHERE Status IN (N'Completed', N'Failed', N'Aborted', N'Canceled')
                   AND CreatedAt < @ArchiveBefore
                 ORDER BY CreatedAt, RunId
@@ -101,7 +102,7 @@ public sealed class OperationalRetentionService : IOperationalRetentionService
             UPDATE r
                 SET Status = N'Archived'
                 OUTPUT inserted.RunId INTO @Archived
-            FROM [{schema}].[MigrationRuns] r
+            FROM [{schema}].[Runs] r
             INNER JOIN EligibleRuns e ON e.RunId = r.RunId;
 
             SELECT RunId FROM @Archived ORDER BY RunId;
@@ -141,7 +142,7 @@ public sealed class OperationalRetentionService : IOperationalRetentionService
             ;WITH EligibleRuns AS
             (
                 SELECT TOP (@BatchSize) RunId
-                FROM [{schema}].[MigrationRuns] WITH (UPDLOCK, READPAST, ROWLOCK)
+                FROM [{schema}].[Runs] WITH (UPDLOCK, READPAST, ROWLOCK)
                 WHERE Status = N'Archived'
                   AND CompletedAt IS NOT NULL
                   AND CompletedAt < @PurgeBefore
@@ -149,11 +150,11 @@ public sealed class OperationalRetentionService : IOperationalRetentionService
             )
             DELETE c FROM [{schema}].[MigrationCheckpoints] c INNER JOIN EligibleRuns e ON e.RunId = c.RunId;
             DELETE f FROM [{schema}].[MigrationFailures] f INNER JOIN EligibleRuns e ON e.RunId = f.RunId;
-            DELETE w FROM [{schema}].[MigrationWorkItems] w INNER JOIN EligibleRuns e ON e.RunId = w.RunId;
+            DELETE w FROM [{schema}].[WorkItems] w INNER JOIN EligibleRuns e ON e.RunId = w.RunId;
             DELETE m FROM [{schema}].[MigrationManifestRecords] m INNER JOIN EligibleRuns e ON e.RunId = m.RunId;
             DELETE r
                 OUTPUT deleted.RunId INTO @Purged
-            FROM [{schema}].[MigrationRuns] r
+            FROM [{schema}].[Runs] r
             INNER JOIN EligibleRuns e ON e.RunId = r.RunId;
 
             SELECT RunId FROM @Purged ORDER BY RunId;
@@ -234,3 +235,5 @@ public sealed class OperationalRetentionService : IOperationalRetentionService
         return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
     }
 }
+
+

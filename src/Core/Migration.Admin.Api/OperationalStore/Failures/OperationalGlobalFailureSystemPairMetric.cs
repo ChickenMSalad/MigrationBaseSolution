@@ -8,3 +8,5 @@ public sealed class OperationalGlobalFailureSystemPairMetric
 
     public int Count { get; init; }
 }
+
+

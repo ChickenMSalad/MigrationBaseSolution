@@ -8,3 +8,5 @@ public sealed class OperationalRetentionOptions
     public int PurgeAfterDays { get; init; } = 180;
     public int BatchSize { get; init; } = 100;
 }
+
+

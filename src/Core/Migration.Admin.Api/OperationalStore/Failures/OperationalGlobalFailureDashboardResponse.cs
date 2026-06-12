@@ -11,3 +11,5 @@ public sealed class OperationalGlobalFailureDashboardResponse
     public IReadOnlyCollection<string> Messages { get; init; } =
         Array.Empty<string>();
 }
+
+

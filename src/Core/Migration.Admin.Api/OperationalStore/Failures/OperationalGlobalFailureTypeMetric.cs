@@ -10,3 +10,5 @@ public sealed class OperationalGlobalFailureTypeMetric
 
     public int NonRetriableCount { get; init; }
 }
+
+

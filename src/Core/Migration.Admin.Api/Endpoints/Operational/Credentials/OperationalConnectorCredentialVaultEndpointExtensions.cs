@@ -82,3 +82,5 @@ public static class OperationalConnectorCredentialVaultEndpointExtensions
         string Message,
         IReadOnlyList<string> Findings);
 }
+
+

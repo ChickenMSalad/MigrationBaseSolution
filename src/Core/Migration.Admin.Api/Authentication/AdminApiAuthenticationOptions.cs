@@ -23,3 +23,5 @@ public sealed class AdminApiAuthenticationOptions
         string.Equals(Mode, "entraId", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(Mode, "openIdConnect", StringComparison.OrdinalIgnoreCase);
 }
+
+

@@ -18,3 +18,5 @@ public sealed class OperationalGlobalRunHealthDetailedRiskResponse
     public IReadOnlyCollection<string> Recommendations { get; init; } =
         Array.Empty<string>();
 }
+
+

@@ -43,3 +43,5 @@ public static class SqlOperationalRuntimeReadinessEndpointExtensions
         return report.Status == "NotFound" ? Results.NotFound(report) : Results.Ok(report);
     }
 }
+
+

@@ -7,3 +7,5 @@ public interface IOperationalGlobalRunHealthSnapshotService
         int metricsSampleLimit = 500,
         CancellationToken cancellationToken = default);
 }
+
+

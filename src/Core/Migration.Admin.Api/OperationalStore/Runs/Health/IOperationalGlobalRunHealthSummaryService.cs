@@ -5,3 +5,5 @@ public interface IOperationalGlobalRunHealthSummaryService
     Task<OperationalGlobalRunHealthSummaryResponse> GetSummaryAsync(
         CancellationToken cancellationToken = default);
 }
+
+

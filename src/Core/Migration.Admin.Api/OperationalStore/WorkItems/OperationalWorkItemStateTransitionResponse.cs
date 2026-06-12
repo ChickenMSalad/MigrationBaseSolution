@@ -14,3 +14,5 @@ public sealed class OperationalWorkItemStateTransitionResponse
 
     public DateTimeOffset? LockedAt { get; init; }
 }
+
+

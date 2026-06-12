@@ -23,3 +23,5 @@ public sealed class OperationalGlobalFailureMetricsResponse
     public IReadOnlyCollection<OperationalGlobalFailureSystemPairMetric> SystemPairs { get; init; } =
         Array.Empty<OperationalGlobalFailureSystemPairMetric>();
 }
+
+

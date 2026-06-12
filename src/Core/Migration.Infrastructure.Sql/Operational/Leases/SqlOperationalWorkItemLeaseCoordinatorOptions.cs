@@ -8,7 +8,7 @@ public sealed class SqlOperationalWorkItemLeaseCoordinatorOptions
 
     public string SchemaName { get; set; } = "migration";
 
-    public string WorkItemsTableName { get; set; } = "OperationalWorkItems";
+    public string WorkItemsTableName { get; set; } = "WorkItems";
 
     public int DefaultLeaseSeconds { get; set; } = 300;
 

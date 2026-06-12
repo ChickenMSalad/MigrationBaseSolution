@@ -17,3 +17,5 @@ public sealed class OperationalRunDashboardSummaryResponse
     public IReadOnlyCollection<string> Messages { get; init; } =
         Array.Empty<string>();
 }
+
+

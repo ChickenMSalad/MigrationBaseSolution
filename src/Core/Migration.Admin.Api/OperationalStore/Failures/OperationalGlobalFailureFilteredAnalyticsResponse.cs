@@ -13,3 +13,5 @@ public sealed class OperationalGlobalFailureFilteredAnalyticsResponse
     public IReadOnlyCollection<string> Messages { get; init; } =
         Array.Empty<string>();
 }
+
+

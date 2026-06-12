@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -44,7 +45,7 @@ public sealed class OperationalMetricsService : IOperationalMetricsService
                      AND CompletedAt IS NULL
                      AND FailedAt IS NULL
                     THEN 1 ELSE 0 END)
-            FROM [{schema}].[MigrationWorkItems];
+            FROM [{schema}].[WorkItems];
             """;
 
         await using var connection =
@@ -97,13 +98,13 @@ public sealed class OperationalMetricsService : IOperationalMetricsService
                 OldestLockedAt = MIN(LockedAt),
                 OldestLockedBy = (
                     SELECT TOP (1) LockedBy
-                    FROM [{schema}].[MigrationWorkItems]
+                    FROM [{schema}].[WorkItems]
                     WHERE Status = N'Locked'
                       AND LockedBy IS NOT NULL
                     ORDER BY LockedAt
                 ),
                 DistinctWorkerCount = COUNT(DISTINCT LockedBy)
-            FROM [{schema}].[MigrationWorkItems]
+            FROM [{schema}].[WorkItems]
             WHERE Status = N'Locked';
             """;
 
@@ -170,7 +171,7 @@ public sealed class OperationalMetricsService : IOperationalMetricsService
                 FailedCount = SUM(CASE WHEN Status = N'Failed' THEN 1 ELSE 0 END),
                 OldestCreatedAt = MIN(CreatedAt),
                 NewestCreatedAt = MAX(CreatedAt)
-            FROM [{schema}].[MigrationRuns];
+            FROM [{schema}].[Runs];
             """;
 
         await using var summaryCommand = new SqlCommand(summarySql, connection);
@@ -248,7 +249,7 @@ public sealed class OperationalMetricsService : IOperationalMetricsService
                 LockedCount = COUNT(1),
                 OldestLockedAt = MIN(LockedAt),
                 NewestLockedAt = MAX(LockedAt)
-            FROM [{schema}].[MigrationWorkItems]
+            FROM [{schema}].[WorkItems]
             WHERE Status = N'Locked'
               AND LockedBy IS NOT NULL
             GROUP BY LockedBy
@@ -283,7 +284,7 @@ public sealed class OperationalMetricsService : IOperationalMetricsService
             SELECT
                 Status,
                 Count = COUNT(1)
-            FROM [{schema}].[MigrationRuns]
+            FROM [{schema}].[Runs]
             GROUP BY Status
             ORDER BY Status;
             """;
@@ -367,3 +368,5 @@ public sealed class OperationalMetricsService : IOperationalMetricsService
             : reader.GetFieldValue<DateTimeOffset>(ordinal);
     }
 }
+
+

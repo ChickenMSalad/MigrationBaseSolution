@@ -278,3 +278,5 @@ WHERE ExecutionSessionId = @ExecutionSessionId;
 
     private sealed record SourceSession(Guid? MigrationRunId, string Name, string? SourceConnector, string? TargetConnector, int ReplayDepth);
 }
+
+

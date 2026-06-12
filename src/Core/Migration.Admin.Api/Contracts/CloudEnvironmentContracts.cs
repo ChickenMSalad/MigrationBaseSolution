@@ -41,3 +41,5 @@ public static class CloudArtifactModes
     public const string AzureBlob = "azureBlob";
     public const string Unknown = "unknown";
 }
+
+

@@ -18,3 +18,5 @@ public static class EndpointPolicyInventoryEndpointExtensions
         return api;
     }
 }
+
+

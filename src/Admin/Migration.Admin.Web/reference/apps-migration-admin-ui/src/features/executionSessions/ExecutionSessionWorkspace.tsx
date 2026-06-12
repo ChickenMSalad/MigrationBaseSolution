@@ -572,8 +572,8 @@ async function pauseSelectedSession() {
                   <td>{new Date(session.createdUtc).toLocaleString()}</td>
                   <td>{session.name}</td>
                   <td>{session.status}</td>
-                  <td>{session.sourceConnector ?? 'â€”'}</td>
-                  <td>{session.targetConnector ?? 'â€”'}</td>
+                  <td>{session.sourceConnector ?? '—'}</td>
+                  <td>{session.targetConnector ?? '—'}</td>
                   <td><code>{session.executionSessionId}</code></td>
                   <td>
                     <button type="button" onClick={() => loadSessionDetails(session)}>View</button>
@@ -635,7 +635,7 @@ async function pauseSelectedSession() {
               <h3>Replay lineage</h3>
               <div className="metric-grid">
                 <article><span>Root session</span><strong>{replayLineage.rootExecutionSessionId}</strong></article>
-                <article><span>Source session</span><strong>{replayLineage.sourceExecutionSessionId ?? 'â€”'}</strong></article>
+                <article><span>Source session</span><strong>{replayLineage.sourceExecutionSessionId ?? '—'}</strong></article>
                 <article><span>Replay depth</span><strong>{replayLineage.replayDepth}</strong></article>
                 <article><span>Children</span><strong>{replayLineage.children.length}</strong></article>
               </div>
@@ -647,7 +647,7 @@ async function pauseSelectedSession() {
                       <td>ancestor</td>
                       <td>{node.name}</td>
                       <td>{node.status}</td>
-                      <td>{node.replayScope ?? 'â€”'}</td>
+                      <td>{node.replayScope ?? '—'}</td>
                       <td><code>{node.executionSessionId}</code></td>
                     </tr>
                   ))}
@@ -656,7 +656,7 @@ async function pauseSelectedSession() {
                       <td>child</td>
                       <td>{node.name}</td>
                       <td>{node.status}</td>
-                      <td>{node.replayScope ?? 'â€”'}</td>
+                      <td>{node.replayScope ?? '—'}</td>
                       <td><code>{node.executionSessionId}</code></td>
                     </tr>
                   ))}
@@ -682,7 +682,7 @@ async function pauseSelectedSession() {
                       <td>{approval.scope}</td>
                       <td>{approval.approvedBy}</td>
                       <td>{new Date(approval.expiresUtc).toLocaleString()}</td>
-                      <td>{approval.replayExecutionSessionId ? <code>{approval.replayExecutionSessionId}</code> : 'â€”'}</td>
+                      <td>{approval.replayExecutionSessionId ? <code>{approval.replayExecutionSessionId}</code> : '—'}</td>
                     </tr>
                   ))
                 )}
@@ -959,9 +959,9 @@ async function pauseSelectedSession() {
                       <td>{item.workItemType}</td>
                       <td>{item.workItemName}</td>
                       <td>{item.status}</td>
-                      <td>{item.workerId ?? 'â€”'}</td>
+                      <td>{item.workerId ?? '—'}</td>
                       <td>{item.retryCount}/{item.maxRetries}</td>
-                      <td>{item.leaseExpiresUtc ? new Date(item.leaseExpiresUtc).toLocaleString() : 'â€”'}</td>
+                      <td>{item.leaseExpiresUtc ? new Date(item.leaseExpiresUtc).toLocaleString() : '—'}</td>
                       <td>
                         <button
                           type="button"

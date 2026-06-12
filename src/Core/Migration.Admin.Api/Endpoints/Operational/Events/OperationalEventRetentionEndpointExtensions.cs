@@ -47,3 +47,5 @@ public sealed record OperationalEventRetentionPolicyResponse(
     int RetentionDays,
     int IntervalHours,
     int StartupDelaySeconds);
+
+

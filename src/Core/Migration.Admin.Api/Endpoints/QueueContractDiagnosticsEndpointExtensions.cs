@@ -45,3 +45,5 @@ public static class QueueContractDiagnosticsEndpointExtensions
         return api;
     }
 }
+
+

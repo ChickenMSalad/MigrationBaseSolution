@@ -19,3 +19,5 @@ public sealed class OperationalGlobalRunHealthSnapshotResponse
     public IReadOnlyCollection<string> Signals { get; init; } =
         Array.Empty<string>();
 }
+
+

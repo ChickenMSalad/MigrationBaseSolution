@@ -11,3 +11,5 @@ public sealed class OperationalGlobalFailureAnalyticsPresetFavorite
     public IReadOnlyCollection<string> PresetKeys { get; init; } =
         Array.Empty<string>();
 }
+
+

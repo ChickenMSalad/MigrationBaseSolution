@@ -1,4 +1,5 @@
-using Migration.Infrastructure.State.OperationalStore.Sql;
+using Migration.Infrastructure.Sql.Connections; 
+using Migration.Infrastructure.Sql.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
@@ -42,7 +43,7 @@ public sealed class OperationalLeaseExpirationService : IOperationalLeaseExpirat
                 m.SourceId,
                 m.SourcePath,
                 m.SourceName
-            FROM [{schema}].[MigrationWorkItems] wi
+            FROM [{schema}].[WorkItems] wi
             INNER JOIN [{schema}].[MigrationManifestRecords] m
                 ON m.ManifestRecordId = wi.ManifestRecordId
             WHERE wi.Status = N'Locked'
@@ -106,7 +107,7 @@ public sealed class OperationalLeaseExpirationService : IOperationalLeaseExpirat
             (
                 SELECT TOP (@MaxCount)
                     WorkItemId
-                FROM [{schema}].[MigrationWorkItems] WITH (UPDLOCK, READPAST, ROWLOCK)
+                FROM [{schema}].[WorkItems] WITH (UPDLOCK, READPAST, ROWLOCK)
                 WHERE Status = N'Locked'
                   AND LockedAt IS NOT NULL
                   AND LockedAt < @ExpiresBefore
@@ -120,7 +121,7 @@ public sealed class OperationalLeaseExpirationService : IOperationalLeaseExpirat
                     LockedAt = NULL,
                     LockedBy = NULL
                 OUTPUT inserted.WorkItemId INTO @Reclaimed
-            FROM [{schema}].[MigrationWorkItems] wi
+            FROM [{schema}].[WorkItems] wi
             INNER JOIN ExpiredWorkItems e
                 ON e.WorkItemId = wi.WorkItemId;
 
@@ -215,3 +216,5 @@ public sealed class OperationalLeaseExpirationService : IOperationalLeaseExpirat
             : reader.GetFieldValue<DateTimeOffset>(ordinal);
     }
 }
+
+

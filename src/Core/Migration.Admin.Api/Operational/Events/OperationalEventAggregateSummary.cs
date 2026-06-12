@@ -11,3 +11,5 @@ public sealed record OperationalEventAggregateSummary(
 public sealed record OperationalEventAggregateBucket(
     string Name,
     int Count);
+
+

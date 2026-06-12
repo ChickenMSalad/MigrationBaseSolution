@@ -46,3 +46,5 @@ public static class OperationalGlobalFailureQueryEndpointExtensions
         return api;
     }
 }
+
+

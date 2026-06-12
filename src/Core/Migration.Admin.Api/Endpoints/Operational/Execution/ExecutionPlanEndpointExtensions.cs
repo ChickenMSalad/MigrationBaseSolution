@@ -40,3 +40,5 @@ public static class ExecutionPlanEndpointExtensions
 public sealed record ExecutionPlanResponse(
     Guid ExecutionSessionId,
     IReadOnlyList<ExecutionPlanStepRecord> Steps);
+
+

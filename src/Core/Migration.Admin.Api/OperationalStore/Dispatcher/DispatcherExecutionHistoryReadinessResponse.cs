@@ -18,3 +18,5 @@ public sealed class DispatcherExecutionHistoryReadinessResponse
     public IReadOnlyCollection<string> Messages { get; init; } =
         Array.Empty<string>();
 }
+
+

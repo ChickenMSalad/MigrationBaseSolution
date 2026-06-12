@@ -42,3 +42,5 @@ public static class OperationalGlobalActivityQueryEndpointExtensions
         return api;
     }
 }
+
+

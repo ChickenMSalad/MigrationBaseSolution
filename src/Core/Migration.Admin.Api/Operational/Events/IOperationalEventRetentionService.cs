@@ -6,3 +6,5 @@ public interface IOperationalEventRetentionService
         int retentionDays,
         CancellationToken cancellationToken);
 }
+
+

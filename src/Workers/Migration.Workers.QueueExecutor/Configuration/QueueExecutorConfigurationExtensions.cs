@@ -5,7 +5,7 @@ namespace Migration.Workers.QueueExecutor.Configuration;
 
 public static class QueueExecutorConfigurationExtensions
 {
-    public static HostApplicationBuilder ConfigureMigrationQueueExecutorConfiguration(this HostApplicationBuilder builder)
+    public static WebApplicationBuilder ConfigureMigrationQueueExecutorConfiguration(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
@@ -22,7 +22,7 @@ public static class QueueExecutorConfigurationExtensions
         return builder;
     }
 
-    public static HostApplicationBuilder LogMigrationQueueExecutorConfiguration(this HostApplicationBuilder builder)
+    public static WebApplicationBuilder LogMigrationQueueExecutorConfiguration(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 

@@ -10,9 +10,9 @@ public static class OperationalSqlHealthEndpointExtensions
     private static readonly string[] ExpectedTables =
     [
         "MigrationProjects",
-        "MigrationRuns",
-        "MigrationManifestRows",
-        "MigrationWorkItems",
+        "Runs",
+        "ManifestRows",
+        "WorkItems",
         "MigrationFailures",
         "MigrationRunCheckpoints",
         "MigrationAssetMappings",
@@ -107,3 +107,5 @@ public sealed record OperationalSqlHealthResponse(
     IReadOnlyList<string> VerifiedTables,
     IReadOnlyList<string> MissingTables,
     string Message);
+
+

@@ -103,9 +103,14 @@ public static class RunEndpointExtensions
 
                 var run = factory.CreateRun(project, resolvedRequest);
 
-                await store.SaveRunAsync(run, cancellationToken).ConfigureAwait(false);
-                await queue.EnqueueAsync(run, cancellationToken).ConfigureAwait(false);
-                await operationalRunMirror.MirrorRunAsync(project, run, cancellationToken).ConfigureAwait(false);
+                await store.SaveRunAsync(run, cancellationToken)
+                    .ConfigureAwait(false);
+
+                await queue.EnqueueAsync(run, cancellationToken)
+                    .ConfigureAwait(false);
+
+                await operationalRunMirror.MirrorRunAsync(project, run, cancellationToken)
+                    .ConfigureAwait(false);
 
                 return Results.Accepted($"/api/runs/{run.RunId}", run);
             })
@@ -221,3 +226,5 @@ public static class RunEndpointExtensions
         return api;
     }
 }
+
+
