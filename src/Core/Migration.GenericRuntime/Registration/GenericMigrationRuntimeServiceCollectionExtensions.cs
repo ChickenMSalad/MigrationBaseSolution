@@ -29,6 +29,21 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
     /// <summary>
     /// Registers the concrete runtime services required by the generic migration execution path.
     /// </summary>
+    /// <remarks>
+    /// This intentionally lives outside the GenericMigration console host so non-console processes
+    /// such as Migration.Admin.Api, QueueExecutor, ServiceBusDispatcher, and ServiceBusExecutor can
+    /// compose generic jobs without depending on a console host project.
+    ///
+    /// Connector/provider registration can be narrowed by configuration:
+    ///
+    /// GenericMigrationRuntime:RegisterAllWhenEmpty = false
+    /// GenericMigrationRuntime:EnabledSources = WebDam,LocalStorage
+    /// GenericMigrationRuntime:EnabledTargets = AzureBlob,LocalStorage
+    /// GenericMigrationRuntime:EnabledManifests = Csv,Excel
+    ///
+    /// Array-style configuration is also supported:
+    /// GenericMigrationRuntime:EnabledSources:0 = WebDam
+    /// </remarks>
     public static IServiceCollection AddGenericMigrationRuntime(
         this IServiceCollection services,
         IConfiguration configuration,
@@ -210,6 +225,9 @@ public static class GenericMigrationRuntimeServiceCollectionExtensions
         services.AddSingleton<IMappingProfileLoader, JsonMappingProfileLoader>();
         services.AddSingleton<IMappingValueTransformer, DefaultMappingValueTransformer>();
         services.AddSingleton<IMapper, CanonicalMapper>();
+
+        // This is the legacy/shared application validation step.
+        // Orchestration-specific validation steps are registered by AddMigrationOrchestration(...).
         services.AddSingleton<IValidationStep, RequiredFieldValidationStep>();
     }
 

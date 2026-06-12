@@ -6,7 +6,7 @@ using Migration.Workers.ServiceBusDispatcher.Runtime;
 using Migration.Application.Operational.Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Configuration.AddEnvironmentVariables(prefix: "MIGRATION_");
 builder.Services
     .AddOptions<SqlServiceBusDispatcherOptions>()
     .Bind(builder.Configuration.GetSection("SqlServiceBusDispatcher"))

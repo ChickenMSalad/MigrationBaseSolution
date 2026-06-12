@@ -1,7 +1,7 @@
 using Migration.Workers.QueueExecutor.Registration;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Configuration.AddEnvironmentVariables(prefix: "MIGRATION_");
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
