@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Migration.ControlPlane.ManifestBuilder;
 
 public sealed class ManifestBuilderServiceRegistry
@@ -6,20 +10,28 @@ public sealed class ManifestBuilderServiceRegistry
 
     public ManifestBuilderServiceRegistry(IEnumerable<ISourceManifestService> services)
     {
-        _services = services.ToDictionary(
-            x => BuildKey(x.SourceType, x.ServiceName),
-            StringComparer.OrdinalIgnoreCase);
+        ArgumentNullException.ThrowIfNull(services);
+
+        _services = services
+            .Where(service => service is not null)
+            .GroupBy(
+                service => BuildKey(service.SourceType, service.ServiceName),
+                StringComparer.OrdinalIgnoreCase)
+            .Select(SelectService)
+            .ToDictionary(
+                service => BuildKey(service.SourceType, service.ServiceName),
+                StringComparer.OrdinalIgnoreCase);
     }
 
     public IReadOnlyList<ManifestBuilderSourceDescriptor> GetSources()
     {
         return _services.Values
-            .Select(x => x.GetDescriptor())
-            .GroupBy(x => x.SourceType, StringComparer.OrdinalIgnoreCase)
+            .Select(service => service.GetDescriptor())
+            .GroupBy(descriptor => descriptor.SourceType, StringComparer.OrdinalIgnoreCase)
             .Select(group =>
             {
                 var services = group
-                    .OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(descriptor => descriptor.DisplayName, StringComparer.OrdinalIgnoreCase)
                     .ToArray();
 
                 return new ManifestBuilderSourceDescriptor(
@@ -27,7 +39,7 @@ public sealed class ManifestBuilderServiceRegistry
                     GetDisplayName(group.Key),
                     services);
             })
-            .OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(source => source.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
@@ -43,7 +55,26 @@ public sealed class ManifestBuilderServiceRegistry
             : null;
     }
 
-    private static string BuildKey(string sourceType, string serviceName) => $"{sourceType.Trim()}::{serviceName.Trim()}";
+    private static ISourceManifestService SelectService(IGrouping<string, ISourceManifestService> group)
+    {
+        var services = group.ToArray();
+        var concreteTypes = services
+            .Select(service => service.GetType())
+            .Distinct()
+            .ToArray();
+
+        if (concreteTypes.Length > 1)
+        {
+            var typeNames = string.Join(", ", concreteTypes.Select(type => type.FullName));
+            throw new InvalidOperationException(
+                $"Multiple different manifest builder services are registered for key '{group.Key}': {typeNames}.");
+        }
+
+        return services[0];
+    }
+
+    private static string BuildKey(string sourceType, string serviceName) =>
+        $"{sourceType.Trim()}::{serviceName.Trim()}";
 
     private static string GetDisplayName(string sourceType)
     {

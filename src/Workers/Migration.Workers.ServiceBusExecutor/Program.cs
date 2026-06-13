@@ -29,6 +29,8 @@ builder.Services.AddOperationalOpenTelemetry(builder.Configuration);
 // Keep the SQL-backed credential metadata store overlay available for this host.
 builder.Services.AddMigrationControlPlane(builder.Configuration);
 
+builder.Services.AddSqlOperationalRunCoordinator(builder.Configuration);
+
 var app = builder.Build();
 
 app.MapGet("/", () => Results.Text("OK", "text/plain"));

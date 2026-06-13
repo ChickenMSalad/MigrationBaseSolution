@@ -239,6 +239,14 @@ where RunId = @RunId;", new
                 IsTerminal = isTerminal ? 1 : 0,
                 EvaluatedUtc = now
             }, cancellationToken: cancellationToken));
+
+            await SyncAdminRunStatusAsync(
+                    run.RunKey,
+                    nextStatus,
+                    isTerminal,
+                    now,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
 
         return new OperationalRunCompletionEvaluationResult(
@@ -251,6 +259,48 @@ where RunId = @RunId;", new
             message);
     }
 
+    private async Task SyncAdminRunStatusAsync(
+        string? runKey,
+        string status,
+        bool isTerminal,
+        DateTimeOffset evaluatedUtc,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(runKey))
+        {
+            return;
+        }
+
+        var sql = @"
+UPDATE dbo.AdminRuns
+SET
+    Status = @Status,
+    CompletedUtc = CASE
+        WHEN @IsTerminal = 1 THEN COALESCE(CompletedUtc, @EvaluatedUtc)
+        ELSE CompletedUtc
+    END,
+    UpdatedUtc = @EvaluatedUtc
+WHERE RunId = @RunKey
+  AND (
+        Status <> @Status
+        OR (@IsTerminal = 1 AND CompletedUtc IS NULL)
+      );";
+
+        await using var connection = OpenConnection();
+
+        await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        RunKey = runKey,
+                        Status = status,
+                        IsTerminal = isTerminal ? 1 : 0,
+                        EvaluatedUtc = evaluatedUtc
+                    },
+                    cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
+    }
     private int ClampBatchSize(int requestedBatchSize)
     {
         var options = _options.Value;

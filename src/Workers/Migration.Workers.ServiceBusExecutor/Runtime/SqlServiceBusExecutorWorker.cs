@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Migration.Application.Operational.WorkItems;
+using Migration.Application.Operational.Runs;
 using Migration.Workers.ServiceBusExecutor.Options;
 using Migration.Workers.ServiceBusExecutor.Processing;
 using Microsoft.Extensions.Hosting;
@@ -18,12 +19,14 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
     private readonly IServiceBusWorkItemExecutor _executor;
     private readonly IOptions<SqlServiceBusExecutorOptions> _options;
     private readonly ILogger<SqlServiceBusExecutorWorker> _logger;
+    private readonly IOperationalRunCoordinator _runCoordinator;
 
     private ServiceBusClient? _client;
     private ServiceBusProcessor? _processor;
 
     public SqlServiceBusExecutorWorker(
         IOperationalWorkItemQueue workItemQueue,
+        IOperationalRunCoordinator runCoordinator,
         IServiceBusWorkItemExecutor executor,
         IOptions<SqlServiceBusExecutorOptions> options,
         ILogger<SqlServiceBusExecutorWorker> logger)
@@ -32,6 +35,7 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
         _executor = executor ?? throw new ArgumentNullException(nameof(executor));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _runCoordinator = runCoordinator ?? throw new ArgumentNullException(nameof(runCoordinator));
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -140,6 +144,11 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
                     new CompleteOperationalWorkItemRequest(workItem.WorkItemId, _options.Value.WorkerId, result.ResultJson),
                     args.CancellationToken);
 
+                await _runCoordinator.EvaluateCompletionAsync(
+                        workItem.RunId,
+                        args.CancellationToken)
+                    .ConfigureAwait(false);
+
                 OperationalExecutionActivity.SetExecutionDuration(activity, DateTimeOffset.UtcNow - activityStartedAtUtc);
                 OperationalExecutionActivity.SetExecutionResult(activity, result.Succeeded, result.ErrorCode);
 
@@ -163,6 +172,11 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
                     result.IsRetryable,
                     nextAttemptUtc),
                 args.CancellationToken);
+
+            await _runCoordinator.EvaluateCompletionAsync(
+                    workItem.RunId,
+                    args.CancellationToken)
+                .ConfigureAwait(false);
 
             if (result.IsRetryable)
             {

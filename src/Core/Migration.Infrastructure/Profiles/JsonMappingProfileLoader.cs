@@ -13,10 +13,43 @@ public sealed class JsonMappingProfileLoader : IMappingProfileLoader
         AllowTrailingCommas = true
     };
 
+    private readonly IArtifactContentResolver? _artifactContentResolver;
+
+    public JsonMappingProfileLoader(IArtifactContentResolver? artifactContentResolver = null)
+    {
+        _artifactContentResolver = artifactContentResolver;
+    }
+
     public async Task<MappingProfile> LoadAsync(string path, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("Mapping profile path is required.", nameof(path));
+        }
+
+        if (_artifactContentResolver is not null && _artifactContentResolver.IsArtifactReference(path))
+        {
+            await using var artifact = await _artifactContentResolver
+                .OpenReadAsync(path, cancellationToken)
+                .ConfigureAwait(false);
+
+            var profileFromArtifact = await JsonSerializer.DeserializeAsync<MappingProfile>(
+                    artifact.Content,
+                    SerializerOptions,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            return profileFromArtifact
+                ?? throw new InvalidOperationException($"Unable to deserialize mapping profile artifact '{path}'.");
+        }
+
         await using var stream = File.OpenRead(path);
-        var profile = await JsonSerializer.DeserializeAsync<MappingProfile>(stream, SerializerOptions, cancellationToken);
+        var profile = await JsonSerializer.DeserializeAsync<MappingProfile>(
+                stream,
+                SerializerOptions,
+                cancellationToken)
+            .ConfigureAwait(false);
+
         return profile ?? throw new InvalidOperationException($"Unable to deserialize mapping profile at '{path}'.");
     }
 }

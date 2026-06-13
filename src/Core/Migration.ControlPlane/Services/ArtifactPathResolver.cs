@@ -1,3 +1,4 @@
+using Migration.Application.Artifacts;
 using Migration.ControlPlane.Artifacts;
 using Migration.ControlPlane.Models;
 
@@ -9,7 +10,7 @@ public sealed class ArtifactPathResolver
 
     public ArtifactPathResolver(IArtifactStore artifacts)
     {
-        _artifacts = artifacts;
+        _artifacts = artifacts ?? throw new ArgumentNullException(nameof(artifacts));
     }
 
     public async Task<CreateRunRequest> ResolveRunRequestAsync(
@@ -17,22 +18,27 @@ public sealed class ArtifactPathResolver
         CreateRunRequest request,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(request);
+
         var manifestArtifactId = FirstNonEmpty(request.ManifestArtifactId, project.ManifestArtifactId);
         var mappingArtifactId = FirstNonEmpty(request.MappingArtifactId, project.MappingArtifactId);
 
-        var manifestPath = await ResolvePathAsync(
-            explicitPath: request.ManifestPath,
-            artifactId: manifestArtifactId,
-            expectedKind: ArtifactKind.Manifest,
-            logicalName: "manifest",
-            cancellationToken).ConfigureAwait(false);
+        var manifestPath = await ResolveReferenceAsync(
+                explicitPath: request.ManifestPath,
+                artifactId: manifestArtifactId,
+                expectedKind: ArtifactKind.Manifest,
+                logicalName: "manifest",
+                cancellationToken)
+            .ConfigureAwait(false);
 
-        var mappingPath = await ResolvePathAsync(
-            explicitPath: request.MappingProfilePath,
-            artifactId: mappingArtifactId,
-            expectedKind: ArtifactKind.Mapping,
-            logicalName: "mapping profile",
-            cancellationToken).ConfigureAwait(false);
+        var mappingPath = await ResolveReferenceAsync(
+                explicitPath: request.MappingProfilePath,
+                artifactId: mappingArtifactId,
+                expectedKind: ArtifactKind.Mapping,
+                logicalName: "mapping profile",
+                cancellationToken)
+            .ConfigureAwait(false);
 
         var settings = AddArtifactSettings(request.Settings, manifestArtifactId, mappingArtifactId);
 
@@ -51,22 +57,27 @@ public sealed class ArtifactPathResolver
         CreatePreflightRequest request,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(request);
+
         var manifestArtifactId = FirstNonEmpty(request.ManifestArtifactId, project.ManifestArtifactId);
         var mappingArtifactId = FirstNonEmpty(request.MappingArtifactId, project.MappingArtifactId);
 
-        var manifestPath = await ResolvePathAsync(
-            explicitPath: request.ManifestPath,
-            artifactId: manifestArtifactId,
-            expectedKind: ArtifactKind.Manifest,
-            logicalName: "manifest",
-            cancellationToken).ConfigureAwait(false);
+        var manifestPath = await ResolveReferenceAsync(
+                explicitPath: request.ManifestPath,
+                artifactId: manifestArtifactId,
+                expectedKind: ArtifactKind.Manifest,
+                logicalName: "manifest",
+                cancellationToken)
+            .ConfigureAwait(false);
 
-        var mappingPath = await ResolvePathAsync(
-            explicitPath: request.MappingProfilePath,
-            artifactId: mappingArtifactId,
-            expectedKind: ArtifactKind.Mapping,
-            logicalName: "mapping profile",
-            cancellationToken).ConfigureAwait(false);
+        var mappingPath = await ResolveReferenceAsync(
+                explicitPath: request.MappingProfilePath,
+                artifactId: mappingArtifactId,
+                expectedKind: ArtifactKind.Mapping,
+                logicalName: "mapping profile",
+                cancellationToken)
+            .ConfigureAwait(false);
 
         var settings = AddArtifactSettings(request.Settings, manifestArtifactId, mappingArtifactId);
 
@@ -84,8 +95,10 @@ public sealed class ArtifactPathResolver
         MigrationProjectRecord project,
         CancellationToken cancellationToken = default)
     {
-        var manifestPath = await TryGetArtifactPathAsync(project.ManifestArtifactId, cancellationToken).ConfigureAwait(false);
-        var mappingPath = await TryGetArtifactPathAsync(project.MappingArtifactId, cancellationToken).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(project);
+
+        var manifestPath = await TryGetArtifactReferenceAsync(project.ManifestArtifactId, cancellationToken).ConfigureAwait(false);
+        var mappingPath = await TryGetArtifactReferenceAsync(project.MappingArtifactId, cancellationToken).ConfigureAwait(false);
 
         return new ProjectArtifactBindingResponse(
             project.ProjectId,
@@ -95,7 +108,7 @@ public sealed class ArtifactPathResolver
             mappingPath);
     }
 
-    private async Task<string> ResolvePathAsync(
+    private async Task<string> ResolveReferenceAsync(
         string? explicitPath,
         string? artifactId,
         ArtifactKind expectedKind,
@@ -122,16 +135,10 @@ public sealed class ArtifactPathResolver
                 $"Artifact '{artifactId}' is '{artifact.Kind}', but a '{expectedKind}' artifact is required for the {logicalName}.");
         }
 
-        if (string.IsNullOrWhiteSpace(artifact.AbsolutePath) || !File.Exists(artifact.AbsolutePath))
-        {
-            throw new FileNotFoundException(
-                $"The file for artifact '{artifactId}' was not found at '{artifact.AbsolutePath}'.");
-        }
-
-        return artifact.AbsolutePath;
+        return ControlPlaneArtifactReference.Create(artifact.ArtifactId);
     }
 
-    private async Task<string?> TryGetArtifactPathAsync(string? artifactId, CancellationToken cancellationToken)
+    private async Task<string?> TryGetArtifactReferenceAsync(string? artifactId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(artifactId))
         {
@@ -139,14 +146,16 @@ public sealed class ArtifactPathResolver
         }
 
         var artifact = await _artifacts.GetAsync(artifactId.Trim(), cancellationToken).ConfigureAwait(false);
-        return artifact?.AbsolutePath;
+        return artifact is null
+            ? null
+            : ControlPlaneArtifactReference.Create(artifact.ArtifactId);
     }
 
     private static string? FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim();
 
-    private static Dictionary<string, string?>? AddArtifactSettings(
-        Dictionary<string, string?>? existing,
+    private static Dictionary<string, string>? AddArtifactSettings(
+        Dictionary<string, string>? existing,
         string? manifestArtifactId,
         string? mappingArtifactId)
     {
@@ -155,7 +164,8 @@ public sealed class ArtifactPathResolver
             return existing;
         }
 
-        var settings = new Dictionary<string, string?>(existing ?? new(), StringComparer.OrdinalIgnoreCase);
+        var settings = new Dictionary<string, string>(existing ?? new(), StringComparer.OrdinalIgnoreCase);
+
         if (!string.IsNullOrWhiteSpace(manifestArtifactId))
         {
             settings["ManifestArtifactId"] = manifestArtifactId;
