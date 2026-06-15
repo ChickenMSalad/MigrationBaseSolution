@@ -33,7 +33,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
         endpoints.MapOperationalSqlHealthEndpoints();
         endpoints.MapSqlOperationalBackboneEndpoints();
         endpoints.MapOperationalWorkerTelemetryEndpoints();
-        endpoints.MapOperationalConnectorConfigurationEndpoints();
+        endpoints.MapOperationalConnectorConfigurationEndpoints(); endpoints.MapOperationalConnectorExecutionProfileEndpoints();
         endpoints.MapOperationalAuditTrailEndpoints();
         endpoints.MapOperationalConnectorCredentialVaultEndpoints();
         endpoints.MapOperationalNotificationEndpoints();
