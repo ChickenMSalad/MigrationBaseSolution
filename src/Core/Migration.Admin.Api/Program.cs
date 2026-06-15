@@ -55,7 +55,7 @@ Migration.Admin.Api.Endpoints.AdminSystemEndpointExtensions.MapAdminSystemEndpoi
 app.MapOperationalHealthEndpoints();
 app.MapAdminEndpointDiagnostics();
 
-var api = app.MapGroup("/api"); api.MapOperationalDispatchEndpoints(); api.MapOperationalDispatcherEndpoints(); api.MapOperationalDispatcherDashboardEndpoints(); api.MapOperationalDispatcherDiagnosticsEndpoints(); api.MapOperationalDispatcherExecutionHistoryEndpoints(); api.MapOperationalDispatcherExecutionHistoryQueryEndpoints(); api.MapOperationalDispatcherExecutionHistoryReadinessEndpoints(); api.MapOperationalDispatcherExecutionHistoryRetentionEndpoints(); api.MapOperationalDispatcherExecutionMetricsEndpoints();
+var api = app.MapGroup("/api"); api.MapOperationalMetricsEndpoints(); api.MapOperationalRetentionEndpoints(); app.MapOperationalMirrorDiagnosticsEndpoints(); api.MapOperationalDispatchEndpoints(); api.MapOperationalDispatcherEndpoints(); api.MapOperationalDispatcherDashboardEndpoints(); api.MapOperationalDispatcherDiagnosticsEndpoints(); api.MapOperationalDispatcherExecutionHistoryEndpoints(); api.MapOperationalDispatcherExecutionHistoryQueryEndpoints(); api.MapOperationalDispatcherExecutionHistoryReadinessEndpoints(); api.MapOperationalDispatcherExecutionHistoryRetentionEndpoints(); api.MapOperationalDispatcherExecutionMetricsEndpoints();
 
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
@@ -72,6 +72,7 @@ app.MapMigrationOperationalEndpoints();
 
 
 app.Run();
+
 
 
 
