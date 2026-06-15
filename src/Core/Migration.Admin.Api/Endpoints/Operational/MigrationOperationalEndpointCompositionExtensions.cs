@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing; using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Endpoints.Operational.Audit;
 using Migration.Admin.Api.Endpoints.Operational.Capacity;
@@ -31,7 +31,7 @@ public static class MigrationOperationalEndpointCompositionExtensions
         endpoints.MapOperationalEventEndpoints();
         endpoints.MapOperationalCommandCenterEndpoints();
         endpoints.MapOperationalSqlHealthEndpoints();
-        endpoints.MapSqlOperationalBackboneEndpoints();
+        endpoints.MapSqlOperationalBackboneEndpoints(); endpoints.MapSqlOperationalWorkItemQueueEndpoints(); endpoints.MapSqlOperationalRuntimeReadinessEndpoints(); endpoints.MapSqlOperationalRunCoordinatorEndpoints();
         endpoints.MapOperationalWorkerTelemetryEndpoints();
         endpoints.MapOperationalConnectorConfigurationEndpoints(); endpoints.MapOperationalConnectorExecutionProfileEndpoints();
         endpoints.MapOperationalAuditTrailEndpoints();
