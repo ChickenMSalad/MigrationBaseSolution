@@ -3,8 +3,12 @@ export type RuntimeDashboardSummary = {
   workItemCount: number;
   queuedWorkItemCount: number;
   dispatchedWorkItemCount: number;
+  runningWorkItemCount?: number;
   completedWorkItemCount: number;
   failedWorkItemCount: number;
+  retryableWorkItemCount?: number;
+  percentComplete?: number;
+  activeWorkItemCount?: number;
 };
 
 export type RuntimeDashboardRun = {
@@ -14,16 +18,23 @@ export type RuntimeDashboardRun = {
   sourceSystem?: string | null;
   targetSystem?: string | null;
   status?: string | null;
+  effectiveStatus?: string | null;
   environmentName?: string | null;
   isDryRun?: boolean;
   requestedAtUtc?: string | null;
   createdAtUtc?: string | null;
   updatedAtUtc?: string | null;
+  firstWorkItemStartedAtUtc?: string | null;
+  lastWorkItemCompletedAtUtc?: string | null;
   workItemCount: number;
   queuedWorkItemCount: number;
   dispatchedWorkItemCount: number;
+  runningWorkItemCount?: number;
   completedWorkItemCount: number;
   failedWorkItemCount: number;
+  retryableWorkItemCount?: number;
+  activeWorkItemCount?: number;
+  percentComplete?: number;
 };
 
 export type RuntimeDashboardWorkItem = {

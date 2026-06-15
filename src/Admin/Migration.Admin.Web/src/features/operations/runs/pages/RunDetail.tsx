@@ -1,36 +1,46 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../../../../api/client";
-import { Card, JsonBlock, StatusPill } from "../../../../components/Card";
+import { Link, useParams } from "react-router-dom";
+import { Card, EmptyState, StatusPill } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
-import type { RunEventsResponse, RunFailuresResponse, RunRecord, RunSummary, RunWorkItemsResponse } from "../../../../types/api";
+import { runtimeDashboardApi } from "../../runtimeDashboard/api/runtimeDashboardApi";
+import type { RuntimeDashboardRunDetail, RuntimeDashboardWorkItem } from "../../runtimeDashboard/types/runtimeDashboard";
+
+function formatDate(value?: string | null) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
+function formatNumber(value?: number | null) {
+  return value === undefined || value === null ? "-" : value.toLocaleString();
+}
+
+function workItemStatus(item: RuntimeDashboardWorkItem) {
+  return item.status ?? "Unknown";
+}
 
 export function RunDetail() {
-  const navigate = useNavigate();
-  const { runId: routeRunId } = useParams();
-  const runId = routeRunId ?? "";
-  const back = () => navigate("/runs");
-  const [run, setRun] = useState<RunRecord | null>(null);
-  const [summary, setSummary] = useState<RunSummary | null>(null);
-  const [events, setEvents] = useState<RunEventsResponse | null>(null);
-  const [failures, setFailures] = useState<RunFailuresResponse | null>(null);
-  const [workItems, setWorkItems] = useState<RunWorkItemsResponse | null>(null);
+  const { runId } = useParams();
+  const [detail, setDetail] = useState<RuntimeDashboardRunDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
+    if (!runId) {
+      setError("Missing run id.");
+      setLoading(false);
+      return;
+    }
+
     setError(null);
+
     try {
-      const [runResult, summaryResult, eventResult, failureResult, workItemResult] = await Promise.allSettled([
-        api.run(runId), api.runSummary(runId), api.runEvents(runId, 250), api.runFailures(runId), api.runWorkItems(runId)
-      ]);
-      if (runResult.status === "fulfilled") setRun(runResult.value);
-      if (summaryResult.status === "fulfilled") setSummary(summaryResult.value);
-      if (eventResult.status === "fulfilled") setEvents(eventResult.value);
-      if (failureResult.status === "fulfilled") setFailures(failureResult.value);
-      if (workItemResult.status === "fulfilled") setWorkItems(workItemResult.value);
-      const firstError = [runResult, summaryResult, eventResult, failureResult, workItemResult].find((x) => x.status === "rejected");
-      if (firstError && firstError.status === "rejected") setError(firstError.reason instanceof Error ? firstError.reason.message : String(firstError.reason));
+      setDetail(await runtimeDashboardApi.runDetail(runId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -38,28 +48,110 @@ export function RunDetail() {
 
   useEffect(() => {
     void load();
-    const timer = window.setInterval(load, 4000);
+    const timer = window.setInterval(load, 5000);
     return () => window.clearInterval(timer);
   }, [runId]);
 
+  const run = detail?.run ?? null;
+  const displayName = run?.runName ?? run?.runKey ?? run?.runId ?? "Run";
+  const status = run?.effectiveStatus ?? run?.status ?? "Unknown";
+
   return (
-    <div className="pageStack">
-      <div className="pageTitle">
-        <div><button className="ghost" onClick={back}>← Runs</button><h1>{run?.jobName ?? "Run"}</h1><p className="mono">{runId}</p></div>
-        <div className="actions"><button onClick={load}>Refresh</button>{run && <StatusPill status={run.status} />}</div>
-      </div>
-      <LoadingError loading={loading} error={error} />
-      <div className="metricGrid">
-        <Card><div className="metric"><span>Total</span><strong>{String(summary?.total ?? workItems?.count ?? "—")}</strong></div></Card>
-        <Card><div className="metric"><span>Completed</span><strong>{String(summary?.completed ?? "—")}</strong></div></Card>
-        <Card><div className="metric"><span>Failed</span><strong>{String(summary?.failed ?? failures?.count ?? "—")}</strong></div></Card>
-        <Card><div className="metric"><span>Events</span><strong>{String(events?.count ?? "—")}</strong></div></Card>
-      </div>
-      <Card title="Run record"><JsonBlock value={run} /></Card>
-      <Card title="Summary"><JsonBlock value={summary} /></Card>
-      <Card title="Failures"><JsonBlock value={failures} /></Card>
-      <Card title="Recent events"><JsonBlock value={events} /></Card>
-      <Card title="Work items"><JsonBlock value={workItems} /></Card>
-    </div>
+    <>
+      <p><Link to="/runs">Back to Runs</Link></p>
+
+      <Card title={displayName} subtitle="SQL operational runtime run detail." action={<button onClick={() => void load()}>Refresh</button>}>
+        <LoadingError loading={loading} error={error} onRetry={() => void load()} />
+
+        {!loading && !error && !run && (
+          <EmptyState title="Run not found" message="No SQL operational run was found for this run id." />
+        )}
+
+        {run && (
+          <>
+            <div className="metric-grid">
+              <Card title="Status"><StatusPill status={status} /></Card>
+              <Card title="Progress"><strong>{formatNumber(run.percentComplete)}%</strong></Card>
+              <Card title="Completed"><strong>{formatNumber(run.completedWorkItemCount)}</strong></Card>
+              <Card title="Failed"><strong>{formatNumber(run.failedWorkItemCount)}</strong></Card>
+            </div>
+
+            <table>
+              <tbody>
+                <tr><th>Run ID</th><td>{run.runId}</td></tr>
+                <tr><th>Run key</th><td>{run.runKey ?? "-"}</td></tr>
+                <tr><th>Source</th><td>{run.sourceSystem ?? "-"}</td></tr>
+                <tr><th>Target</th><td>{run.targetSystem ?? "-"}</td></tr>
+                <tr><th>Environment</th><td>{run.environmentName ?? "-"}</td></tr>
+                <tr><th>Dry run</th><td>{run.isDryRun ? "Yes" : "No"}</td></tr>
+                <tr><th>Requested</th><td>{formatDate(run.requestedAtUtc)}</td></tr>
+                <tr><th>Created</th><td>{formatDate(run.createdAtUtc)}</td></tr>
+                <tr><th>Updated</th><td>{formatDate(run.updatedAtUtc)}</td></tr>
+              </tbody>
+            </table>
+          </>
+        )}
+      </Card>
+
+      {run && (
+        <Card title="Work item progress" subtitle="Latest SQL work item state for this run.">
+          {detail?.workItems.length === 0 ? (
+            <EmptyState title="No work items" message="No work items were found for this operational run." />
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Status</th>
+                  <th>Type</th>
+                  <th>Attempts</th>
+                  <th>Claimed by</th>
+                  <th>Updated</th>
+                  <th>Error</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(detail?.workItems ?? []).map((item) => (
+                  <tr key={item.workItemId}>
+                    <td>{item.workItemId}</td>
+                    <td><StatusPill status={workItemStatus(item)} /></td>
+                    <td>{item.workType ?? "-"}</td>
+                    <td>{formatNumber(item.attemptCount)}</td>
+                    <td>{item.claimedBy ?? "-"}</td>
+                    <td>{formatDate(item.updatedAtUtc ?? item.completedAtUtc ?? item.createdAtUtc)}</td>
+                    <td>{item.lastErrorMessage ?? "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      )}
+
+      {run && detail && detail.failures.length > 0 && (
+        <Card title="Failures" subtitle="Failure rows associated with this operational run.">
+          <table>
+            <thead>
+              <tr>
+                <th>Work item</th>
+                <th>Type</th>
+                <th>Message</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {detail.failures.map((failure, index) => (
+                <tr key={`${failure.workItemId ?? "failure"}-${index}`}>
+                  <td>{failure.workItemId ?? "-"}</td>
+                  <td>{failure.failureType ?? "-"}</td>
+                  <td>{failure.message ?? "-"}</td>
+                  <td>{formatDate(failure.createdAtUtc)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+    </>
   );
 }
