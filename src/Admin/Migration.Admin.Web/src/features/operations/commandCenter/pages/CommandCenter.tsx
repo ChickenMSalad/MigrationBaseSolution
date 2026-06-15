@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { commandCenterApi } from '../api/commandCenterApi';
 import type { CommandCenterHealthCheck, CommandCenterSummary } from '../types/commandCenter';
 
@@ -28,11 +29,11 @@ function statusClass(value?: string | null): string {
     return 'status-success';
   }
 
-  if (status.includes('degraded') || status.includes('failed') || status.includes('critical')) {
+  if (status.includes('degraded') || status.includes('failed') || status.includes('critical') || status.includes('error')) {
     return 'status-danger';
   }
 
-  if (status.includes('warning') || status.includes('stale')) {
+  if (status.includes('warning') || status.includes('stale') || status.includes('queued')) {
     return 'status-warning';
   }
 
@@ -48,7 +49,6 @@ export function CommandCenter() {
 
   async function loadCommandCenter() {
     setState((current) => ({ ...current, loading: true, error: undefined }));
-
     try {
       const [summary, health] = await Promise.all([
         commandCenterApi.getSummary(),
@@ -71,30 +71,33 @@ export function CommandCenter() {
 
   useEffect(() => {
     void loadCommandCenter();
+    const timer = window.setInterval(() => {
+      void loadCommandCenter();
+    }, 10000);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   const summary = state.summary;
-  const events = summary?.recentEvents ?? [];
+  const events = useMemo(() => summary?.recentEvents ?? [], [summary?.recentEvents]);
 
   return (
-    <section className="page-stack">
-      <header className="page-header">
+    <main className="page-shell">
+      <div className="page-header">
         <div>
           <p className="eyebrow">Operations</p>
           <h1>Command Center</h1>
-          <p className="page-subtitle">
-            Consolidated operational runtime health, queue, worker, notification, and recent-event visibility.
-          </p>
+          <p>Live SQL runtime summary across runs, queue pressure, failures, workers, readiness, and recent activity.</p>
         </div>
-        <button className="button-primary" type="button" onClick={() => void loadCommandCenter()}>
+        <button className="button button-secondary" type="button" onClick={() => void loadCommandCenter()} disabled={state.loading}>
           Refresh
         </button>
-      </header>
+      </div>
 
-      {state.error ? <div className="error-banner">{state.error}</div> : null}
-      {state.loading ? <div className="card">Loading command center summary...</div> : null}
+      {state.error ? <div className="alert alert-danger">{state.error}</div> : null}
+      {state.loading ? <div className="panel">Loading command center summary...</div> : null}
 
-      <div className="card-grid metrics-grid">
+      <section className="metric-grid">
         <article className="metric-card">
           <span>Runtime status</span>
           <strong className={statusClass(summary?.runtimeStatus)}>{summary?.runtimeStatus ?? 'Unknown'}</strong>
@@ -106,6 +109,10 @@ export function CommandCenter() {
         <article className="metric-card">
           <span>Queued work</span>
           <strong>{metric(summary?.queuedWorkItems)}</strong>
+        </article>
+        <article className="metric-card">
+          <span>Dispatched work</span>
+          <strong>{metric(summary?.dispatchedWorkItems)}</strong>
         </article>
         <article className="metric-card">
           <span>Failed work</span>
@@ -120,47 +127,75 @@ export function CommandCenter() {
           <strong>{metric(summary?.activeWorkers)}</strong>
         </article>
         <article className="metric-card">
-          <span>Stale workers</span>
-          <strong>{metric(summary?.staleWorkers)}</strong>
-        </article>
-        <article className="metric-card">
           <span>Critical alerts</span>
           <strong>{metric(summary?.criticalAlerts)}</strong>
         </article>
-      </div>
-
-      <section className="card">
-        <h2>Health checks</h2>
-        {state.checks.length === 0 ? (
-          <p>No command-center health checks are available yet.</p>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.checks.map((check) => (
-                <tr key={check.name}>
-                  <td>{check.name}</td>
-                  <td className={statusClass(check.status)}>{check.status}</td>
-                  <td>{check.message ?? '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </section>
 
-      <section className="card">
-        <h2>Recent events</h2>
+      <section className="panel-grid two-column">
+        <article className="panel">
+          <div className="section-header">
+            <div>
+              <h2>Operational readiness</h2>
+              <p>SQL backbone and runtime table checks.</p>
+            </div>
+            <Link to="/operations/preflight">Open Preflight</Link>
+          </div>
+
+          {state.checks.length === 0 ? (
+            <p>No command-center health checks are available yet.</p>
+          ) : (
+            <table className="data-table compact">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {state.checks.map((check) => (
+                  <tr key={check.name}>
+                    <td>{check.name}</td>
+                    <td><span className={statusClass(check.status)}>{check.status}</span></td>
+                    <td>{check.message ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </article>
+
+        <article className="panel">
+          <div className="section-header">
+            <div>
+              <h2>Quick links</h2>
+              <p>Open the operational pages that now use SQL runtime truth.</p>
+            </div>
+          </div>
+          <div className="action-list">
+            <Link to="/operations/runtime-dashboard">Runtime Dashboard</Link>
+            <Link to="/operations/runs">Runs</Link>
+            <Link to="/operations/failure-retry">Failure Retry</Link>
+            <Link to="/operations/operational-events">Operational Events</Link>
+            <Link to="/operations/execution-sessions">Execution Sessions</Link>
+          </div>
+        </article>
+      </section>
+
+      <section className="panel">
+        <div className="section-header">
+          <div>
+            <h2>Recent runtime activity</h2>
+            <p>Derived from operational SQL run and work item state.</p>
+          </div>
+          <Link to="/operations/operational-events">Open Events</Link>
+        </div>
+
         {events.length === 0 ? (
           <p>No recent command-center events are available yet.</p>
         ) : (
-          <table className="data-table">
+          <table className="data-table compact">
             <thead>
               <tr>
                 <th>Created</th>
@@ -172,9 +207,9 @@ export function CommandCenter() {
             </thead>
             <tbody>
               {events.map((event, index) => (
-                <tr key={String(event.eventId ?? index)}>
+                <tr key={`${event.eventId ?? index}-${event.createdUtc ?? 'event'}`}>
                   <td>{formatDate(event.createdUtc)}</td>
-                  <td className={statusClass(event.severity)}>{event.severity ?? '-'}</td>
+                  <td><span className={statusClass(event.severity)}>{event.severity ?? '-'}</span></td>
                   <td>{event.category ?? '-'}</td>
                   <td>{event.title ?? event.message ?? '-'}</td>
                   <td>{event.source ?? '-'}</td>
@@ -186,6 +221,6 @@ export function CommandCenter() {
       </section>
 
       {summary?.generatedUtc ? <p className="muted">Generated {formatDate(summary.generatedUtc)}</p> : null}
-    </section>
+    </main>
   );
 }
