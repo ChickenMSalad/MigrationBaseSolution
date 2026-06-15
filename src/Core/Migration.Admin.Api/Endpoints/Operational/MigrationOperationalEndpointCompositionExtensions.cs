@@ -41,7 +41,8 @@ public static class MigrationOperationalEndpointCompositionExtensions
         endpoints.MapExecutionReplayEndpoints();
         endpoints.MapOperationalSqlSchemaDiagnosticsEndpoints(); 
         
-        return endpoints;
+        var dispatcherPressureApi = endpoints.MapGroup("/api"); dispatcherPressureApi.MapOperationalDispatcherPressureAnalyticsEndpoints(); return endpoints;
     }
 }
+
 
