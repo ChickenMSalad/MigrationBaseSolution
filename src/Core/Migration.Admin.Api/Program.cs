@@ -1,4 +1,4 @@
-using Migration.Admin.Api.Endpoints.Operational.Dashboard;
+﻿using Migration.Admin.Api.Endpoints.Operational.Dashboard;
 using Migration.Admin.Api.Operational.Execution;
 using Migration.Admin.Api.Operational.Events;
 using Migration.Admin.Api.Operational.SqlMetrics;
@@ -55,7 +55,7 @@ Migration.Admin.Api.Endpoints.AdminSystemEndpointExtensions.MapAdminSystemEndpoi
 app.MapOperationalHealthEndpoints();
 app.MapAdminEndpointDiagnostics();
 
-var api = app.MapGroup("/api");
+var api = app.MapGroup("/api"); api.MapOperationalDispatchEndpoints(); api.MapOperationalDispatcherEndpoints(); api.MapOperationalDispatcherDashboardEndpoints(); api.MapOperationalDispatcherDiagnosticsEndpoints(); api.MapOperationalDispatcherExecutionHistoryEndpoints(); api.MapOperationalDispatcherExecutionHistoryQueryEndpoints(); api.MapOperationalDispatcherExecutionHistoryReadinessEndpoints(); api.MapOperationalDispatcherExecutionHistoryRetentionEndpoints(); api.MapOperationalDispatcherExecutionMetricsEndpoints();
 
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
@@ -72,6 +72,7 @@ app.MapMigrationOperationalEndpoints();
 
 
 app.Run();
+
 
 
 
