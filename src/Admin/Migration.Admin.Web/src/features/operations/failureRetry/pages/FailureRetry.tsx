@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { failureRetryApi } from "../api/failureRetryApi";
 import type { FailureRetryResponse, FailureRetryWorkItem } from "../types/failureRetry";
 
@@ -6,6 +6,9 @@ type LoadState = {
   loading: boolean;
   error?: string;
   response?: FailureRetryResponse;
+  actionMessage?: string;
+  actionError?: string;
+  retryingWorkItemId?: number;
 };
 
 function formatDate(value?: string | null) {
@@ -26,9 +29,11 @@ function statusClass(item: FailureRetryWorkItem) {
   if (status.includes("retry")) {
     return "status-warning";
   }
+
   if (status.includes("fail")) {
     return "status-danger";
   }
+
   if (status.includes("complete")) {
     return "status-success";
   }
@@ -36,59 +41,94 @@ function statusClass(item: FailureRetryWorkItem) {
   return "status-neutral";
 }
 
+function canRetry(item: FailureRetryWorkItem) {
+  const status = String(item.status ?? "").toLowerCase();
+  return status.includes("fail") || status.includes("retry");
+}
+
 export function FailureRetry() {
   const [state, setState] = useState<LoadState>({ loading: true });
 
-  useEffect(() => {
-    let cancelled = false;
+  const load = useCallback(async () => {
+    setState((current) => ({
+      ...current,
+      loading: true,
+      error: undefined,
+      actionError: undefined,
+    }));
 
-    async function load() {
-      setState((current) => ({ ...current, loading: true, error: undefined }));
-
-      try {
-        const response = await failureRetryApi.recent(50);
-        if (!cancelled) {
-          setState({ loading: false, response });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setState({
-            loading: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
+    try {
+      const response = await failureRetryApi.recent(50);
+      setState((current) => ({
+        ...current,
+        loading: false,
+        response,
+      }));
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        loading: false,
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function retry(item: FailureRetryWorkItem) {
+    setState((current) => ({
+      ...current,
+      retryingWorkItemId: item.workItemId,
+      actionMessage: undefined,
+      actionError: undefined,
+    }));
+
+    try {
+      const response = await failureRetryApi.retryWorkItem(item.workItemId);
+      const message = response.message || `Work item ${item.workItemId} was reset for retry.`;
+      setState((current) => ({
+        ...current,
+        retryingWorkItemId: undefined,
+        actionMessage: message,
+      }));
+      await load();
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        retryingWorkItemId: undefined,
+        actionError: error instanceof Error ? error.message : String(error),
+      }));
+    }
+  }
 
   const workItems = state.response?.workItems ?? [];
   const summary = state.response?.summary;
   const infoMessage = state.response?.message;
 
   return (
-    <section className="page-stack">
-      <div className="page-header">
-        <div>
-          <p className="eyebrow">Runtime operations</p>
-          <h1>Failure retry</h1>
-          <p className="muted">
-            Failed and retryable operational work items from the canonical runtime dashboard API.
-          </p>
-        </div>
+    <section className="operations-page">
+      <p className="eyebrow">Runtime operations</p>
+      <h1>Failure retry</h1>
+      <p className="page-intro">
+        Failed and retryable operational work items from the canonical runtime dashboard API.
+      </p>
+
+      <div className="toolbar-row">
+        <button type="button" className="button-secondary" onClick={() => void load()} disabled={state.loading}>
+          Refresh
+        </button>
       </div>
 
-      {state.error ? <div className="error-card">{state.error}</div> : null}
-      {state.loading ? <div className="loading-card">Loading failure retry state...</div> : null}
-      {!state.loading && infoMessage ? <div className="info-card">{infoMessage}</div> : null}
+      {state.error ? <div className="alert alert-danger">{state.error}</div> : null}
+      {state.actionError ? <div className="alert alert-danger">{state.actionError}</div> : null}
+      {state.actionMessage ? <div className="alert alert-success">{state.actionMessage}</div> : null}
+      {state.loading ? <div className="panel">Loading failure retry state...</div> : null}
+      {!state.loading && infoMessage ? <div className="panel muted">{infoMessage}</div> : null}
 
       {!state.loading && summary ? (
-        <div className="metric-grid">
+        <div className="metric-grid compact">
           <article className="metric-card">
             <span>Failed</span>
             <strong>{summary.failed}</strong>
@@ -105,7 +145,7 @@ export function FailureRetry() {
       ) : null}
 
       {!state.loading && workItems.length === 0 ? (
-        <div className="empty-card">No failed or retryable work items were returned.</div>
+        <div className="panel">No failed or retryable work items were returned.</div>
       ) : null}
 
       {!state.loading && workItems.length > 0 ? (
@@ -119,19 +159,30 @@ export function FailureRetry() {
                 <th>Attempts</th>
                 <th>Updated</th>
                 <th>Error</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {workItems.map((item) => (
                 <tr key={item.workItemId}>
                   <td>{item.workItemId}</td>
-                  <td className="mono">{item.runId}</td>
+                  <td>{item.runId}</td>
                   <td>
                     <span className={statusClass(item)}>{item.status}</span>
                   </td>
                   <td>{item.attemptCount ?? 0}</td>
                   <td>{formatDate(item.updatedAtUtc)}</td>
-                  <td className="error-cell">{item.lastErrorMessage ?? "-"}</td>
+                  <td>{item.lastErrorMessage ?? "-"}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      disabled={!canRetry(item) || state.retryingWorkItemId === item.workItemId}
+                      onClick={() => void retry(item)}
+                    >
+                      {state.retryingWorkItemId === item.workItemId ? "Retrying..." : "Retry"}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -141,5 +192,3 @@ export function FailureRetry() {
     </section>
   );
 }
-
-

@@ -5,8 +5,7 @@ namespace Migration.Admin.Api.Endpoints;
 
 public static class OperationalWorkItemLeaseEndpointExtensions
 {
-    public static RouteGroupBuilder MapOperationalWorkItemLeaseEndpoints(
-        this RouteGroupBuilder api)
+    public static RouteGroupBuilder MapOperationalWorkItemLeaseEndpoints(this RouteGroupBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
 
@@ -19,10 +18,7 @@ public static class OperationalWorkItemLeaseEndpointExtensions
                 {
                     try
                     {
-                        var response = await leaseService.LeaseAsync(
-                            request,
-                            cancellationToken);
-
+                        var response = await leaseService.LeaseAsync(request, cancellationToken);
                         return Results.Ok(response);
                     }
                     catch (ArgumentException ex)
@@ -33,12 +29,12 @@ public static class OperationalWorkItemLeaseEndpointExtensions
             .WithName("LeaseOperationalWorkItems")
             .WithTags("Operational Store")
             .WithSummary("Leases unlocked operational work items for a worker.")
-            .Produces<OperationalWorkItemLeaseResponse>(StatusCodes.Status200OK)
-            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
             .WithOpenApi();
 
         api.MapPost(
-                "/operational/work-items/{workItemId:guid}/heartbeat",
+                "/operational/work-items/{workItemId:long}/heartbeat",
                 async (
                     long workItemId,
                     OperationalWorkItemHeartbeatRequest request,
@@ -47,14 +43,8 @@ public static class OperationalWorkItemLeaseEndpointExtensions
                 {
                     try
                     {
-                        var response = await leaseService.HeartbeatAsync(
-                            workItemId,
-                            request,
-                            cancellationToken);
-
-                        return response.Success
-                            ? Results.Ok(response)
-                            : Results.Conflict(response);
+                        var response = await leaseService.HeartbeatAsync(workItemId, request, cancellationToken);
+                        return response.Success ? Results.Ok(response) : Results.Conflict(response);
                     }
                     catch (ArgumentException ex)
                     {
@@ -64,13 +54,13 @@ public static class OperationalWorkItemLeaseEndpointExtensions
             .WithName("HeartbeatOperationalWorkItem")
             .WithTags("Operational Store")
             .WithSummary("Refreshes the lock timestamp for a leased operational work item.")
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status200OK)
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status409Conflict)
-            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status400BadRequest)
             .WithOpenApi();
 
         api.MapPost(
-                "/operational/work-items/{workItemId:guid}/complete",
+                "/operational/work-items/{workItemId:long}/complete",
                 async (
                     long workItemId,
                     OperationalWorkItemCompleteRequest request,
@@ -79,14 +69,8 @@ public static class OperationalWorkItemLeaseEndpointExtensions
                 {
                     try
                     {
-                        var response = await leaseService.CompleteAsync(
-                            workItemId,
-                            request,
-                            cancellationToken);
-
-                        return response.Success
-                            ? Results.Ok(response)
-                            : Results.Conflict(response);
+                        var response = await leaseService.CompleteAsync(workItemId, request, cancellationToken);
+                        return response.Success ? Results.Ok(response) : Results.Conflict(response);
                     }
                     catch (ArgumentException ex)
                     {
@@ -96,13 +80,13 @@ public static class OperationalWorkItemLeaseEndpointExtensions
             .WithName("CompleteOperationalWorkItem")
             .WithTags("Operational Store")
             .WithSummary("Marks a leased operational work item completed.")
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status200OK)
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status409Conflict)
-            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status400BadRequest)
             .WithOpenApi();
 
         api.MapPost(
-                "/operational/work-items/{workItemId:guid}/fail",
+                "/operational/work-items/{workItemId:long}/fail",
                 async (
                     long workItemId,
                     OperationalWorkItemFailRequest request,
@@ -111,14 +95,8 @@ public static class OperationalWorkItemLeaseEndpointExtensions
                 {
                     try
                     {
-                        var response = await leaseService.FailAsync(
-                            workItemId,
-                            request,
-                            cancellationToken);
-
-                        return response.Success
-                            ? Results.Ok(response)
-                            : Results.Conflict(response);
+                        var response = await leaseService.FailAsync(workItemId, request, cancellationToken);
+                        return response.Success ? Results.Ok(response) : Results.Conflict(response);
                     }
                     catch (ArgumentException ex)
                     {
@@ -128,13 +106,13 @@ public static class OperationalWorkItemLeaseEndpointExtensions
             .WithName("FailOperationalWorkItem")
             .WithTags("Operational Store")
             .WithSummary("Marks a leased operational work item failed.")
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status200OK)
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status409Conflict)
-            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status400BadRequest)
             .WithOpenApi();
 
         api.MapPost(
-                "/operational/work-items/{workItemId:guid}/release",
+                "/operational/work-items/{workItemId:long}/release",
                 async (
                     long workItemId,
                     OperationalWorkItemReleaseRequest request,
@@ -143,14 +121,8 @@ public static class OperationalWorkItemLeaseEndpointExtensions
                 {
                     try
                     {
-                        var response = await recoveryService.ReleaseAsync(
-                            workItemId,
-                            request,
-                            cancellationToken);
-
-                        return response.Success
-                            ? Results.Ok(response)
-                            : Results.Conflict(response);
+                        var response = await recoveryService.ReleaseAsync(workItemId, request, cancellationToken);
+                        return response.Success ? Results.Ok(response) : Results.Conflict(response);
                     }
                     catch (ArgumentException ex)
                     {
@@ -160,13 +132,13 @@ public static class OperationalWorkItemLeaseEndpointExtensions
             .WithName("ReleaseOperationalWorkItem")
             .WithTags("Operational Store")
             .WithSummary("Releases a leased operational work item back to Created.")
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status200OK)
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status409Conflict)
-            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status400BadRequest)
             .WithOpenApi();
 
         api.MapPost(
-                "/operational/work-items/{workItemId:guid}/reset",
+                "/operational/work-items/{workItemId:long}/reset",
                 async (
                     long workItemId,
                     OperationalWorkItemResetRequest request,
@@ -175,14 +147,8 @@ public static class OperationalWorkItemLeaseEndpointExtensions
                 {
                     try
                     {
-                        var response = await recoveryService.ResetAsync(
-                            workItemId,
-                            request,
-                            cancellationToken);
-
-                        return response.Success
-                            ? Results.Ok(response)
-                            : Results.Conflict(response);
+                        var response = await recoveryService.ResetAsync(workItemId, request, cancellationToken);
+                        return response.Success ? Results.Ok(response) : Results.Conflict(response);
                     }
                     catch (ArgumentException ex)
                     {
@@ -192,13 +158,11 @@ public static class OperationalWorkItemLeaseEndpointExtensions
             .WithName("ResetOperationalWorkItem")
             .WithTags("Operational Store")
             .WithSummary("Resets an operational work item to Created for recovery/testing.")
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status200OK)
-            .Produces<OperationalWorkItemStateTransitionResponse>(StatusCodes.Status409Conflict)
-            .Produces<AdminApiErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status400BadRequest)
             .WithOpenApi();
 
         return api;
     }
 }
-
-
