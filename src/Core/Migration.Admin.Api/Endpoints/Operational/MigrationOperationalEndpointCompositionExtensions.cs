@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing; using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Endpoints.Operational.Audit;
 using Migration.Admin.Api.Endpoints.Operational.Capacity;
 using Migration.Admin.Api.Endpoints.Operational.Connectors;
@@ -12,9 +12,7 @@ using Migration.Admin.Api.Endpoints.Operational.SlaSlo;
 using Migration.Admin.Api.Endpoints.Operational.SqlHealth;
 using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
 using Migration.Admin.Api.Endpoints.Operational.Workers;
-
 namespace Migration.Admin.Api.Endpoints.Operational;
-
 public static class MigrationOperationalEndpointCompositionExtensions
 {
     public static IEndpointRouteBuilder MapMigrationOperationalEndpoints(
@@ -40,45 +38,10 @@ public static class MigrationOperationalEndpointCompositionExtensions
         endpoints.MapOperationalSlaSloEndpoints();
         endpoints.MapOperationalCapacityEndpoints();
         endpoints.MapOperationalCostAnalyticsEndpoints();
-
         endpoints.MapExecutionReplayEndpoints();
+        endpoints.MapOperationalSqlSchemaDiagnosticsEndpoints(); 
+        
         return endpoints;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
