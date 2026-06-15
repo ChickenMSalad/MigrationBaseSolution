@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Migration.Admin.Api.Operational.Events;
 using Migration.Admin.Api.Operational.SqlMetrics;
 
@@ -23,7 +24,6 @@ public static class OperationalEventEndpointExtensions
         {
             var snapshot = await metricsReader.ReadSnapshotAsync(cancellationToken);
             var severity = snapshot.Status == "healthy" ? "info" : "warning";
-
             if (snapshot.FailureCount > 0 || snapshot.Status == "unhealthy")
             {
                 severity = "critical";
@@ -52,15 +52,31 @@ public static class OperationalEventEndpointExtensions
 
         group.MapGet("/recent", async (
             IOperationalEventStore eventStore,
+            IConfiguration configuration,
             int? take,
             CancellationToken cancellationToken) =>
         {
             var safeTake = Math.Clamp(take.GetValueOrDefault(50), 1, 250);
             var events = await eventStore.ReadRecentAsync(safeTake, cancellationToken);
+            if (events.Count > 0)
+            {
+                return Results.Ok(new OperationalRecentEventsResponse(
+                    Take: safeTake,
+                    Events: events));
+            }
+
+            var synthesizedEvents = await SqlOperationalEventTimelineReader.ReadAsync(
+                configuration,
+                migrationRunId: null,
+                skip: 0,
+                take: safeTake,
+                fromUtc: null,
+                toUtc: null,
+                cancellationToken: cancellationToken);
 
             return Results.Ok(new OperationalRecentEventsResponse(
                 Take: safeTake,
-                Events: events));
+                Events: synthesizedEvents));
         })
         .WithName("GetRecentOperationalEvents");
 
@@ -82,6 +98,4 @@ public sealed record OperationalEventSnapshotResponse(
 
 public sealed record OperationalRecentEventsResponse(
     int Take,
-    IReadOnlyList<OperationalEventRecord> Events);
-
-
+    IReadOnlyList<object> Events);
