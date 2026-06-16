@@ -7,8 +7,8 @@ export type RuntimeDashboardSummary = {
   completedWorkItemCount: number;
   failedWorkItemCount: number;
   retryableWorkItemCount?: number;
-  percentComplete?: number;
   activeWorkItemCount?: number;
+  percentComplete?: number;
 };
 
 export type RuntimeDashboardRun = {
