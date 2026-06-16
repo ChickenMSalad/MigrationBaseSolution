@@ -1,4 +1,4 @@
-﻿using Migration.Admin.Api.Endpoints.Operational.Dashboard;
+using Migration.Admin.Api.Endpoints.Operational.Dashboard;
 using Migration.Admin.Api.Operational.Execution;
 using Migration.Admin.Api.Operational.Events;
 using Migration.Admin.Api.Operational.SqlMetrics;
@@ -55,19 +55,12 @@ Migration.Admin.Api.Endpoints.AdminSystemEndpointExtensions.MapAdminSystemEndpoi
 app.MapOperationalHealthEndpoints();
 app.MapAdminEndpointDiagnostics();
 
-var api = app.MapGroup("/api"); api.MapOperationalMetricsEndpoints(); api.MapOperationalRetentionEndpoints(); app.MapOperationalMirrorDiagnosticsEndpoints(); api.MapOperationalDispatchEndpoints(); api.MapOperationalDispatcherEndpoints(); api.MapOperationalDispatcherDashboardEndpoints(); api.MapOperationalDispatcherDiagnosticsEndpoints(); api.MapOperationalDispatcherExecutionHistoryEndpoints(); api.MapOperationalDispatcherExecutionHistoryQueryEndpoints(); api.MapOperationalDispatcherExecutionHistoryReadinessEndpoints(); api.MapOperationalDispatcherExecutionHistoryRetentionEndpoints(); api.MapOperationalDispatcherExecutionMetricsEndpoints();
+var api = app.MapGroup("/api");
 
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiRouteGroupEndpoints(api);
 AdminApiEndpointStartupExtensions.MapMigrationAdminApiAppLevelEndpoints(app);
 
-app.MapSqlOperationalWorkItemQueueEndpoints();
-app.MapSqlOperationalRunCoordinatorEndpoints();
-app.MapSqlOperationalRuntimeReadinessEndpoints();
-app.MapSqlOperationalRuntimeDashboardEndpoints();
-app.MapSqlOperationalRuntimeDashboardDetailEndpoints();
-app.MapOperationalConnectorCredentialVaultEndpoints();
 
-app.MapOperationalConnectorExecutionProfileEndpoints();
 app.MapMigrationOperationalEndpoints();
 
 

@@ -1,9 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="DependencyInjection\**" />
+    <EmbeddedResource Remove="DependencyInjection\**" />
+    <None Remove="DependencyInjection\**" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Migration.Domain\Migration.Domain.csproj" />
     <ProjectReference Include="..\Migration.Application\Migration.Application.csproj" />
@@ -16,8 +21,5 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="DependencyInjection\" />
   </ItemGroup>
 </Project>

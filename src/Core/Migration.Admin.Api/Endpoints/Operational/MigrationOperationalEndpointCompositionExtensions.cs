@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing; using Migration.Admin.Api.Endpoints;
 using Migration.Admin.Api.Endpoints.Operational.Audit;
 using Migration.Admin.Api.Endpoints.Operational.Capacity;
@@ -32,9 +32,13 @@ public static class MigrationOperationalEndpointCompositionExtensions
  endpoints.MapOperationalEventEndpoints();
  endpoints.MapOperationalCommandCenterEndpoints();
  endpoints.MapOperationalSqlHealthEndpoints();
- endpoints.MapSqlOperationalBackboneEndpoints(); endpoints.MapSqlOperationalWorkItemQueueEndpoints(); endpoints.MapSqlOperationalRuntimeReadinessEndpoints(); endpoints.MapSqlOperationalRunCoordinatorEndpoints();
+ endpoints.MapSqlOperationalBackboneEndpoints(); 
+ endpoints.MapSqlOperationalWorkItemQueueEndpoints(); 
+ endpoints.MapSqlOperationalRuntimeReadinessEndpoints(); 
+ endpoints.MapSqlOperationalRunCoordinatorEndpoints();
  endpoints.MapOperationalWorkerTelemetryEndpoints();
- endpoints.MapOperationalConnectorConfigurationEndpoints(); endpoints.MapOperationalConnectorExecutionProfileEndpoints();
+ endpoints.MapOperationalConnectorConfigurationEndpoints(); 
+ endpoints.MapOperationalConnectorExecutionProfileEndpoints();
  endpoints.MapOperationalAuditTrailEndpoints();
  endpoints.MapOperationalConnectorCredentialVaultEndpoints();
  endpoints.MapOperationalNotificationEndpoints();
@@ -42,9 +46,8 @@ public static class MigrationOperationalEndpointCompositionExtensions
  endpoints.MapOperationalCapacityEndpoints();
  endpoints.MapOperationalCostAnalyticsEndpoints();
  endpoints.MapExecutionReplayEndpoints();
- endpoints.MapOperationalSqlSchemaDiagnosticsEndpoints(); 
  
- var operationalRunsApi = endpoints.MapGroup("/api"); var dispatcherPressureApi = endpoints.MapGroup("/api"); dispatcherPressureApi.MapOperationalDispatcherPressureAnalyticsEndpoints(); return endpoints;
+ return endpoints;
  }
 }
 
