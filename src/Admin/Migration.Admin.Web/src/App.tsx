@@ -1,4 +1,4 @@
-﻿import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Artifacts } from './features/platform/artifacts/pages/Artifacts';
 import { Connectors } from './features/connectors/catalog/pages/Connectors';
@@ -34,34 +34,26 @@ export default function App() {
         <Route path="projects/:projectId/preflight" element={<Preflight />} />
         <Route path="runs" element={<Runs />} />
         <Route path="runs/:runId" element={<RunDetail />} />
+        <Route path="runtime-dashboard" element={<RuntimeDashboard />} />
+        <Route path="runtime-dashboard/:runId" element={<RuntimeRunDetail />} />
+        <Route path="runtime-runs/:runId" element={<RuntimeRunDetail />} />
+        <Route path="execution-sessions" element={<ExecutionSessions />} />
+        <Route path="execution-worker-telemetry" element={<ExecutionWorkerTelemetry />} />
+        <Route path="failure-retry" element={<FailureRetry />} />
+        <Route path="operations/operational-events" element={<OperationalEvents />} />
+        <Route path="audit-trail" element={<AuditTrail />} />
+        <Route path="notification-routing" element={<NotificationRouting />} />
+        <Route path="command-center" element={<CommandCenter />} />
+        <Route path="connector-configuration" element={<ConnectorConfiguration />} />
+        <Route path="credential-vault" element={<CredentialVault />} />
         <Route path="connectors" element={<Connectors />} />
-        <Route path="/connector-configuration" element={<ConnectorConfiguration />} />
         <Route path="credentials" element={<Credentials />} />
-        <Route path="/credential-vault" element={<CredentialVault />} />
         <Route path="artifacts" element={<Artifacts />} />
         <Route path="manifest-builder" element={<ManifestBuilder />} />
         <Route path="taxonomy-builder" element={<TaxonomyBuilder />} />
         <Route path="mapping-builder" element={<MappingBuilder />} />
-        <Route path="/execution-sessions" element={<ExecutionSessions />} />
-        <Route path="/failure-retry" element={<FailureRetry />} />
-        <Route path="runtime-dashboard" element={<RuntimeDashboard />} />
-  <Route path="runtime-runs/:runId" element={<RuntimeRunDetail />} />
-  <Route path="execution-sessions" element={<ExecutionSessions />} />
-  <Route path="failure-retry" element={<FailureRetry />} />
-  <Route path="credential-vault" element={<CredentialVault />} />
-  <Route path="execution-worker-telemetry" element={<ExecutionWorkerTelemetry />} />
-  <Route path="notification-routing" element={<NotificationRouting />} />
-  <Route path="audit-trail" element={<AuditTrail />} />
-  <Route path="command-center" element={<CommandCenter />} />
-          <Route path="/operations/operational-events" element={<OperationalEvents />} />
-  <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
-      <Route path="/runtime-dashboard" element={<RuntimeDashboard />} />
-        <Route path="/runtime-dashboard/:runId" element={<RuntimeRunDetail />} />
-              <Route path="/manifest-builder" element={<ManifestBuilder />} />
-              <Route path="/taxonomy-builder" element={<TaxonomyBuilder />} />
-              <Route path="/mapping-builder" element={<MappingBuilder />} />
-      </Routes>
-  ); };
-
-
+    </Routes>
+  );
+}

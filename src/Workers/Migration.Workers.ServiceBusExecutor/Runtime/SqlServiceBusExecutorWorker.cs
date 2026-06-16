@@ -282,10 +282,16 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
         const string adminSql = """
             IF OBJECT_ID(N'dbo.AdminRuns', N'U') IS NOT NULL
             BEGIN
+                DECLARE @RunKey nvarchar(256);
+
+                SELECT @RunKey = RunKey
+                FROM migration.Runs
+                WHERE RunId = @RunId;
+
                 UPDATE dbo.AdminRuns
                 SET Status = 'Running',
                     UpdatedUtc = SYSUTCDATETIME()
-                WHERE RunId = @RunId
+                WHERE (RunId = @RunKey OR RunId = CONVERT(nvarchar(36), @RunId))
                   AND Status NOT IN ('Completed', 'Failed', 'Canceled');
             END
             """;

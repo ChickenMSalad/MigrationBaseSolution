@@ -41,6 +41,8 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
 
         ValidateOptions();
 
+        await RecoverStaleDispatchingWorkItemsAsync(cancellationToken).ConfigureAwait(false);
+
         IReadOnlyList<SqlWorkItemDispatchRecord> workItems =
             await ClaimPendingWorkItemsAsync(cancellationToken).ConfigureAwait(false);
 
@@ -185,6 +187,32 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
             .ConfigureAwait(false);
     }
 
+    private async Task RecoverStaleDispatchingWorkItemsAsync(CancellationToken cancellationToken)
+    {
+        const string sql = """
+            UPDATE migration.WorkItems
+            SET Status = 'Queued',
+                LeaseOwner = NULL,
+                LeaseExpiresUtc = NULL,
+                UpdatedUtc = SYSUTCDATETIME()
+            WHERE Status = 'Dispatching'
+              AND DispatchedAtUtc IS NULL
+              AND UpdatedUtc < DATEADD(second, -30, SYSUTCDATETIME());
+            """;
+
+        await using SqlConnection connection = new(_options.SqlConnectionString);
+        int recovered = await connection.ExecuteAsync(
+            new CommandDefinition(sql, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
+
+        if (recovered > 0)
+        {
+            _logger.LogWarning(
+                "Recovered {Count} stale SQL work items from Dispatching back to Queued before dispatch polling.",
+                recovered);
+        }
+    }
+
     private async Task MarkRunRunningAsync(Guid runId, CancellationToken cancellationToken)
     {
         const string operationalSql = """
@@ -200,10 +228,16 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
         const string adminSql = """
             IF OBJECT_ID(N'dbo.AdminRuns', N'U') IS NOT NULL
             BEGIN
+                DECLARE @RunKey nvarchar(256);
+
+                SELECT @RunKey = RunKey
+                FROM migration.Runs
+                WHERE RunId = @RunId;
+
                 UPDATE dbo.AdminRuns
                 SET Status = 'Running',
                     UpdatedUtc = SYSUTCDATETIME()
-                WHERE RunId = @RunId
+                WHERE (RunId = @RunKey OR RunId = CONVERT(nvarchar(36), @RunId))
                   AND Status NOT IN ('Completed', 'Failed', 'Canceled');
             END
             """;

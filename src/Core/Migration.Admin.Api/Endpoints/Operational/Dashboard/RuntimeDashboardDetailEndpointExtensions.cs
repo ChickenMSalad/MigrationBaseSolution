@@ -18,13 +18,13 @@ public static class RuntimeDashboardDetailEndpointExtensions
             .MapGroup("/api/runtime/dashboard")
             .WithTags("Runtime Dashboard");
 
-        group.MapGet("/runs/{runId:guid}", GetRunDetailAsync)
+        group.MapGet("/runs/{runId}", GetRunDetailAsync)
             .WithName("GetRuntimeDashboardRunDetail");
 
-        group.MapGet("/runs/{runId:guid}/work-items", GetRunWorkItemsAsync)
+        group.MapGet("/runs/{runId}/work-items", GetRunWorkItemsAsync)
             .WithName("GetRuntimeDashboardRunWorkItems");
 
-        group.MapGet("/runs/{runId:guid}/failures", GetRunFailuresAsync)
+        group.MapGet("/runs/{runId}/failures", GetRunFailuresAsync)
             .WithName("GetRuntimeDashboardRunFailures");
 
         group.MapGet("/failures", GetAllFailuresAsync)
@@ -34,15 +34,138 @@ public static class RuntimeDashboardDetailEndpointExtensions
     }
 
     private static async Task<IResult> GetRunDetailAsync(
-        Guid runId,
+        string runId,
         IConfiguration configuration,
+        int? take,
         CancellationToken cancellationToken)
     {
+        var rowLimit = Math.Clamp(take.GetValueOrDefault(100), 1, 500);
         var connectionString = ResolveConnectionString(configuration);
 
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
+        var resolvedRunId = await ResolveRunIdAsync(connection, runId, cancellationToken).ConfigureAwait(false);
+        if (resolvedRunId is null)
+        {
+            return Results.NotFound(new { runId });
+        }
+
+        var run = await ReadRunAsync(connection, resolvedRunId.Value, cancellationToken).ConfigureAwait(false);
+        if (run is null)
+        {
+            return Results.NotFound(new { runId });
+        }
+
+        var workItems = await ReadWorkItemsAsync(connection, resolvedRunId.Value, rowLimit, failedOnly: false, cancellationToken).ConfigureAwait(false);
+        var failures = await ReadFailureItemsAsync(connection, resolvedRunId.Value, rowLimit, cancellationToken).ConfigureAwait(false);
+
+        return Results.Ok(new
+        {
+            run,
+            workItems,
+            failures
+        });
+    }
+
+    private static async Task<IResult> GetRunWorkItemsAsync(
+        string runId,
+        IConfiguration configuration,
+        int? take,
+        CancellationToken cancellationToken)
+    {
+        var rowLimit = Math.Clamp(take.GetValueOrDefault(100), 1, 500);
+        var connectionString = ResolveConnectionString(configuration);
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var resolvedRunId = await ResolveRunIdAsync(connection, runId, cancellationToken).ConfigureAwait(false);
+        if (resolvedRunId is null)
+        {
+            return Results.NotFound(new { runId });
+        }
+
+        return Results.Ok(await ReadWorkItemsAsync(connection, resolvedRunId.Value, rowLimit, failedOnly: false, cancellationToken).ConfigureAwait(false));
+    }
+
+    private static async Task<IResult> GetRunFailuresAsync(
+        string runId,
+        IConfiguration configuration,
+        int? take,
+        CancellationToken cancellationToken)
+    {
+        var rowLimit = Math.Clamp(take.GetValueOrDefault(100), 1, 500);
+        var connectionString = ResolveConnectionString(configuration);
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var resolvedRunId = await ResolveRunIdAsync(connection, runId, cancellationToken).ConfigureAwait(false);
+        if (resolvedRunId is null)
+        {
+            return Results.NotFound(new { runId });
+        }
+
+        return Results.Ok(await ReadFailureItemsAsync(connection, resolvedRunId.Value, rowLimit, cancellationToken).ConfigureAwait(false));
+    }
+
+    private static async Task<IResult> GetAllFailuresAsync(
+        IConfiguration configuration,
+        int? take,
+        CancellationToken cancellationToken)
+    {
+        var rowLimit = Math.Clamp(take.GetValueOrDefault(50), 1, 500);
+        var connectionString = ResolveConnectionString(configuration);
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var summary = await ReadFailureSummaryAsync(connection, cancellationToken).ConfigureAwait(false);
+        var rows = await ReadFailureRowsAsync(connection, rowLimit, cancellationToken).ConfigureAwait(false);
+
+        return Results.Ok(new
+        {
+            summary,
+            workItems = rows,
+            message = rows.Count == 0
+                ? "No failed or retryable work items were found in migration.WorkItems."
+                : null
+        });
+    }
+
+    private static async Task<Guid?> ResolveRunIdAsync(
+        SqlConnection connection,
+        string runIdOrKey,
+        CancellationToken cancellationToken)
+    {
+        if (Guid.TryParse(runIdOrKey, out var parsed))
+        {
+            return parsed;
+        }
+
+        await using var command = connection.CreateCommand();
+        command.CommandType = CommandType.Text;
+        command.CommandText = @"
+SELECT TOP (1) RunId
+FROM migration.Runs
+WHERE RunKey = @RunKey;";
+        command.Parameters.Add(new SqlParameter("@RunKey", SqlDbType.NVarChar, 256) { Value = runIdOrKey });
+
+        var value = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        if (value is Guid guid)
+        {
+            return guid;
+        }
+
+        return null;
+    }
+
+    private static async Task<object?> ReadRunAsync(
+        SqlConnection connection,
+        Guid runId,
+        CancellationToken cancellationToken)
+    {
         await using var command = connection.CreateCommand();
         command.CommandType = CommandType.Text;
         command.CommandText = @"
@@ -59,13 +182,15 @@ SELECT TOP (1)
     r.CreatedAtUtc,
     r.UpdatedAtUtc,
     COUNT_BIG(w.WorkItemId) AS WorkItemCount,
-    SUM(CASE WHEN w.Status IN (N'Pending', N'Queued') THEN 1 ELSE 0 END) AS QueuedWorkItemCount,
-    SUM(CASE WHEN w.Status = N'Dispatched' THEN 1 ELSE 0 END) AS DispatchedWorkItemCount,
-    SUM(CASE WHEN w.Status IN (N'Running', N'InProgress', N'Processing') THEN 1 ELSE 0 END) AS RunningWorkItemCount,
-    SUM(CASE WHEN w.Status = N'Completed' THEN 1 ELSE 0 END) AS CompletedWorkItemCount,
-    SUM(CASE WHEN w.Status LIKE N'Failed%' THEN 1 ELSE 0 END) AS FailedWorkItemCount,
-    SUM(CASE WHEN w.Status IN (N'Retryable', N'FailedRetryable') THEN 1 ELSE 0 END) AS RetryableWorkItemCount,
-    SUM(CASE WHEN w.Status = N'RetryQueued' THEN 1 ELSE 0 END) AS RetryQueuedWorkItemCount
+    SUM(CASE WHEN w.Status IN (N'Pending', N'Ready', N'Queued', N'FailedRetryable') THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS QueuedWorkItemCount,
+    SUM(CASE WHEN w.Status IN (N'Dispatching', N'Dispatched') THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS DispatchedWorkItemCount,
+    SUM(CASE WHEN w.Status IN (N'Leased', N'Running', N'InProgress', N'Processing', N'Started', N'Executing') OR (w.StartedAtUtc IS NOT NULL AND w.CompletedAtUtc IS NULL AND w.Status NOT IN (N'Completed')) THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS RunningWorkItemCount,
+    SUM(CASE WHEN w.Status = N'Completed' THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS CompletedWorkItemCount,
+    SUM(CASE WHEN w.Status LIKE N'Failed%' OR w.LastErrorMessage IS NOT NULL THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS FailedWorkItemCount,
+    SUM(CASE WHEN w.Status IN (N'Retryable', N'FailedRetryable') THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS RetryableWorkItemCount,
+    SUM(CASE WHEN w.Status = N'RetryQueued' THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS RetryQueuedWorkItemCount,
+    MIN(w.StartedAtUtc) AS FirstWorkItemStartedAtUtc,
+    MAX(w.CompletedAtUtc) AS LastWorkItemCompletedAtUtc
 FROM migration.Runs r
 LEFT JOIN migration.WorkItems w ON w.RunId = r.RunId
 WHERE r.RunId = @RunId
@@ -83,92 +208,47 @@ GROUP BY
     r.UpdatedAtUtc;";
         command.Parameters.Add(new SqlParameter("@RunId", SqlDbType.UniqueIdentifier) { Value = runId });
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
-            return Results.NotFound(new { runId });
+            return null;
         }
 
         var total = ToInt64(reader["WorkItemCount"]);
+        var queued = ToInt64(reader["QueuedWorkItemCount"]);
+        var dispatched = ToInt64(reader["DispatchedWorkItemCount"]);
+        var running = ToInt64(reader["RunningWorkItemCount"]);
         var completed = ToInt64(reader["CompletedWorkItemCount"]);
         var failed = ToInt64(reader["FailedWorkItemCount"]);
-        var terminal = completed + failed;
+        var status = ToNullableString(reader["Status"]);
 
-        return Results.Ok(new
+        return new
         {
             runId = reader["RunId"],
             runKey = ToNullableString(reader["RunKey"]),
             runName = ToNullableString(reader["RunName"]),
             sourceSystem = ToNullableString(reader["SourceSystem"]),
             targetSystem = ToNullableString(reader["TargetSystem"]),
-            status = ToNullableString(reader["Status"]),
+            status,
+            effectiveStatus = CalculateEffectiveStatus(status, total, queued, dispatched, running, completed, failed),
             environmentName = ToNullableString(reader["EnvironmentName"]),
             isDryRun = reader["IsDryRun"] is not DBNull && Convert.ToBoolean(reader["IsDryRun"]),
             requestedAtUtc = ToNullableValue(reader["RequestedAtUtc"]),
             createdAtUtc = ToNullableValue(reader["CreatedAtUtc"]),
             updatedAtUtc = ToNullableValue(reader["UpdatedAtUtc"]),
+            firstWorkItemStartedAtUtc = ToNullableValue(reader["FirstWorkItemStartedAtUtc"]),
+            lastWorkItemCompletedAtUtc = ToNullableValue(reader["LastWorkItemCompletedAtUtc"]),
             workItemCount = total,
-            queuedWorkItemCount = ToInt64(reader["QueuedWorkItemCount"]),
-            dispatchedWorkItemCount = ToInt64(reader["DispatchedWorkItemCount"]),
-            runningWorkItemCount = ToInt64(reader["RunningWorkItemCount"]),
+            queuedWorkItemCount = queued,
+            dispatchedWorkItemCount = dispatched,
+            runningWorkItemCount = running,
             completedWorkItemCount = completed,
             failedWorkItemCount = failed,
             retryableWorkItemCount = ToInt64(reader["RetryableWorkItemCount"]),
             retryQueuedWorkItemCount = ToInt64(reader["RetryQueuedWorkItemCount"]),
-            percentComplete = total == 0 ? 0 : Math.Round((decimal)terminal * 100m / total, 2)
-        });
-    }
-
-    private static Task<IResult> GetRunWorkItemsAsync(
-        Guid runId,
-        IConfiguration configuration,
-        int? take,
-        CancellationToken cancellationToken)
-    {
-        return GetRunWorkItemRowsAsync(
-            runId,
-            configuration,
-            take,
-            failedOnly: false,
-            cancellationToken);
-    }
-
-    private static Task<IResult> GetRunFailuresAsync(
-        Guid runId,
-        IConfiguration configuration,
-        int? take,
-        CancellationToken cancellationToken)
-    {
-        return GetRunWorkItemRowsAsync(
-            runId,
-            configuration,
-            take,
-            failedOnly: true,
-            cancellationToken);
-    }
-
-    private static async Task<IResult> GetAllFailuresAsync(
-        IConfiguration configuration,
-        int? take,
-        CancellationToken cancellationToken)
-    {
-        var rowLimit = Math.Clamp(take.GetValueOrDefault(50), 1, 500);
-        var connectionString = ResolveConnectionString(configuration);
-
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
-
-        var summary = await ReadFailureSummaryAsync(connection, cancellationToken);
-        var rows = await ReadFailureRowsAsync(connection, rowLimit, cancellationToken);
-
-        return Results.Ok(new
-        {
-            summary,
-            workItems = rows,
-            message = rows.Count == 0
-                ? "No failed or retryable work items were found in migration.WorkItems."
-                : null
-        });
+            activeWorkItemCount = queued + dispatched + running,
+            percentComplete = CalculatePercentComplete(total, completed, failed)
+        };
     }
 
     private static async Task<object> ReadFailureSummaryAsync(
@@ -189,8 +269,8 @@ WHERE
     OR Status IN (N'Retryable', N'FailedRetryable', N'RetryQueued')
     OR LastErrorMessage IS NOT NULL;";
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             return new
             {
@@ -238,8 +318,8 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
         command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = take });
 
         var rows = new List<object>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             rows.Add(MapWorkItemRow(reader));
         }
@@ -247,19 +327,13 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
         return rows;
     }
 
-    private static async Task<IResult> GetRunWorkItemRowsAsync(
+    private static async Task<List<object>> ReadWorkItemsAsync(
+        SqlConnection connection,
         Guid runId,
-        IConfiguration configuration,
-        int? take,
+        int take,
         bool failedOnly,
         CancellationToken cancellationToken)
     {
-        var rowLimit = Math.Clamp(take.GetValueOrDefault(100), 1, 500);
-        var connectionString = ResolveConnectionString(configuration);
-
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
-
         await using var command = connection.CreateCommand();
         command.CommandType = CommandType.Text;
         command.CommandText = failedOnly
@@ -301,16 +375,35 @@ WHERE RunId = @RunId
 ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
 
         command.Parameters.Add(new SqlParameter("@RunId", SqlDbType.UniqueIdentifier) { Value = runId });
-        command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = rowLimit });
+        command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = take });
 
         var rows = new List<object>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             rows.Add(MapWorkItemRow(reader));
         }
 
-        return Results.Ok(rows);
+        return rows;
+    }
+
+    private static async Task<List<object>> ReadFailureItemsAsync(
+        SqlConnection connection,
+        Guid runId,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        var rows = await ReadWorkItemsAsync(connection, runId, take, failedOnly: true, cancellationToken).ConfigureAwait(false);
+        return rows.Select(row => (object)new
+        {
+            failureId = (string?)null,
+            runId = GetPropertyValue(row, "runId"),
+            workItemId = GetPropertyValue(row, "workItemId"),
+            manifestRowId = (long?)null,
+            failureType = GetPropertyValue(row, "status"),
+            message = GetPropertyValue(row, "lastErrorMessage"),
+            createdAtUtc = GetPropertyValue(row, "updatedAtUtc") ?? GetPropertyValue(row, "createdAtUtc")
+        }).ToList();
     }
 
     private static object MapWorkItemRow(SqlDataReader reader)
@@ -330,6 +423,12 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
         };
     }
 
+    private static object? GetPropertyValue(object item, string name)
+    {
+        var property = item.GetType().GetProperty(name);
+        return property?.GetValue(item);
+    }
+
     private static string ResolveConnectionString(IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -337,7 +436,17 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
         var connectionString = configuration.GetConnectionString("MigrationOperationalStore");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
+            connectionString = configuration.GetConnectionString("OperationalSql");
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
             connectionString = configuration["SqlOperationalRuntimeReadiness:ConnectionString"];
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            connectionString = configuration["OperationalSql:ConnectionString"];
         }
 
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -347,6 +456,53 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
         }
 
         return connectionString;
+    }
+
+    private static string CalculateEffectiveStatus(
+        string? storedStatus,
+        long total,
+        long queued,
+        long dispatched,
+        long running,
+        long completed,
+        long failed)
+    {
+        if (total <= 0)
+        {
+            return string.IsNullOrWhiteSpace(storedStatus) ? "Queued" : storedStatus;
+        }
+
+        if (failed > 0 && completed + failed >= total)
+        {
+            return "CompletedWithFailures";
+        }
+
+        if (completed >= total)
+        {
+            return "Completed";
+        }
+
+        if (running > 0 || dispatched > 0 || completed > 0 || failed > 0)
+        {
+            return "Running";
+        }
+
+        if (queued > 0)
+        {
+            return "Queued";
+        }
+
+        return string.IsNullOrWhiteSpace(storedStatus) ? "Unknown" : storedStatus;
+    }
+
+    private static double CalculatePercentComplete(long total, long completed, long failed)
+    {
+        if (total <= 0)
+        {
+            return 0.0d;
+        }
+
+        return Math.Round(((double)(completed + failed) / total) * 100.0d, 2, MidpointRounding.AwayFromZero);
     }
 
     private static string? ToNullableString(object value)
@@ -359,13 +515,13 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
         return value is DBNull ? null : value;
     }
 
-    private static int? ToNullableInt32(object value)
-    {
-        return value is DBNull ? null : Convert.ToInt32(value);
-    }
-
     private static long ToInt64(object value)
     {
         return value is DBNull ? 0L : Convert.ToInt64(value);
+    }
+
+    private static int? ToNullableInt32(object value)
+    {
+        return value is DBNull ? null : Convert.ToInt32(value);
     }
 }
