@@ -8,7 +8,8 @@ using Migration.Admin.Api.Endpoints.Operational.Events;
 using Migration.Admin.Api.Endpoints.Operational.CommandCenter;
 using Migration.Admin.Api.Endpoints.Operational.Cost;
 using Migration.Admin.Api.Endpoints.Operational.Credentials;
-using Migration.Admin.Api.Endpoints.Operational.Notifications;
+using Migration.Admin.Api.Endpoints.Operational.Notifications; 
+
 using Migration.Admin.Api.Endpoints.Operational.SlaSlo;
 using Migration.Admin.Api.Endpoints.Operational.SqlHealth;
 using Migration.Admin.Api.Endpoints.Operational.SqlBackbone;
@@ -16,35 +17,38 @@ using Migration.Admin.Api.Endpoints.Operational.Workers;
 namespace Migration.Admin.Api.Endpoints.Operational;
 public static class MigrationOperationalEndpointCompositionExtensions
 {
-    public static IEndpointRouteBuilder MapMigrationOperationalEndpoints(
-        this IEndpointRouteBuilder endpoints)
-    {
-        endpoints.MapOperationalEventExportEndpoints();
-        endpoints.MapOperationalEventQueryEndpoints();
-        endpoints.MapOperationalEventRetentionEndpoints();
-        endpoints.MapExecutionWorkerTelemetryEndpoints();
-        endpoints.MapExecutionControlEndpoints();
-        endpoints.MapExecutionWorkItemQueueEndpoints();
-        endpoints.MapExecutionPlanEndpoints();
-        endpoints.MapExecutionLifecycleEndpoints();
-        endpoints.MapExecutionSessionEndpoints();
-        endpoints.MapOperationalEventEndpoints();
-        endpoints.MapOperationalCommandCenterEndpoints();
-        endpoints.MapOperationalSqlHealthEndpoints();
-        endpoints.MapSqlOperationalBackboneEndpoints(); endpoints.MapSqlOperationalWorkItemQueueEndpoints(); endpoints.MapSqlOperationalRuntimeReadinessEndpoints(); endpoints.MapSqlOperationalRunCoordinatorEndpoints();
-        endpoints.MapOperationalWorkerTelemetryEndpoints();
-        endpoints.MapOperationalConnectorConfigurationEndpoints(); endpoints.MapOperationalConnectorExecutionProfileEndpoints();
-        endpoints.MapOperationalAuditTrailEndpoints();
-        endpoints.MapOperationalConnectorCredentialVaultEndpoints();
-        endpoints.MapOperationalNotificationEndpoints();
-        endpoints.MapOperationalSlaSloEndpoints();
-        endpoints.MapOperationalCapacityEndpoints();
-        endpoints.MapOperationalCostAnalyticsEndpoints();
-        endpoints.MapExecutionReplayEndpoints();
-        endpoints.MapOperationalSqlSchemaDiagnosticsEndpoints(); 
-        
-        var dispatcherPressureApi = endpoints.MapGroup("/api"); dispatcherPressureApi.MapOperationalDispatcherPressureAnalyticsEndpoints(); return endpoints;
-    }
+ public static IEndpointRouteBuilder MapMigrationOperationalEndpoints(
+ this IEndpointRouteBuilder endpoints)
+ {
+ endpoints.MapOperationalEventExportEndpoints();
+ endpoints.MapOperationalEventQueryEndpoints();
+ endpoints.MapOperationalEventRetentionEndpoints();
+ endpoints.MapExecutionWorkerTelemetryEndpoints();
+ endpoints.MapExecutionControlEndpoints();
+ endpoints.MapExecutionWorkItemQueueEndpoints();
+ endpoints.MapExecutionPlanEndpoints();
+ endpoints.MapExecutionLifecycleEndpoints();
+ endpoints.MapExecutionSessionEndpoints();
+ endpoints.MapOperationalEventEndpoints();
+ endpoints.MapOperationalCommandCenterEndpoints();
+ endpoints.MapOperationalSqlHealthEndpoints();
+ endpoints.MapSqlOperationalBackboneEndpoints(); endpoints.MapSqlOperationalWorkItemQueueEndpoints(); endpoints.MapSqlOperationalRuntimeReadinessEndpoints(); endpoints.MapSqlOperationalRunCoordinatorEndpoints();
+ endpoints.MapOperationalWorkerTelemetryEndpoints();
+ endpoints.MapOperationalConnectorConfigurationEndpoints(); endpoints.MapOperationalConnectorExecutionProfileEndpoints();
+ endpoints.MapOperationalAuditTrailEndpoints();
+ endpoints.MapOperationalConnectorCredentialVaultEndpoints();
+ endpoints.MapOperationalNotificationEndpoints();
+ endpoints.MapOperationalSlaSloEndpoints();
+ endpoints.MapOperationalCapacityEndpoints();
+ endpoints.MapOperationalCostAnalyticsEndpoints();
+ endpoints.MapExecutionReplayEndpoints();
+ endpoints.MapOperationalSqlSchemaDiagnosticsEndpoints(); 
+ 
+ var operationalRunsApi = endpoints.MapGroup("/api"); var dispatcherPressureApi = endpoints.MapGroup("/api"); dispatcherPressureApi.MapOperationalDispatcherPressureAnalyticsEndpoints(); return endpoints;
+ }
 }
+
+
+
 
 

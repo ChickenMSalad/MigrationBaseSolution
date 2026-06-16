@@ -324,7 +324,7 @@ export function Preflight() {
                 <tbody>
                   {visibleIssues.map((issue, index) => (
                     <tr key={`${issue.code ?? "issue"}-${index}`}>
-                      <td><span className={statusClass(issue.severity)}>{issue.severity}</span></td>
+                      <td><span className={statusClass(issue.severity!)}>{issue.severity}</span></td>
                       <td>{issue.code}</td>
                       <td>{issue.rowId ?? ""}</td>
                       <td>{issue.field ?? ""}</td>
