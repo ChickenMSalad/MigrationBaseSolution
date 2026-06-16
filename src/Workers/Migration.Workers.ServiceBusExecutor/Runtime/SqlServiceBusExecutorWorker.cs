@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -75,6 +75,7 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
             options.WorkerId);
 
         await _processor.StartProcessingAsync(stoppingToken).ConfigureAwait(false);
+        _logger.LogInformation("Executor heartbeat processor started at {HeartbeatUtc} for queue {QueueName} as worker {WorkerId}.", DateTimeOffset.UtcNow, options.QueueName, options.WorkerId);
 
         try
         {
@@ -324,3 +325,4 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
         return Task.CompletedTask;
     }
 }
+

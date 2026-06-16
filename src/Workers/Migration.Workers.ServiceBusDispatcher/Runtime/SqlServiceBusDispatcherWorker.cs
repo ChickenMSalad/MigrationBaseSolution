@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Migration.Workers.ServiceBusDispatcher.Dispatching;
@@ -30,7 +30,10 @@ internal sealed class SqlServiceBusDispatcherWorker : BackgroundService
         {
             try
             {
-                await _dispatcher.DispatchNextBatchAsync(stoppingToken).ConfigureAwait(false);
+                _logger.LogInformation("P7 heartbeat: dispatcher loop starting. WorkerId={WorkerId}, Queue={QueueName}, BatchSize={BatchSize}, PollIntervalSeconds={PollIntervalSeconds}, Utc={Utc}", _options.WorkerId, _options.QueueName, _options.BatchSize, _options.PollIntervalSeconds, DateTimeOffset.UtcNow);
+await _dispatcher.DispatchNextBatchAsync(stoppingToken).ConfigureAwait(false);
+                _logger.LogInformation("Dispatcher heartbeat poll completed at {HeartbeatUtc}.", DateTimeOffset.UtcNow);
+_logger.LogInformation("P7 heartbeat: dispatcher loop completed. WorkerId={WorkerId}, Queue={QueueName}, Utc={Utc}", _options.WorkerId, _options.QueueName, DateTimeOffset.UtcNow);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -48,3 +51,4 @@ internal sealed class SqlServiceBusDispatcherWorker : BackgroundService
         _logger.LogInformation("SQL Service Bus dispatcher worker stopped.");
     }
 }
+
