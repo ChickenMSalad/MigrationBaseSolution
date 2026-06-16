@@ -41,7 +41,8 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
 
         ValidateOptions();
 
-        IReadOnlyList<SqlWorkItemDispatchRecord> workItems = await ClaimPendingWorkItemsAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<SqlWorkItemDispatchRecord> workItems =
+            await ClaimPendingWorkItemsAsync(cancellationToken).ConfigureAwait(false);
 
         if (workItems.Count == 0)
         {
@@ -52,6 +53,8 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            await MarkRunRunningAsync(item.RunId, cancellationToken).ConfigureAwait(false);
+
             ServiceBusWorkItemMessage body = new(
                 item.WorkItemId,
                 item.RunId,
@@ -61,6 +64,7 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
                 _options.WorkerId);
 
             string json = JsonSerializer.Serialize(body);
+
             ServiceBusMessage message = new(json)
             {
                 MessageId = item.WorkItemId.ToString("N"),
@@ -73,8 +77,8 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
             message.ApplicationProperties["sequenceNumber"] = item.SequenceNumber;
             message.ApplicationProperties["dispatcherId"] = _options.WorkerId;
 
-
             var activityStartedAtUtc = DateTimeOffset.UtcNow;
+
             using var activity = OperationalExecutionActivity.StartServiceBusDispatch(
                 item.RunId,
                 item.WorkItemId,
@@ -88,7 +92,11 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
             OperationalExecutionActivity.SetExecutionResult(activity, succeeded: true, errorCode: null);
         }
 
-        _logger.LogInformation("Dispatched {Count} SQL work items to Service Bus queue {QueueName}.", workItems.Count, _options.QueueName);
+        _logger.LogInformation(
+            "Dispatched {Count} SQL work items to Service Bus queue {QueueName}.",
+            workItems.Count,
+            _options.QueueName);
+
         return workItems.Count;
     }
 
@@ -117,30 +125,27 @@ internal sealed class SqlWorkItemDispatcher : IAsyncDisposable
 
     private async Task<IReadOnlyList<SqlWorkItemDispatchRecord>> ClaimPendingWorkItemsAsync(CancellationToken cancellationToken)
     {
-        const string sql = """
-SELECT TOP (@BatchSize)
-    wi.WorkItemId,
-    wi.RunId,
-    CAST(wi.WorkItemId AS bigint) AS SequenceNumber,
-    wi.Status,
-    wi.PayloadJson
-FROM migration.WorkItems wi WITH (READPAST, ROWLOCK)
-WHERE wi.Status IN ('Pending', 'Ready', 'Queued')
-ORDER BY wi.Priority DESC, wi.WorkItemId ASC, wi.CreatedUtc ASC;
-""";
+        const string selectSql = """
+            SELECT TOP (@BatchSize)
+                   wi.WorkItemId,
+                   wi.RunId,
+                   CAST(wi.WorkItemId AS bigint) AS SequenceNumber,
+                   wi.Status,
+                   wi.PayloadJson
+            FROM migration.WorkItems wi WITH (READPAST, ROWLOCK)
+            WHERE wi.Status IN ('Pending', 'Ready', 'Queued', 'FailedRetryable')
+              AND (wi.NotBeforeUtc IS NULL OR wi.NotBeforeUtc <= SYSUTCDATETIME())
+            ORDER BY wi.Priority DESC, wi.WorkItemId ASC, wi.CreatedUtc ASC;
+            """;
 
         await using SqlConnection connection = new(_options.SqlConnectionString);
 
-        List<SqlWorkItemDispatchRecord> records =
-            (
-                await connection.QueryAsync<SqlWorkItemDispatchRecord>(
-                    new CommandDefinition(
-                        sql,
-                        new
-                        {
-                            _options.BatchSize
-                        },
-                        cancellationToken: cancellationToken))
+        List<SqlWorkItemDispatchRecord> records = (
+            await connection.QueryAsync<SqlWorkItemDispatchRecord>(
+                new CommandDefinition(
+                    selectSql,
+                    new { _options.BatchSize },
+                    cancellationToken: cancellationToken))
             ).ToList();
 
         foreach (SqlWorkItemDispatchRecord record in records)
@@ -148,42 +153,68 @@ ORDER BY wi.Priority DESC, wi.WorkItemId ASC, wi.CreatedUtc ASC;
             await connection.ExecuteAsync(
                 new CommandDefinition(
                     """
-UPDATE migration.WorkItems
-SET
-    Status = 'Dispatching',
-    LeaseOwner = @WorkerId,
-    LeaseExpiresUtc = NULL,
-    UpdatedUtc = SYSUTCDATETIME()
-WHERE WorkItemId = @WorkItemId;
-""",
-                    new
-                    {
-                        WorkItemId = record.WorkItemId,
-                        _options.WorkerId
-                    },
-                    cancellationToken: cancellationToken));
+                    UPDATE migration.WorkItems
+                    SET Status = 'Dispatching',
+                        LeaseOwner = @WorkerId,
+                        LeaseExpiresUtc = NULL,
+                        StartedAtUtc = COALESCE(StartedAtUtc, SYSUTCDATETIME()),
+                        UpdatedUtc = SYSUTCDATETIME()
+                    WHERE WorkItemId = @WorkItemId;
+                    """,
+                    new { WorkItemId = record.WorkItemId, _options.WorkerId },
+                    cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
         return records;
     }
+
     private async Task MarkDispatchedAsync(long workItemId, CancellationToken cancellationToken)
     {
         const string sql = """
-UPDATE migration.WorkItems
-SET
-    Status = 'Dispatched',
-    StartedAtUtc = coalesce(StartedAtUtc, SYSUTCDATETIME()),
-    DispatchedAtUtc = SYSUTCDATETIME(),
-    UpdatedUtc = SYSUTCDATETIME()
-WHERE WorkItemId = @WorkItemId;
-""";
+            UPDATE migration.WorkItems
+            SET Status = 'Dispatched',
+                StartedAtUtc = COALESCE(StartedAtUtc, SYSUTCDATETIME()),
+                DispatchedAtUtc = SYSUTCDATETIME(),
+                UpdatedUtc = SYSUTCDATETIME()
+            WHERE WorkItemId = @WorkItemId;
+            """;
 
         await using SqlConnection connection = new(_options.SqlConnectionString);
         await connection.ExecuteAsync(
-            new CommandDefinition(
-                sql,
-                new { WorkItemId = workItemId },
-                cancellationToken: cancellationToken)).ConfigureAwait(false);
+            new CommandDefinition(sql, new { WorkItemId = workItemId }, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
+    }
+
+    private async Task MarkRunRunningAsync(Guid runId, CancellationToken cancellationToken)
+    {
+        const string operationalSql = """
+            UPDATE migration.Runs
+            SET Status = 'Running',
+                StatusReason = COALESCE(StatusReason, 'Dispatching SQL work items.'),
+                StartedAtUtc = COALESCE(StartedAtUtc, SYSUTCDATETIME()),
+                UpdatedAtUtc = SYSUTCDATETIME()
+            WHERE RunId = @RunId
+              AND Status NOT IN ('Completed', 'Failed', 'Canceled');
+            """;
+
+        const string adminSql = """
+            IF OBJECT_ID(N'dbo.AdminRuns', N'U') IS NOT NULL
+            BEGIN
+                UPDATE dbo.AdminRuns
+                SET Status = 'Running',
+                    UpdatedUtc = SYSUTCDATETIME()
+                WHERE RunId = @RunId
+                  AND Status NOT IN ('Completed', 'Failed', 'Canceled');
+            END
+            """;
+
+        await using SqlConnection connection = new(_options.SqlConnectionString);
+        await connection.ExecuteAsync(
+            new CommandDefinition(operationalSql, new { RunId = runId }, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
+        await connection.ExecuteAsync(
+            new CommandDefinition(adminSql, new { RunId = runId }, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
     }
 
     public async ValueTask DisposeAsync()
