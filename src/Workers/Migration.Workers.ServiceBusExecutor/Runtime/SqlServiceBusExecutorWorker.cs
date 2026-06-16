@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -113,6 +113,8 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
 
             if (message is null)
             {
+                _logger.LogWarning("P7_EVENT_WORK_ITEM_INVALID_MESSAGE MessageId={MessageId} DeliveryCount={DeliveryCount}.", args.Message.MessageId, args.Message.DeliveryCount);
+
                 await args.DeadLetterMessageAsync(
                     args.Message,
                     "INVALID_MESSAGE",
@@ -125,6 +127,8 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
 
             if (workItem is null)
             {
+                _logger.LogWarning("P7_EVENT_WORK_ITEM_NOT_FOUND WorkItemId={WorkItemId} MessageId={MessageId}.", message.WorkItemId, args.Message.MessageId);
+
                 await args.DeadLetterMessageAsync(
                     args.Message,
                     "WORK_ITEM_NOT_FOUND",
@@ -135,6 +139,17 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
 
             await MarkExecutionStartedAsync(workItem.RunId, workItem.WorkItemId, args.CancellationToken)
                 .ConfigureAwait(false);
+
+            _logger.LogInformation(
+                "P7_EVENT_WORK_ITEM_START RunId={RunId} WorkItemId={WorkItemId} ManifestRowId={ManifestRowId} WorkItemType={WorkItemType} AttemptCount={AttemptCount} WorkerId={WorkerId} MessageId={MessageId} DeliveryCount={DeliveryCount}.",
+                workItem.RunId,
+                workItem.WorkItemId,
+                workItem.ManifestRowId,
+                workItem.WorkItemType,
+                workItem.AttemptCount,
+                _options.Value.WorkerId,
+                args.Message.MessageId,
+                args.Message.DeliveryCount);
 
             using var telemetryScope = _logger.BeginScope(new Dictionary<string, object?>
             {
@@ -176,6 +191,13 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
                 await _runCoordinator.EvaluateCompletionAsync(workItem.RunId, args.CancellationToken)
                     .ConfigureAwait(false);
 
+                _logger.LogInformation(
+                    "P7_EVENT_WORK_ITEM_SUCCEEDED RunId={RunId} WorkItemId={WorkItemId} WorkerId={WorkerId} DurationMs={DurationMs}.",
+                    workItem.RunId,
+                    workItem.WorkItemId,
+                    _options.Value.WorkerId,
+                    (DateTimeOffset.UtcNow - activityStartedAtUtc).TotalMilliseconds);
+
                 OperationalExecutionActivity.SetExecutionDuration(activity, DateTimeOffset.UtcNow - activityStartedAtUtc);
                 OperationalExecutionActivity.SetExecutionResult(activity, result.Succeeded, result.ErrorCode);
 
@@ -203,6 +225,16 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
             await _runCoordinator.EvaluateCompletionAsync(workItem.RunId, args.CancellationToken)
                 .ConfigureAwait(false);
 
+            _logger.LogWarning(
+                "P7_EVENT_WORK_ITEM_FAILED RunId={RunId} WorkItemId={WorkItemId} WorkerId={WorkerId} Retryable={Retryable} ErrorCode={ErrorCode} ErrorMessage={ErrorMessage} DurationMs={DurationMs}.",
+                workItem.RunId,
+                workItem.WorkItemId,
+                _options.Value.WorkerId,
+                result.IsRetryable,
+                result.ErrorCode ?? "EXECUTION_FAILED",
+                result.ErrorMessage ?? "Service Bus work item execution failed.",
+                (DateTimeOffset.UtcNow - activityStartedAtUtc).TotalMilliseconds);
+
             if (result.IsRetryable)
             {
                 await args.CompleteMessageAsync(args.Message, args.CancellationToken).ConfigureAwait(false);
@@ -218,7 +250,7 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled error while executing Service Bus work item {WorkItemId}.", message?.WorkItemId);
+            _logger.LogError(ex, "P7_EVENT_WORK_ITEM_UNHANDLED WorkItemId={WorkItemId}. Unhandled error while executing Service Bus work item.", message?.WorkItemId);
             await args.AbandonMessageAsync(args.Message, cancellationToken: args.CancellationToken).ConfigureAwait(false);
         }
     }

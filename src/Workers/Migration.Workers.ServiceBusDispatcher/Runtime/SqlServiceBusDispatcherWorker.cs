@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Migration.Workers.ServiceBusDispatcher.Dispatching;
@@ -24,16 +24,33 @@ internal sealed class SqlServiceBusDispatcherWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("SQL Service Bus dispatcher worker starting. Enabled={Enabled}, Queue={QueueName}.", _options.Enabled, _options.QueueName);
+        _logger.LogInformation(
+            "SQL Service Bus dispatcher worker starting. Enabled={Enabled}, Queue={QueueName}.",
+            _options.Enabled,
+            _options.QueueName);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                _logger.LogInformation("P7 heartbeat: dispatcher loop starting. WorkerId={WorkerId}, Queue={QueueName}, BatchSize={BatchSize}, PollIntervalSeconds={PollIntervalSeconds}, Utc={Utc}", _options.WorkerId, _options.QueueName, _options.BatchSize, _options.PollIntervalSeconds, DateTimeOffset.UtcNow);
-await _dispatcher.DispatchNextBatchAsync(stoppingToken).ConfigureAwait(false);
-                _logger.LogInformation("Dispatcher heartbeat poll completed at {HeartbeatUtc}.", DateTimeOffset.UtcNow);
-_logger.LogInformation("P7 heartbeat: dispatcher loop completed. WorkerId={WorkerId}, Queue={QueueName}, Utc={Utc}", _options.WorkerId, _options.QueueName, DateTimeOffset.UtcNow);
+                DateTimeOffset pollStartedUtc = DateTimeOffset.UtcNow;
+
+                _logger.LogInformation(
+                    "P7_EVENT_DISPATCHER_POLL_START WorkerId={WorkerId} Queue={QueueName} BatchSize={BatchSize} PollIntervalSeconds={PollIntervalSeconds} Utc={Utc}.",
+                    _options.WorkerId,
+                    _options.QueueName,
+                    _options.BatchSize,
+                    _options.PollIntervalSeconds,
+                    pollStartedUtc);
+
+                await _dispatcher.DispatchNextBatchAsync(stoppingToken).ConfigureAwait(false);
+
+                _logger.LogInformation(
+                    "P7_EVENT_DISPATCHER_POLL_COMPLETE WorkerId={WorkerId} Queue={QueueName} DurationMs={DurationMs} Utc={Utc}.",
+                    _options.WorkerId,
+                    _options.QueueName,
+                    (DateTimeOffset.UtcNow - pollStartedUtc).TotalMilliseconds,
+                    DateTimeOffset.UtcNow);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -41,7 +58,11 @@ _logger.LogInformation("P7 heartbeat: dispatcher loop completed. WorkerId={Worke
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "SQL Service Bus dispatcher iteration failed.");
+                _logger.LogError(
+                    ex,
+                    "P7_EVENT_DISPATCHER_POLL_FAILED WorkerId={WorkerId} Queue={QueueName}. SQL Service Bus dispatcher iteration failed.",
+                    _options.WorkerId,
+                    _options.QueueName);
             }
 
             int delaySeconds = Math.Max(1, _options.PollIntervalSeconds);
@@ -51,4 +72,3 @@ _logger.LogInformation("P7 heartbeat: dispatcher loop completed. WorkerId={Worke
         _logger.LogInformation("SQL Service Bus dispatcher worker stopped.");
     }
 }
-
