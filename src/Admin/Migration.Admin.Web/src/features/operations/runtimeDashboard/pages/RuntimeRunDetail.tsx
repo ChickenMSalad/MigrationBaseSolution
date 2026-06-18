@@ -148,6 +148,7 @@ export function RuntimeRunDetail() {
           <div><dt>Target</dt><dd>{run.targetSystem ?? "-"}</dd></div>
           <div><dt>Environment</dt><dd>{run.environmentName ?? "-"}</dd></div>
           <div><dt>Dry run</dt><dd>{run.isDryRun ? "Yes" : "No"}</dd></div>
+          <div><dt>Overwrite existing target</dt><dd>{run.overwriteExisting ? "Yes" : "No"}</dd></div>
           <div><dt>Requested</dt><dd>{formatDate(run.requestedAtUtc)}</dd></div>
           <div><dt>Created</dt><dd>{formatDate(run.createdAtUtc)}</dd></div>
           <div><dt>Updated</dt><dd>{formatDate(run.updatedAtUtc)}</dd></div>

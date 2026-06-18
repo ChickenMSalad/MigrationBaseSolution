@@ -115,6 +115,8 @@ export type CreateRunRequest = {
   mappingArtifactId?: string | null;
   dryRun: boolean;
   parallelism: number;
+  forceRerun?: boolean;
+  overwriteExisting?: boolean;
   settings?: Record<string, string | null | undefined>;
 };
 

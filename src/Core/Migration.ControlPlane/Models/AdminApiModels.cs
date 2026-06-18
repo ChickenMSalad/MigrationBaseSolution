@@ -54,7 +54,9 @@ public sealed record CreateRunRequest(
     int Parallelism = 1,
     Dictionary<string, string?>? Settings = null,
     string? ManifestArtifactId = null,
-    string? MappingArtifactId = null);
+    string? MappingArtifactId = null,
+    bool ForceRerun = false,
+    bool OverwriteExisting = false);
 
 public sealed record CreatePreflightRequest(
     string? JobName = null,

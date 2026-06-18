@@ -21,6 +21,7 @@ export type RuntimeDashboardRun = {
   effectiveStatus?: string | null;
   environmentName?: string | null;
   isDryRun?: boolean;
+  overwriteExisting?: boolean;
   requestedAtUtc?: string | null;
   createdAtUtc?: string | null;
   updatedAtUtc?: string | null;

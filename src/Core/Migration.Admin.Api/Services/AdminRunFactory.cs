@@ -38,6 +38,9 @@ public sealed class AdminRunFactory
     {
         var runId = CreateId("run");
         var jobName = NormalizeJobName(request.JobName, project, runId);
+        var settings = MergeSettings(project.Settings, request.Settings);
+        ApplyRunOptions(settings, request);
+
         var job = new MigrationJobDefinition
         {
             JobName = jobName,
@@ -48,7 +51,7 @@ public sealed class AdminRunFactory
             MappingProfilePath = request.MappingProfilePath,
             DryRun = request.DryRun,
             Parallelism = Math.Max(1, request.Parallelism),
-            Settings = MergeSettings(project.Settings, request.Settings)
+            Settings = settings
         };
 
         return new MigrationRunControlRecord
@@ -101,6 +104,22 @@ public sealed class AdminRunFactory
         if (runSettings is not null)
             foreach (var pair in runSettings) merged[pair.Key] = pair.Value;
         return merged;
+    }
+
+    private static void ApplyRunOptions(Dictionary<string, string?> settings, CreateRunRequest request)
+    {
+        RemoveRunOptionAliases(settings);
+
+        settings["forceRerun"] = request.ForceRerun ? "true" : "false";
+        settings["overwriteExisting"] = request.OverwriteExisting ? "true" : "false";
+    }
+
+    private static void RemoveRunOptionAliases(Dictionary<string, string?> settings)
+    {
+        settings.Remove("ForceRerun");
+        settings.Remove("Overwrite");
+        settings.Remove("overwrite");
+        settings.Remove("AzureBlobTargetOverwrite");
     }
 
     private static string NormalizeJobName(string? requestedJobName, MigrationProjectRecord project, string runId)

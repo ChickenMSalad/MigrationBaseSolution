@@ -55,6 +55,7 @@ export function ProjectDetail() {
   const [targetCredentialSetId, setTargetCredentialSetId] = useState("");
   const [dryRun, setDryRun] = useState(false);
   const [forceRerun, setForceRerun] = useState(false);
+  const [overwriteExisting, setOverwriteExisting] = useState(false);
   const [parallelism, setParallelism] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -193,8 +194,7 @@ export function ProjectDetail() {
 
     try {
       const runSettings = {
-        ...(project.settings ?? {}),
-        ForceRerun: forceRerun ? "true" : "false"
+        ...(project.settings ?? {})
       } as Record<string, string>;
 
       if (sourceRequiresCredentials) {
@@ -213,6 +213,8 @@ export function ProjectDetail() {
         mappingArtifactId: mappingArtifactId || null,
         dryRun,
         parallelism,
+        forceRerun,
+        overwriteExisting,
         settings: runSettings
       });
 
@@ -337,7 +339,8 @@ export function ProjectDetail() {
           <label>Mapping profile path override<input value={mappingProfilePath} onChange={(e) => setMappingProfilePath(e.target.value)} placeholder="Optional when a mapping artifact is selected" /></label>
           <label>Parallelism<input type="number" min={1} value={parallelism} onChange={(e) => setParallelism(Number(e.target.value || 1))} /></label>
           <label className="check"><input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} /> Dry run</label>
-          <label className="check"><input type="checkbox" checked={forceRerun} onChange={e => setForceRerun(e.target.checked)} /> Force re-run completed work items</label>
+          <label className="check"><input type="checkbox" checked={forceRerun} onChange={(e) => setForceRerun(e.target.checked)} /> Force re-run completed work items</label>
+          <label className="check"><input type="checkbox" checked={overwriteExisting} onChange={(e) => setOverwriteExisting(e.target.checked)} /> Overwrite existing target files/blobs</label>
         </div>
 
         {missingCredentials && (

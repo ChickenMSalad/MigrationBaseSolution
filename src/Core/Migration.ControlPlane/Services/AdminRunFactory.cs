@@ -54,6 +54,7 @@ public sealed class AdminRunFactory
         var runId = CreateId("run");
         var jobName = NormalizeJobName(request.JobName, project, runId);
         var settings = MergeSettings(project.Settings, request.Settings);
+        ApplyRunOptions(settings, request);
         var manifestPath = RequiresManifest(project, settings)
             ? RequireResolvedPath(request.ManifestPath, "ManifestPath")
             : NormalizeOptional(request.ManifestPath);
@@ -159,6 +160,22 @@ public sealed class AdminRunFactory
         }
 
         return merged;
+    }
+
+    private static void ApplyRunOptions(Dictionary<string, string> settings, CreateRunRequest request)
+    {
+        RemoveRunOptionAliases(settings);
+
+        settings["forceRerun"] = request.ForceRerun ? "true" : "false";
+        settings["overwriteExisting"] = request.OverwriteExisting ? "true" : "false";
+    }
+
+    private static void RemoveRunOptionAliases(Dictionary<string, string> settings)
+    {
+        settings.Remove("ForceRerun");
+        settings.Remove("Overwrite");
+        settings.Remove("overwrite");
+        settings.Remove("AzureBlobTargetOverwrite");
     }
 
     private static string NormalizeJobName(string? requestedJobName, MigrationProjectRecord project, string runId) =>

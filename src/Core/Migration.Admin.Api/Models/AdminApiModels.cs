@@ -18,7 +18,7 @@ public sealed record MigrationProjectRecord
     public Dictionary<string, string?> Settings { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
-public sealed record CreateRunRequest(string? JobName, string ManifestPath, string MappingProfilePath, bool DryRun = true, int Parallelism = 1, Dictionary<string, string?>? Settings = null);
+public sealed record CreateRunRequest(string? JobName, string ManifestPath, string MappingProfilePath, bool DryRun = true, int Parallelism = 1, Dictionary<string, string?>? Settings = null, bool ForceRerun = false, bool OverwriteExisting = false);
 public sealed record CreatePreflightRequest(string? JobName, string ManifestPath, string MappingProfilePath, Dictionary<string, string?>? Settings = null);
 
 public sealed record MigrationRunControlRecord

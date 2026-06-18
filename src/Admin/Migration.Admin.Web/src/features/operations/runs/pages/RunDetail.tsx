@@ -84,6 +84,7 @@ export function RunDetail() {
                 <tr><th>Target</th><td>{run.targetSystem ?? "-"}</td></tr>
                 <tr><th>Environment</th><td>{run.environmentName ?? "-"}</td></tr>
                 <tr><th>Dry run</th><td>{run.isDryRun ? "Yes" : "No"}</td></tr>
+                <tr><th>Overwrite existing target</th><td>{run.overwriteExisting ? "Yes" : "No"}</td></tr>
                 <tr><th>Requested</th><td>{formatDate(run.requestedAtUtc)}</td></tr>
                 <tr><th>Created</th><td>{formatDate(run.createdAtUtc)}</td></tr>
                 <tr><th>Updated</th><td>{formatDate(run.updatedAtUtc)}</td></tr>

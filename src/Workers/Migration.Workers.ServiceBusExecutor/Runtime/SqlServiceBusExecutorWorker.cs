@@ -77,9 +77,15 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
         await _processor.StartProcessingAsync(stoppingToken).ConfigureAwait(false);
         _logger.LogInformation("Executor heartbeat processor started at {HeartbeatUtc} for queue {QueueName} as worker {WorkerId}.", DateTimeOffset.UtcNow, options.QueueName, options.WorkerId);
 
+        await TryRecordExecutorHeartbeatAsync("idle", 0, "Service Bus executor processor started.", stoppingToken).ConfigureAwait(false);
+
         try
         {
-            await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken).ConfigureAwait(false);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken).ConfigureAwait(false);
+                await TryRecordExecutorHeartbeatAsync("idle", 0, "Service Bus executor processor is alive.", stoppingToken).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -151,6 +157,8 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
                 args.Message.MessageId,
                 args.Message.DeliveryCount);
 
+            await TryRecordExecutorHeartbeatAsync("active", 1, $"Executing work item {workItem.WorkItemId} for run {workItem.RunId}.", args.CancellationToken).ConfigureAwait(false);
+
             using var telemetryScope = _logger.BeginScope(new Dictionary<string, object?>
             {
                 [OperationalExecutionTelemetryFields.RunId] = workItem.RunId,
@@ -201,6 +209,7 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
                 OperationalExecutionActivity.SetExecutionDuration(activity, DateTimeOffset.UtcNow - activityStartedAtUtc);
                 OperationalExecutionActivity.SetExecutionResult(activity, result.Succeeded, result.ErrorCode);
 
+                await TryRecordExecutorHeartbeatAsync("idle", 0, $"Completed work item {workItem.WorkItemId} for run {workItem.RunId}.", args.CancellationToken).ConfigureAwait(false);
                 await args.CompleteMessageAsync(args.Message, args.CancellationToken).ConfigureAwait(false);
                 return;
             }
@@ -235,6 +244,9 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
                 result.ErrorMessage ?? "Service Bus work item execution failed.",
                 (DateTimeOffset.UtcNow - activityStartedAtUtc).TotalMilliseconds);
 
+            var heartbeatErrorCode = result.ErrorCode ?? "EXECUTION_FAILED";
+            await TryRecordExecutorHeartbeatAsync("idle", 0, $"Failed work item {workItem.WorkItemId} for run {workItem.RunId}: {heartbeatErrorCode}.", args.CancellationToken).ConfigureAwait(false);
+
             if (result.IsRetryable)
             {
                 await args.CompleteMessageAsync(args.Message, args.CancellationToken).ConfigureAwait(false);
@@ -253,6 +265,92 @@ internal sealed class SqlServiceBusExecutorWorker : BackgroundService
             _logger.LogError(ex, "P7_EVENT_WORK_ITEM_UNHANDLED WorkItemId={WorkItemId}. Unhandled error while executing Service Bus work item.", message?.WorkItemId);
             await args.AbandonMessageAsync(args.Message, cancellationToken: args.CancellationToken).ConfigureAwait(false);
         }
+    }
+
+
+    private async Task TryRecordExecutorHeartbeatAsync(string status, int activeLeaseCount, string message, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await RecordExecutorHeartbeatAsync(status, activeLeaseCount, message, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is SqlException or InvalidOperationException)
+        {
+            _logger.LogWarning(ex, "Executor heartbeat could not be recorded. WorkerId={WorkerId}; Status={Status}.", _options.Value.WorkerId, status);
+        }
+    }
+
+    private async Task RecordExecutorHeartbeatAsync(string status, int activeLeaseCount, string message, CancellationToken cancellationToken)
+    {
+        string connectionString = ResolveOperationalConnectionString();
+
+        const string sql = """
+IF OBJECT_ID(N'dbo.MigrationExecutionWorkerHeartbeats', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.MigrationExecutionWorkerHeartbeats
+    (
+        WorkerId nvarchar(256) NOT NULL PRIMARY KEY,
+        ExecutionSessionId uniqueidentifier NULL,
+        Status nvarchar(64) NOT NULL,
+        LastHeartbeatUtc datetimeoffset NOT NULL,
+        ActiveLeaseCount int NOT NULL,
+        Message nvarchar(1024) NULL,
+        CreatedUtc datetimeoffset NOT NULL
+    );
+END;
+
+MERGE dbo.MigrationExecutionWorkerHeartbeats AS target
+USING
+(
+    SELECT
+        @WorkerId AS WorkerId,
+        @ExecutionSessionId AS ExecutionSessionId,
+        @Status AS Status,
+        @ActiveLeaseCount AS ActiveLeaseCount,
+        @Message AS Message
+) AS source
+ON target.WorkerId = source.WorkerId
+WHEN MATCHED THEN
+    UPDATE SET
+        ExecutionSessionId = source.ExecutionSessionId,
+        Status = source.Status,
+        LastHeartbeatUtc = SYSUTCDATETIME(),
+        ActiveLeaseCount = source.ActiveLeaseCount,
+        Message = source.Message
+WHEN NOT MATCHED THEN
+    INSERT
+    (
+        WorkerId,
+        ExecutionSessionId,
+        Status,
+        LastHeartbeatUtc,
+        ActiveLeaseCount,
+        Message,
+        CreatedUtc
+    )
+    VALUES
+    (
+        source.WorkerId,
+        source.ExecutionSessionId,
+        source.Status,
+        SYSUTCDATETIME(),
+        source.ActiveLeaseCount,
+        source.Message,
+        SYSUTCDATETIME()
+    );
+""";
+
+        await using SqlConnection connection = new(connectionString);
+        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+        await using SqlCommand command = connection.CreateCommand();
+        command.CommandText = sql;
+        command.Parameters.AddWithValue("@WorkerId", _options.Value.WorkerId);
+        command.Parameters.AddWithValue("@ExecutionSessionId", DBNull.Value);
+        command.Parameters.AddWithValue("@Status", status);
+        command.Parameters.AddWithValue("@ActiveLeaseCount", Math.Max(0, activeLeaseCount));
+        command.Parameters.AddWithValue("@Message", string.IsNullOrWhiteSpace(message) ? DBNull.Value : message);
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task MarkExecutionStartedAsync(Guid runId, long workItemId, CancellationToken cancellationToken)
