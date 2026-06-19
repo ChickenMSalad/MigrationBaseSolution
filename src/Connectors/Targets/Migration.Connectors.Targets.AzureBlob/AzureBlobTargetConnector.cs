@@ -59,7 +59,13 @@ public sealed class AzureBlobTargetConnector : IAssetTargetConnector
 
         var intermediateStorage = ResolveIntermediateStorageProfile(job);
         var naming = ResolveBlobNaming(job, item, binary, intermediateStorage);
-        var overwrite = GetBool(job, _options.Overwrite, "AzureBlobTargetOverwrite", "AzureBlobOverwrite", "Overwrite");
+        var overwrite = GetBool(
+            job,
+            _options.Overwrite,
+            "overwriteExisting",
+            "AzureBlobTargetOverwrite",
+            "AzureBlobOverwrite",
+            "Overwrite");
         // Intermediate storage mappings now store searchable metadata as Azure Blob index tags.
         // Do not create JSON sidecars for intermediate mappings; legacy/non-mapping runs keep existing behavior.
         //var writeSidecar = intermediateStorage is null
