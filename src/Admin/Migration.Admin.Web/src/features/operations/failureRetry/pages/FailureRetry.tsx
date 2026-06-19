@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { failureRetryApi } from "../api/failureRetryApi";
 import type { FailureRetryResponse, FailureRetryWorkItem } from "../types/failureRetry";
 
@@ -41,52 +41,57 @@ function statusClass(item: FailureRetryWorkItem) {
   return "status-neutral";
 }
 
+
+function csvCell(value: unknown) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function downloadFailureReport(workItems: FailureRetryWorkItem[]) {
+  const headers = [
+    "workItemId",
+    "runId",
+    "status",
+    "workType",
+    "attemptCount",
+    "claimedBy",
+    "createdAtUtc",
+    "updatedAtUtc",
+    "completedAtUtc",
+    "lastErrorMessage"
+  ];
+
+  const lines = [
+    headers.join(","),
+    ...workItems.map(item => [
+      item.workItemId,
+      item.runId,
+      item.status,
+      item.workType ?? "",
+      item.attemptCount ?? 0,
+      item.claimedBy ?? "",
+      item.createdAtUtc ?? "",
+      item.updatedAtUtc ?? "",
+      item.completedAtUtc ?? "",
+      item.lastErrorMessage ?? ""
+    ].map(csvCell).join(","))
+  ];
+
+  const blob = new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  anchor.href = url;
+  anchor.download = `failure-retry-report-${timestamp}.csv`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 function canRetry(item: FailureRetryWorkItem) {
   const status = String(item.status ?? "").toLowerCase();
   return status.includes("fail") || status.includes("retry");
-}
-
-function csvValue(value: unknown) {
-  const text = value === null || value === undefined ? "" : String(value);
-  return '"' + text.replace(/"/g, '""') + '"';
-}
-
-function exportFailures(workItems: FailureRetryWorkItem[]) {
-  const headers = [
-    "WorkItemId",
-    "RunId",
-    "Status",
-    "AttemptCount",
-    "UpdatedUtc",
-    "ErrorCode",
-    "ErrorMessage",
-    "PayloadJson"
-  ];
-
-  const rows = workItems.map(item => [
-    item.workItemId,
-    item.runId,
-    item.status,
-    item.attemptCount ?? 0,
-    item.updatedAtUtc ?? "",
-    item.lastErrorCode ?? "",
-    item.lastErrorMessage ?? "",
-    item.payloadJson ?? ""
-  ]);
-
-  const csv = [headers, ...rows]
-    .map(row => row.map(csvValue).join(","))
-    .join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `failure-retry-${new Date().toISOString().replace(/[:.]/g, "-")}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }
 
 export function FailureRetry() {
@@ -130,7 +135,7 @@ export function FailureRetry() {
 
     try {
       const response = await failureRetryApi.retryWorkItem(item.workItemId);
-      const message = response.message || `Work item ${item.workItemId} was queued for retry.`;
+      const message = response.message || `Work item ${item.workItemId} was reset for retry.`;
       setState((current) => ({
         ...current,
         retryingWorkItemId: undefined,
@@ -149,7 +154,6 @@ export function FailureRetry() {
   const workItems = state.response?.workItems ?? [];
   const summary = state.response?.summary;
   const infoMessage = state.response?.message;
-  const retryableCount = useMemo(() => workItems.filter(canRetry).length, [workItems]);
 
   return (
     <section className="operations-page">
@@ -163,8 +167,13 @@ export function FailureRetry() {
         <button type="button" className="button-secondary" onClick={() => void load()} disabled={state.loading}>
           Refresh
         </button>
-        <button type="button" className="button-secondary" onClick={() => exportFailures(workItems)} disabled={workItems.length === 0}>
-          Export failures CSV
+        <button
+          type="button"
+          className="button-secondary"
+          onClick={() => downloadFailureReport(workItems)}
+          disabled={state.loading || workItems.length === 0}
+        >
+          Export CSV
         </button>
       </div>
 
@@ -181,8 +190,8 @@ export function FailureRetry() {
             <strong>{summary.failed}</strong>
           </article>
           <article className="metric-card">
-            <span>Retryable now</span>
-            <strong>{retryableCount}</strong>
+            <span>Retryable</span>
+            <strong>{summary.retryable}</strong>
           </article>
           <article className="metric-card">
             <span>Retry queued</span>
@@ -203,9 +212,9 @@ export function FailureRetry() {
                 <th>Work item</th>
                 <th>Run</th>
                 <th>Status</th>
+                <th>Type</th>
                 <th>Attempts</th>
                 <th>Updated</th>
-                <th>Error code</th>
                 <th>Error</th>
                 <th>Action</th>
               </tr>
@@ -218,13 +227,10 @@ export function FailureRetry() {
                   <td>
                     <span className={statusClass(item)}>{item.status}</span>
                   </td>
+                  <td>{item.workType ?? "-"}</td>
                   <td>{item.attemptCount ?? 0}</td>
                   <td>{formatDate(item.updatedAtUtc)}</td>
-                  <td>{item.lastErrorCode ?? "-"}</td>
-                  <td>
-                    <div>{item.lastErrorMessage ?? "-"}</div>
-                    {item.payloadJson ? <details><summary>Payload</summary><pre>{item.payloadJson}</pre></details> : null}
-                  </td>
+                  <td>{item.lastErrorMessage ?? "-"}</td>
                   <td>
                     <button
                       type="button"
