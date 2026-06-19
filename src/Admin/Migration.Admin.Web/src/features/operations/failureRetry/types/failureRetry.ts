@@ -10,7 +10,9 @@ export type FailureRetryWorkItem = {
   createdAtUtc?: string | null;
   updatedAtUtc?: string | null;
   completedAtUtc?: string | null;
+  lastErrorCode?: string | null;
   lastErrorMessage?: string | null;
+  payloadJson?: string | null;
 };
 
 export type FailureRetrySummary = {

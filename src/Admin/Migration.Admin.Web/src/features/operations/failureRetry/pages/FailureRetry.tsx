@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { failureRetryApi } from "../api/failureRetryApi";
 import type { FailureRetryResponse, FailureRetryWorkItem } from "../types/failureRetry";
 
@@ -46,6 +46,49 @@ function canRetry(item: FailureRetryWorkItem) {
   return status.includes("fail") || status.includes("retry");
 }
 
+function csvValue(value: unknown) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+
+function exportFailures(workItems: FailureRetryWorkItem[]) {
+  const headers = [
+    "WorkItemId",
+    "RunId",
+    "Status",
+    "AttemptCount",
+    "UpdatedUtc",
+    "ErrorCode",
+    "ErrorMessage",
+    "PayloadJson"
+  ];
+
+  const rows = workItems.map(item => [
+    item.workItemId,
+    item.runId,
+    item.status,
+    item.attemptCount ?? 0,
+    item.updatedAtUtc ?? "",
+    item.lastErrorCode ?? "",
+    item.lastErrorMessage ?? "",
+    item.payloadJson ?? ""
+  ]);
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(csvValue).join(","))
+    .join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `failure-retry-${new Date().toISOString().replace(/[:.]/g, "-")}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function FailureRetry() {
   const [state, setState] = useState<LoadState>({ loading: true });
 
@@ -87,7 +130,7 @@ export function FailureRetry() {
 
     try {
       const response = await failureRetryApi.retryWorkItem(item.workItemId);
-      const message = response.message || `Work item ${item.workItemId} was reset for retry.`;
+      const message = response.message || `Work item ${item.workItemId} was queued for retry.`;
       setState((current) => ({
         ...current,
         retryingWorkItemId: undefined,
@@ -106,6 +149,7 @@ export function FailureRetry() {
   const workItems = state.response?.workItems ?? [];
   const summary = state.response?.summary;
   const infoMessage = state.response?.message;
+  const retryableCount = useMemo(() => workItems.filter(canRetry).length, [workItems]);
 
   return (
     <section className="operations-page">
@@ -118,6 +162,9 @@ export function FailureRetry() {
       <div className="toolbar-row">
         <button type="button" className="button-secondary" onClick={() => void load()} disabled={state.loading}>
           Refresh
+        </button>
+        <button type="button" className="button-secondary" onClick={() => exportFailures(workItems)} disabled={workItems.length === 0}>
+          Export failures CSV
         </button>
       </div>
 
@@ -134,8 +181,8 @@ export function FailureRetry() {
             <strong>{summary.failed}</strong>
           </article>
           <article className="metric-card">
-            <span>Retryable</span>
-            <strong>{summary.retryable}</strong>
+            <span>Retryable now</span>
+            <strong>{retryableCount}</strong>
           </article>
           <article className="metric-card">
             <span>Retry queued</span>
@@ -158,6 +205,7 @@ export function FailureRetry() {
                 <th>Status</th>
                 <th>Attempts</th>
                 <th>Updated</th>
+                <th>Error code</th>
                 <th>Error</th>
                 <th>Action</th>
               </tr>
@@ -172,7 +220,11 @@ export function FailureRetry() {
                   </td>
                   <td>{item.attemptCount ?? 0}</td>
                   <td>{formatDate(item.updatedAtUtc)}</td>
-                  <td>{item.lastErrorMessage ?? "-"}</td>
+                  <td>{item.lastErrorCode ?? "-"}</td>
+                  <td>
+                    <div>{item.lastErrorMessage ?? "-"}</div>
+                    {item.payloadJson ? <details><summary>Payload</summary><pre>{item.payloadJson}</pre></details> : null}
+                  </td>
                   <td>
                     <button
                       type="button"

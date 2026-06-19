@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;
-using System.Text.Json;
 
 namespace Migration.Admin.Api.Endpoints.Operational.Dashboard;
 
@@ -191,13 +190,7 @@ SELECT TOP (1)
     SUM(CASE WHEN w.Status IN (N'Retryable', N'FailedRetryable') THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS RetryableWorkItemCount,
     SUM(CASE WHEN w.Status = N'RetryQueued' THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS RetryQueuedWorkItemCount,
     MIN(w.StartedAtUtc) AS FirstWorkItemStartedAtUtc,
-    MAX(w.CompletedAtUtc) AS LastWorkItemCompletedAtUtc,
-    (
-        SELECT TOP (1) wi.PayloadJson
-        FROM migration.WorkItems wi
-        WHERE wi.RunId = r.RunId
-        ORDER BY wi.CreatedUtc ASC
-    ) AS SamplePayloadJson
+    MAX(w.CompletedAtUtc) AS LastWorkItemCompletedAtUtc
 FROM migration.Runs r
 LEFT JOIN migration.WorkItems w ON w.RunId = r.RunId
 WHERE r.RunId = @RunId
@@ -240,7 +233,6 @@ GROUP BY
             effectiveStatus = CalculateEffectiveStatus(status, total, queued, dispatched, running, completed, failed),
             environmentName = ToNullableString(reader["EnvironmentName"]),
             isDryRun = reader["IsDryRun"] is not DBNull && Convert.ToBoolean(reader["IsDryRun"]),
-            overwriteExisting = ReadOverwriteExisting(reader["SamplePayloadJson"]),
             requestedAtUtc = ToNullableValue(reader["RequestedAtUtc"]),
             createdAtUtc = ToNullableValue(reader["CreatedAtUtc"]),
             updatedAtUtc = ToNullableValue(reader["UpdatedAtUtc"]),
@@ -257,79 +249,6 @@ GROUP BY
             activeWorkItemCount = queued + dispatched + running,
             percentComplete = CalculatePercentComplete(total, completed, failed)
         };
-    }
-
-
-    private static bool ReadOverwriteExisting(object? payloadJsonValue)
-    {
-        if (payloadJsonValue is null || payloadJsonValue is DBNull)
-        {
-            return false;
-        }
-
-        var payloadJson = Convert.ToString(payloadJsonValue);
-        if (string.IsNullOrWhiteSpace(payloadJson))
-        {
-            return false;
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(payloadJson);
-            var root = document.RootElement;
-            if (TryReadBoolean(root, "overwriteExisting", out var value) ||
-                TryReadBoolean(root, "Overwrite", out value) ||
-                TryReadBoolean(root, "overwrite", out value) ||
-                TryReadBoolean(root, "AzureBlobTargetOverwrite", out value))
-            {
-                return value;
-            }
-
-            if (root.TryGetProperty("job", out var job) && job.ValueKind == JsonValueKind.Object &&
-                job.TryGetProperty("settings", out var settings) && settings.ValueKind == JsonValueKind.Object)
-            {
-                return
-                    (TryReadBoolean(settings, "overwriteExisting", out value) && value) ||
-                    (TryReadBoolean(settings, "Overwrite", out value) && value) ||
-                    (TryReadBoolean(settings, "overwrite", out value) && value) ||
-                    (TryReadBoolean(settings, "AzureBlobTargetOverwrite", out value) && value);
-            }
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-
-        return false;
-    }
-
-    private static bool TryReadBoolean(JsonElement element, string propertyName, out bool value)
-    {
-        value = false;
-        if (!element.TryGetProperty(propertyName, out var property))
-        {
-            return false;
-        }
-
-        if (property.ValueKind == JsonValueKind.True)
-        {
-            value = true;
-            return true;
-        }
-
-        if (property.ValueKind == JsonValueKind.False)
-        {
-            value = false;
-            return true;
-        }
-
-        if (property.ValueKind == JsonValueKind.String && bool.TryParse(property.GetString(), out var parsed))
-        {
-            value = parsed;
-            return true;
-        }
-
-        return false;
     }
 
     private static async Task<object> ReadFailureSummaryAsync(
@@ -389,7 +308,9 @@ SELECT TOP (@Take)
     CreatedUtc,
     UpdatedUtc,
     CompletedAtUtc,
-    LastErrorMessage
+    LastErrorCode,
+    LastErrorMessage,
+    PayloadJson
 FROM migration.WorkItems
 WHERE
     Status LIKE N'Failed%'
@@ -429,7 +350,9 @@ SELECT TOP (@Take)
     CreatedUtc,
     UpdatedUtc,
     CompletedAtUtc,
-    LastErrorMessage
+    LastErrorCode,
+    LastErrorMessage,
+    PayloadJson
 FROM migration.WorkItems
 WHERE
     RunId = @RunId
@@ -450,7 +373,9 @@ SELECT TOP (@Take)
     CreatedUtc,
     UpdatedUtc,
     CompletedAtUtc,
-    LastErrorMessage
+    LastErrorCode,
+    LastErrorMessage,
+    PayloadJson
 FROM migration.WorkItems
 WHERE RunId = @RunId
 ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
@@ -483,6 +408,8 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
             manifestRowId = (long?)null,
             failureType = GetPropertyValue(row, "status"),
             message = GetPropertyValue(row, "lastErrorMessage"),
+            errorCode = GetPropertyValue(row, "lastErrorCode"),
+            payloadJson = GetPropertyValue(row, "payloadJson"),
             createdAtUtc = GetPropertyValue(row, "updatedAtUtc") ?? GetPropertyValue(row, "createdAtUtc")
         }).ToList();
     }
@@ -500,7 +427,9 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
             createdAtUtc = ToNullableValue(reader["CreatedUtc"]),
             updatedAtUtc = ToNullableValue(reader["UpdatedUtc"]),
             completedAtUtc = ToNullableValue(reader["CompletedAtUtc"]),
-            lastErrorMessage = ToNullableString(reader["LastErrorMessage"])
+            lastErrorCode = ToNullableString(reader["LastErrorCode"]),
+            lastErrorMessage = ToNullableString(reader["LastErrorMessage"]),
+            payloadJson = ToNullableString(reader["PayloadJson"])
         };
     }
 

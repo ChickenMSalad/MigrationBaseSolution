@@ -26,12 +26,30 @@ function displayStatus(run: RuntimeDashboardRun) {
   return run.effectiveStatus ?? run.status ?? "Unknown";
 }
 
+function canDeleteRun(run: RuntimeDashboardRun) {
+  const status = displayStatus(run).toLowerCase();
+  return ![
+    "queued",
+    "dispatching",
+    "dispatched",
+    "running",
+    "leased",
+    "inprogress",
+    "in-progress",
+    "processing",
+    "started",
+    "executing"
+  ].includes(status);
+}
+
 export function Runs() {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<RuntimeDashboardSummary | null>(null);
   const [runs, setRuns] = useState<RuntimeDashboardRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
 
   async function load() {
     setError(null);
@@ -51,6 +69,34 @@ export function Runs() {
     }
   }
 
+  async function deleteRun(run: RuntimeDashboardRun) {
+    const runName = displayRunName(run);
+
+    if (!canDeleteRun(run)) {
+      setError(`Run "${runName}" is active and cannot be deleted.`);
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete run "${runName}"? This removes the Admin run record and SQL runtime run/work-item records.`);
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingRunId(run.runId);
+    setError(null);
+    setMessage(null);
+
+    try {
+      await runtimeDashboardApi.deleteRun(run.runId);
+      setMessage(`Deleted run "${runName}".`);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeletingRunId(null);
+    }
+  }
+
   useEffect(() => {
     void load();
     const timer = window.setInterval(load, 5000);
@@ -65,6 +111,7 @@ export function Runs() {
         action={<button onClick={() => void load()}>Refresh</button>}
       >
         <LoadingError loading={loading} error={error} onRetry={() => void load()} />
+        {message && <div className="notice">{message}</div>}
 
         {!loading && !error && (
           <>
@@ -99,6 +146,7 @@ export function Runs() {
                           {displayRunName(run)}
                         </button>
                         <div className="muted">{run.runId}</div>
+                        {run.runKey && <div className="muted">{run.runKey}</div>}
                       </td>
                       <td><StatusPill status={displayStatus(run)} /></td>
                       <td>{run.sourceSystem ?? "-"}</td>
@@ -110,8 +158,13 @@ export function Runs() {
                       <td>{formatNumber(run.failedWorkItemCount)}</td>
                       <td>{formatDate(run.updatedAtUtc ?? run.createdAtUtc ?? run.requestedAtUtc)}</td>
                       <td>
-                        <button type="button" onClick={() => navigate("/runs/" + encodeURIComponent(run.runId))}>
-                          Open
+                        <button
+                          type="button"
+                          onClick={() => void deleteRun(run)}
+                          disabled={deletingRunId === run.runId || !canDeleteRun(run)}
+                          title={canDeleteRun(run) ? "Delete this run" : "Active runs cannot be deleted"}
+                        >
+                          {deletingRunId === run.runId ? "Deleting..." : "Delete"}
                         </button>
                       </td>
                     </tr>

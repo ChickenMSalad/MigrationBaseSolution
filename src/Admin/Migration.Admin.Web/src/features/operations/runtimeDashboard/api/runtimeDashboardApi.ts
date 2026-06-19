@@ -1,4 +1,4 @@
-import { apiGet } from "../../../../api/core/adminApiClient";
+import { apiDelete, apiGet } from "../../../../api/core/adminApiClient";
 import type {
   RuntimeDashboardRun,
   RuntimeDashboardRunDetail,
@@ -21,5 +21,6 @@ function queryString(params: Record<string, unknown>) {
 export const runtimeDashboardApi = {
   summary: () => apiGet<RuntimeDashboardSummary>("/api/runtime/dashboard/summary"),
   runs: (take = 50) => apiGet<RuntimeDashboardRun[]>(`/api/runtime/dashboard/runs${queryString({ take })}`),
-  runDetail: (runId: string) => apiGet<RuntimeDashboardRunDetail>(`/api/runtime/dashboard/runs/${encodeURIComponent(runId)}`)
+  runDetail: (runId: string) => apiGet<RuntimeDashboardRunDetail>(`/api/runtime/dashboard/runs/${encodeURIComponent(runId)}`),
+  deleteRun: (runId: string) => apiDelete<void>(`/api/runs/${encodeURIComponent(runId)}`)
 };

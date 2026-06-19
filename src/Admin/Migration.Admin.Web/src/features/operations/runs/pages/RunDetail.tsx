@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Card, EmptyState, StatusPill } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
 import { runtimeDashboardApi } from "../../runtimeDashboard/api/runtimeDashboardApi";
-import type { RuntimeDashboardRunDetail, RuntimeDashboardWorkItem } from "../../runtimeDashboard/types/runtimeDashboard";
+import type { RuntimeDashboardRun, RuntimeDashboardRunDetail, RuntimeDashboardWorkItem } from "../../runtimeDashboard/types/runtimeDashboard";
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -22,11 +22,29 @@ function workItemStatus(item: RuntimeDashboardWorkItem) {
   return item.status ?? "Unknown";
 }
 
+function canDeleteRun(run: RuntimeDashboardRun) {
+  const status = String(run.effectiveStatus ?? run.status ?? "").toLowerCase();
+  return ![
+    "queued",
+    "dispatching",
+    "dispatched",
+    "running",
+    "leased",
+    "inprogress",
+    "in-progress",
+    "processing",
+    "started",
+    "executing"
+  ].includes(status);
+}
+
 export function RunDetail() {
+  const navigate = useNavigate();
   const { runId } = useParams();
   const [detail, setDetail] = useState<RuntimeDashboardRunDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     if (!runId) {
@@ -46,6 +64,36 @@ export function RunDetail() {
     }
   }
 
+  async function deleteRun() {
+    const run = detail?.run;
+    if (!run) {
+      return;
+    }
+
+    const displayName = run.runName ?? run.runKey ?? run.runId;
+    if (!canDeleteRun(run)) {
+      setError(`Run "${displayName}" is active and cannot be deleted.`);
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete run "${displayName}"? This removes the Admin run record and SQL runtime run/work-item records.`);
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+
+    try {
+      await runtimeDashboardApi.deleteRun(run.runId);
+      navigate("/runs");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   useEffect(() => {
     void load();
     const timer = window.setInterval(load, 5000);
@@ -60,7 +108,25 @@ export function RunDetail() {
     <>
       <p><Link to="/runs">Back to Runs</Link></p>
 
-      <Card title={displayName} subtitle="SQL operational runtime run detail." action={<button onClick={() => void load()}>Refresh</button>}>
+      <Card
+        title={displayName}
+        subtitle="SQL operational runtime run detail."
+        action={
+          <div className="actionRow">
+            <button onClick={() => void load()}>Refresh</button>
+            {run && (
+              <button
+                type="button"
+                onClick={() => void deleteRun()}
+                disabled={deleting || !canDeleteRun(run)}
+                title={canDeleteRun(run) ? "Delete this run" : "Active runs cannot be deleted"}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            )}
+          </div>
+        }
+      >
         <LoadingError loading={loading} error={error} onRetry={() => void load()} />
 
         {!loading && !error && !run && (
