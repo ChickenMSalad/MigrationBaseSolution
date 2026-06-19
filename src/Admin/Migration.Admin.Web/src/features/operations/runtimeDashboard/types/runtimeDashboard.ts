@@ -61,8 +61,33 @@ export type RuntimeDashboardFailure = {
   createdAtUtc?: string | null;
 };
 
+
+export type RuntimeDashboardProgressSnapshot = {
+  completed?: number | null;
+  total?: number | null;
+  percentComplete?: number | null;
+  message?: string | null;
+  updatedAtUtc?: string | null;
+};
+
+export type RuntimeDashboardEvent = {
+  eventId?: string | null;
+  eventType?: string | null;
+  severity?: string | null;
+  category?: string | null;
+  source?: string | null;
+  message?: string | null;
+  payloadJson?: string | null;
+  createdAtUtc?: string | null;
+  workItemId?: string | null;
+  completed?: number | null;
+  total?: number | null;
+};
+
 export type RuntimeDashboardRunDetail = {
   run: RuntimeDashboardRun | null;
+  progress?: RuntimeDashboardProgressSnapshot | null;
   workItems: RuntimeDashboardWorkItem[];
   failures: RuntimeDashboardFailure[];
+  events?: RuntimeDashboardEvent[];
 };

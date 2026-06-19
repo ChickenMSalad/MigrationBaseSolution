@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Card, EmptyState, StatusPill } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
 import { runtimeDashboardApi } from "../../runtimeDashboard/api/runtimeDashboardApi";
-import type { RuntimeDashboardRun, RuntimeDashboardRunDetail, RuntimeDashboardWorkItem } from "../../runtimeDashboard/types/runtimeDashboard";
+import type { RuntimeDashboardRun, RuntimeDashboardEvent, RuntimeDashboardRunDetail, RuntimeDashboardWorkItem } from "../../runtimeDashboard/types/runtimeDashboard";
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -16,6 +16,19 @@ function formatDate(value?: string | null) {
 
 function formatNumber(value?: number | null) {
   return value === undefined || value === null ? "-" : value.toLocaleString();
+}
+
+
+function formatPercent(value?: number | null) {
+  return value === undefined || value === null ? "-" : `${value.toFixed(2)}%`;
+}
+
+function formatProgress(completed?: number | null, total?: number | null) {
+  if (completed === undefined || completed === null || total === undefined || total === null) {
+    return "-";
+  }
+
+  return `${completed.toLocaleString()} / ${total.toLocaleString()}`;
 }
 
 function workItemStatus(item: RuntimeDashboardWorkItem) {
@@ -103,6 +116,8 @@ export function RunDetail() {
   const run = detail?.run ?? null;
   const displayName = run?.runName ?? run?.runKey ?? run?.runId ?? "Run";
   const status = run?.effectiveStatus ?? run?.status ?? "Unknown";
+  const progress = detail?.progress ?? null;
+  const events: RuntimeDashboardEvent[] = detail?.events ?? [];
 
   return (
     <>
@@ -137,7 +152,7 @@ export function RunDetail() {
           <>
             <div className="metric-grid">
               <Card title="Status"><StatusPill status={status} /></Card>
-              <Card title="Progress"><strong>{formatNumber(run.percentComplete)}%</strong></Card>
+              <Card title="Progress"><strong>{formatPercent(progress?.percentComplete ?? run.percentComplete)}</strong><div className="muted">{formatProgress(progress?.completed, progress?.total)}</div></Card>
               <Card title="Completed"><strong>{formatNumber(run.completedWorkItemCount)}</strong></Card>
               <Card title="Failed"><strong>{formatNumber(run.failedWorkItemCount)}</strong></Card>
             </div>
@@ -159,6 +174,24 @@ export function RunDetail() {
           </>
         )}
       </Card>
+
+
+      {run && (
+        <Card title="Live progress" subtitle="Latest durable progress event written by the executor while the run is active.">
+          {progress?.updatedAtUtc ? (
+            <table>
+              <tbody>
+                <tr><th>Completed / total</th><td>{formatProgress(progress.completed, progress.total)}</td></tr>
+                <tr><th>Percent</th><td>{formatPercent(progress.percentComplete)}</td></tr>
+                <tr><th>Last update</th><td>{formatDate(progress.updatedAtUtc)}</td></tr>
+                <tr><th>Message</th><td>{progress.message ?? "-"}</td></tr>
+              </tbody>
+            </table>
+          ) : (
+            <EmptyState title="No live progress event yet" message="Progress events appear once the executor starts processing manifest rows for this run." />
+          )}
+        </Card>
+      )}
 
       {run && (
         <Card title="Work item progress" subtitle="Latest SQL work item state for this run.">
@@ -187,6 +220,38 @@ export function RunDetail() {
                     <td>{item.claimedBy ?? "-"}</td>
                     <td>{formatDate(item.updatedAtUtc ?? item.completedAtUtc ?? item.createdAtUtc)}</td>
                     <td>{item.lastErrorMessage ?? "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      )}
+
+
+      {run && (
+        <Card title="Run event timeline" subtitle="Durable operational and migration progress events for this run.">
+          {events.length === 0 ? (
+            <EmptyState title="No run events" message="No operational events were recorded for this run yet." />
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Type</th>
+                  <th>Severity</th>
+                  <th>Progress</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.map((event, index) => (
+                  <tr key={event.eventId ?? `${event.createdAtUtc ?? "event"}-${index}`}>
+                    <td>{formatDate(event.createdAtUtc)}</td>
+                    <td>{event.eventType ?? "-"}</td>
+                    <td>{event.severity ?? "-"}</td>
+                    <td>{formatProgress(event.completed, event.total)}</td>
+                    <td>{event.message ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>

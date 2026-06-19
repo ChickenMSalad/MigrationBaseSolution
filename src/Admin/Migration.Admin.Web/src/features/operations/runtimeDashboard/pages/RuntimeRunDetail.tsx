@@ -6,6 +6,7 @@ import { LoadingError } from "../../../../components/LoadingError";
 import type {
   RuntimeDashboardFailure,
   RuntimeDashboardRun,
+  RuntimeDashboardEvent,
   RuntimeDashboardRunDetail,
   RuntimeDashboardWorkItem,
 } from "../types/runtimeDashboard";
@@ -21,6 +22,18 @@ function formatDate(value?: string | null) {
 
 function formatNumber(value?: number | null) {
   return value === undefined || value === null ? "-" : value.toLocaleString();
+}
+
+function formatProgressValue(completed?: number | null, total?: number | null) {
+  if (completed === undefined || completed === null || total === undefined || total === null) {
+    return "-";
+  }
+
+  return `${completed.toLocaleString()} / ${total.toLocaleString()}`;
+}
+
+function formatProgressPercent(value?: number | null) {
+  return value === undefined || value === null ? "-" : `${value.toFixed(2)}%`;
 }
 
 function formatPercent(completed: number, total: number) {
@@ -87,6 +100,8 @@ export function RuntimeRunDetail() {
   const run = getRun(detail);
   const workItems = useMemo<RuntimeDashboardWorkItem[]>(() => detail?.workItems ?? [], [detail]);
   const failures = useMemo<RuntimeDashboardFailure[]>(() => detail?.failures ?? [], [detail]);
+  const events = useMemo<RuntimeDashboardEvent[]>(() => detail?.events ?? [], [detail]);
+  const liveProgress = detail?.progress ?? null;
 
   const completedCount = run?.completedWorkItemCount ?? workItems.filter((item) => isCompletedStatus(item.status)).length;
   const failedCount = run?.failedWorkItemCount ?? workItems.filter((item) => isFailedStatus(item.status)).length;
@@ -124,7 +139,7 @@ export function RuntimeRunDetail() {
           <StatusPill status={run.status ?? "Unknown"} />
         </Card>
         <Card title="Progress">
-          <strong>{formatPercent(completedCount, totalCount)}</strong>
+          <strong>{formatProgressPercent(liveProgress?.percentComplete) !== "-" ? formatProgressPercent(liveProgress?.percentComplete) : formatPercent(completedCount, totalCount)}</strong>
         </Card>
         <Card title="Completed">
           <strong>{formatNumber(completedCount)} / {formatNumber(totalCount)}</strong>
@@ -139,6 +154,20 @@ export function RuntimeRunDetail() {
           <strong>{formatNumber(dispatchedCount)}</strong>
         </Card>
       </div>
+
+
+      <Card title="Live progress" subtitle="Latest durable progress event written by the executor.">
+        {liveProgress?.updatedAtUtc ? (
+          <div className="detail-grid">
+            <div><dt>Completed / total</dt><dd>{formatProgressValue(liveProgress.completed, liveProgress.total)}</dd></div>
+            <div><dt>Percent</dt><dd>{formatProgressPercent(liveProgress.percentComplete)}</dd></div>
+            <div><dt>Last update</dt><dd>{formatDate(liveProgress.updatedAtUtc)}</dd></div>
+            <div><dt>Message</dt><dd>{liveProgress.message ?? "-"}</dd></div>
+          </div>
+        ) : (
+          <EmptyState title="No live progress event yet" description="Progress events appear once the executor starts processing manifest rows for this run." />
+        )}
+      </Card>
 
       <Card title="Run metadata">
         <div className="detail-grid">
@@ -182,6 +211,38 @@ export function RuntimeRunDetail() {
                     <td>{item.claimedBy ?? "-"}</td>
                     <td>{formatDate(item.updatedAtUtc)}</td>
                     <td>{item.lastErrorMessage ?? "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+
+      <Card title="Run event timeline" subtitle="Durable operational and migration progress events for this run.">
+        {events.length === 0 ? (
+          <EmptyState title="No run events" description="No operational events were recorded for this run yet." />
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Type</th>
+                  <th>Severity</th>
+                  <th>Progress</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.map((event, index) => (
+                  <tr key={event.eventId ?? `${event.createdAtUtc ?? "event"}-${index}`}>
+                    <td>{formatDate(event.createdAtUtc)}</td>
+                    <td>{event.eventType ?? "-"}</td>
+                    <td>{event.severity ?? "-"}</td>
+                    <td>{formatProgressValue(event.completed, event.total)}</td>
+                    <td>{event.message ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>

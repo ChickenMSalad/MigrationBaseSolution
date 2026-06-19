@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;
+using System.Text.Json;
 
 namespace Migration.Admin.Api.Endpoints.Operational.Dashboard;
 
@@ -26,6 +27,9 @@ public static class RuntimeDashboardDetailEndpointExtensions
 
         group.MapGet("/runs/{runId}/failures", GetRunFailuresAsync)
             .WithName("GetRuntimeDashboardRunFailures");
+
+        group.MapGet("/runs/{runId}/events", GetRunEventsAsync)
+            .WithName("GetRuntimeDashboardRunEvents");
 
         group.MapGet("/failures", GetAllFailuresAsync)
             .WithName("GetRuntimeDashboardFailures");
@@ -59,12 +63,16 @@ public static class RuntimeDashboardDetailEndpointExtensions
 
         var workItems = await ReadWorkItemsAsync(connection, resolvedRunId.Value, rowLimit, failedOnly: false, cancellationToken).ConfigureAwait(false);
         var failures = await ReadFailureItemsAsync(connection, resolvedRunId.Value, rowLimit, cancellationToken).ConfigureAwait(false);
+        var events = await ReadRunEventsAsync(connection, resolvedRunId.Value, rowLimit, cancellationToken).ConfigureAwait(false);
+        var progress = BuildProgressSnapshot(events);
 
         return Results.Ok(new
         {
             run,
+            progress,
             workItems,
-            failures
+            failures,
+            events
         });
     }
 
@@ -108,6 +116,27 @@ public static class RuntimeDashboardDetailEndpointExtensions
         }
 
         return Results.Ok(await ReadFailureItemsAsync(connection, resolvedRunId.Value, rowLimit, cancellationToken).ConfigureAwait(false));
+    }
+
+    private static async Task<IResult> GetRunEventsAsync(
+        string runId,
+        IConfiguration configuration,
+        int? take,
+        CancellationToken cancellationToken)
+    {
+        var rowLimit = Math.Clamp(take.GetValueOrDefault(100), 1, 500);
+        var connectionString = ResolveConnectionString(configuration);
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var resolvedRunId = await ResolveRunIdAsync(connection, runId, cancellationToken).ConfigureAwait(false);
+        if (resolvedRunId is null)
+        {
+            return Results.NotFound(new { runId });
+        }
+
+        return Results.Ok(await ReadRunEventsAsync(connection, resolvedRunId.Value, rowLimit, cancellationToken).ConfigureAwait(false));
     }
 
     private static async Task<IResult> GetAllFailuresAsync(
@@ -190,7 +219,13 @@ SELECT TOP (1)
     SUM(CASE WHEN w.Status IN (N'Retryable', N'FailedRetryable') THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS RetryableWorkItemCount,
     SUM(CASE WHEN w.Status = N'RetryQueued' THEN CONVERT(bigint, 1) ELSE CONVERT(bigint, 0) END) AS RetryQueuedWorkItemCount,
     MIN(w.StartedAtUtc) AS FirstWorkItemStartedAtUtc,
-    MAX(w.CompletedAtUtc) AS LastWorkItemCompletedAtUtc
+    MAX(w.CompletedAtUtc) AS LastWorkItemCompletedAtUtc,
+    (
+        SELECT TOP (1) wi.PayloadJson
+        FROM migration.WorkItems wi
+        WHERE wi.RunId = r.RunId
+        ORDER BY wi.CreatedUtc ASC
+    ) AS SamplePayloadJson
 FROM migration.Runs r
 LEFT JOIN migration.WorkItems w ON w.RunId = r.RunId
 WHERE r.RunId = @RunId
@@ -233,6 +268,7 @@ GROUP BY
             effectiveStatus = CalculateEffectiveStatus(status, total, queued, dispatched, running, completed, failed),
             environmentName = ToNullableString(reader["EnvironmentName"]),
             isDryRun = reader["IsDryRun"] is not DBNull && Convert.ToBoolean(reader["IsDryRun"]),
+            overwriteExisting = ReadOverwriteExisting(reader["SamplePayloadJson"]),
             requestedAtUtc = ToNullableValue(reader["RequestedAtUtc"]),
             createdAtUtc = ToNullableValue(reader["CreatedAtUtc"]),
             updatedAtUtc = ToNullableValue(reader["UpdatedAtUtc"]),
@@ -249,6 +285,244 @@ GROUP BY
             activeWorkItemCount = queued + dispatched + running,
             percentComplete = CalculatePercentComplete(total, completed, failed)
         };
+    }
+
+
+    private static bool ReadOverwriteExisting(object? payloadJsonValue)
+    {
+        if (payloadJsonValue is null || payloadJsonValue is DBNull)
+        {
+            return false;
+        }
+
+        var payloadJson = Convert.ToString(payloadJsonValue);
+        if (string.IsNullOrWhiteSpace(payloadJson))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(payloadJson);
+            var root = document.RootElement;
+            if (TryReadBoolean(root, "overwriteExisting", out var value) ||
+                TryReadBoolean(root, "Overwrite", out value) ||
+                TryReadBoolean(root, "overwrite", out value) ||
+                TryReadBoolean(root, "AzureBlobTargetOverwrite", out value))
+            {
+                return value;
+            }
+
+            if (root.TryGetProperty("job", out var job) && job.ValueKind == JsonValueKind.Object &&
+                job.TryGetProperty("settings", out var settings) && settings.ValueKind == JsonValueKind.Object)
+            {
+                return
+                    (TryReadBoolean(settings, "overwriteExisting", out value) && value) ||
+                    (TryReadBoolean(settings, "Overwrite", out value) && value) ||
+                    (TryReadBoolean(settings, "overwrite", out value) && value) ||
+                    (TryReadBoolean(settings, "AzureBlobTargetOverwrite", out value) && value);
+            }
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        return false;
+    }
+
+    private static bool TryReadBoolean(JsonElement element, string propertyName, out bool value)
+    {
+        value = false;
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return false;
+        }
+
+        if (property.ValueKind == JsonValueKind.True)
+        {
+            value = true;
+            return true;
+        }
+
+        if (property.ValueKind == JsonValueKind.False)
+        {
+            value = false;
+            return true;
+        }
+
+        if (property.ValueKind == JsonValueKind.String && bool.TryParse(property.GetString(), out var parsed))
+        {
+            value = parsed;
+            return true;
+        }
+
+        return false;
+    }
+
+
+    private static async Task<List<object>> ReadRunEventsAsync(
+        SqlConnection connection,
+        Guid runId,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandType = CommandType.Text;
+        command.CommandText = @"
+IF OBJECT_ID(N'dbo.MigrationOperationalEvents', N'U') IS NULL
+BEGIN
+    SELECT TOP (0)
+        CAST(NULL AS uniqueidentifier) AS OperationalEventId,
+        CAST(NULL AS nvarchar(128)) AS EventType,
+        CAST(NULL AS nvarchar(32)) AS Severity,
+        CAST(NULL AS nvarchar(128)) AS Category,
+        CAST(NULL AS nvarchar(256)) AS Source,
+        CAST(NULL AS nvarchar(max)) AS Message,
+        CAST(NULL AS nvarchar(max)) AS PayloadJson,
+        CAST(NULL AS datetimeoffset) AS CreatedUtc;
+END
+ELSE
+BEGIN
+    SELECT TOP (@Take)
+        OperationalEventId,
+        EventType,
+        Severity,
+        Category,
+        Source,
+        Message,
+        PayloadJson,
+        CreatedUtc
+    FROM dbo.MigrationOperationalEvents
+    WHERE MigrationRunId = @RunId
+    ORDER BY CreatedUtc DESC;
+END";
+        command.Parameters.Add(new SqlParameter("@RunId", SqlDbType.UniqueIdentifier) { Value = runId });
+        command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = take });
+
+        var rows = new List<object>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var payloadJson = ToNullableString(reader["PayloadJson"]);
+            var progress = ParseProgressPayload(payloadJson);
+            rows.Add(new
+            {
+                eventId = reader["OperationalEventId"],
+                eventType = ToNullableString(reader["EventType"]),
+                severity = ToNullableString(reader["Severity"]),
+                category = ToNullableString(reader["Category"]),
+                source = ToNullableString(reader["Source"]),
+                message = ToNullableString(reader["Message"]),
+                payloadJson,
+                createdAtUtc = ToNullableValue(reader["CreatedUtc"]),
+                workItemId = progress.WorkItemId,
+                completed = progress.Completed,
+                total = progress.Total
+            });
+        }
+
+        return rows;
+    }
+
+    private static object BuildProgressSnapshot(IReadOnlyList<object> events)
+    {
+        foreach (var item in events)
+        {
+            var completed = GetPropertyValue(item, "completed");
+            var total = GetPropertyValue(item, "total");
+            if (completed is null || total is null)
+            {
+                continue;
+            }
+
+            var completedValue = Convert.ToInt32(completed, System.Globalization.CultureInfo.InvariantCulture);
+            var totalValue = Convert.ToInt32(total, System.Globalization.CultureInfo.InvariantCulture);
+            var createdAtUtc = GetPropertyValue(item, "createdAtUtc");
+            var message = Convert.ToString(GetPropertyValue(item, "message"), System.Globalization.CultureInfo.InvariantCulture);
+            var percentComplete = totalValue <= 0
+                ? 0.0d
+                : Math.Round(((double)completedValue / totalValue) * 100.0d, 2, MidpointRounding.AwayFromZero);
+
+            return new
+            {
+                completed = completedValue,
+                total = totalValue,
+                percentComplete,
+                message,
+                updatedAtUtc = createdAtUtc
+            };
+        }
+
+        return new
+        {
+            completed = (int?)null,
+            total = (int?)null,
+            percentComplete = (double?)null,
+            message = (string?)null,
+            updatedAtUtc = (object?)null
+        };
+    }
+
+    private static (int? Completed, int? Total, string? WorkItemId) ParseProgressPayload(string? payloadJson)
+    {
+        if (string.IsNullOrWhiteSpace(payloadJson))
+        {
+            return (null, null, null);
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(payloadJson);
+            var root = document.RootElement;
+            return (
+                TryReadInt32(root, "completed", out var completed) ? completed : null,
+                TryReadInt32(root, "total", out var total) ? total : null,
+                TryReadString(root, "workItemId", out var workItemId) ? workItemId : null);
+        }
+        catch (JsonException)
+        {
+            return (null, null, null);
+        }
+    }
+
+    private static bool TryReadInt32(JsonElement element, string propertyName, out int value)
+    {
+        value = 0;
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return false;
+        }
+
+        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt32(out value))
+        {
+            return true;
+        }
+
+        if (property.ValueKind == JsonValueKind.String && int.TryParse(property.GetString(), out value))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryReadString(JsonElement element, string propertyName, out string? value)
+    {
+        value = null;
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return false;
+        }
+
+        if (property.ValueKind == JsonValueKind.String)
+        {
+            value = property.GetString();
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
+        value = property.ToString();
+        return !string.IsNullOrWhiteSpace(value);
     }
 
     private static async Task<object> ReadFailureSummaryAsync(
@@ -308,9 +582,7 @@ SELECT TOP (@Take)
     CreatedUtc,
     UpdatedUtc,
     CompletedAtUtc,
-    LastErrorCode,
-    LastErrorMessage,
-    PayloadJson
+    LastErrorMessage
 FROM migration.WorkItems
 WHERE
     Status LIKE N'Failed%'
@@ -350,9 +622,7 @@ SELECT TOP (@Take)
     CreatedUtc,
     UpdatedUtc,
     CompletedAtUtc,
-    LastErrorCode,
-    LastErrorMessage,
-    PayloadJson
+    LastErrorMessage
 FROM migration.WorkItems
 WHERE
     RunId = @RunId
@@ -373,9 +643,7 @@ SELECT TOP (@Take)
     CreatedUtc,
     UpdatedUtc,
     CompletedAtUtc,
-    LastErrorCode,
-    LastErrorMessage,
-    PayloadJson
+    LastErrorMessage
 FROM migration.WorkItems
 WHERE RunId = @RunId
 ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
@@ -408,8 +676,6 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
             manifestRowId = (long?)null,
             failureType = GetPropertyValue(row, "status"),
             message = GetPropertyValue(row, "lastErrorMessage"),
-            errorCode = GetPropertyValue(row, "lastErrorCode"),
-            payloadJson = GetPropertyValue(row, "payloadJson"),
             createdAtUtc = GetPropertyValue(row, "updatedAtUtc") ?? GetPropertyValue(row, "createdAtUtc")
         }).ToList();
     }
@@ -427,9 +693,7 @@ ORDER BY COALESCE(UpdatedUtc, CreatedUtc) DESC, WorkItemId DESC;";
             createdAtUtc = ToNullableValue(reader["CreatedUtc"]),
             updatedAtUtc = ToNullableValue(reader["UpdatedUtc"]),
             completedAtUtc = ToNullableValue(reader["CompletedAtUtc"]),
-            lastErrorCode = ToNullableString(reader["LastErrorCode"]),
-            lastErrorMessage = ToNullableString(reader["LastErrorMessage"]),
-            payloadJson = ToNullableString(reader["PayloadJson"])
+            lastErrorMessage = ToNullableString(reader["LastErrorMessage"])
         };
     }
 

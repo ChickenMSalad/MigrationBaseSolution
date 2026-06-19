@@ -696,6 +696,18 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
 
     private Task ReportAsync(string runId, MigrationJobDefinition job, string eventName, string? workItemId, int? completed, int? total, string? message, CancellationToken cancellationToken)
     {
+        var properties = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        if (job.Settings is not null)
+        {
+            foreach (var pair in job.Settings)
+            {
+                if (pair.Key.StartsWith("SqlOperational", StringComparison.OrdinalIgnoreCase))
+                {
+                    properties[pair.Key] = pair.Value;
+                }
+            }
+        }
+
         return _progressReporter.ReportAsync(new MigrationProgressEvent
         {
             RunId = runId,
@@ -704,7 +716,8 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
             WorkItemId = workItemId,
             Completed = completed,
             Total = total,
-            Message = message
+            Message = message,
+            Properties = properties
         }, cancellationToken);
     }
 

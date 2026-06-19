@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Migration.Orchestration.Progress;
 using Migration.Workers.QueueExecutor.Options;
 using Migration.Workers.QueueExecutor.Services;
 
@@ -19,6 +21,7 @@ public static class SqlOperationalMigrationJobExecutorServiceCollectionExtension
 
         services.RemoveAll<ISqlOperationalWorkItemExecutor>();
         services.AddSingleton<ISqlOperationalWorkItemExecutor, SqlOperationalMigrationJobWorkItemExecutor>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IMigrationProgressSink, SqlOperationalMigrationProgressSink>());
 
         return services;
     }
