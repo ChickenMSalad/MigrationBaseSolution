@@ -52,6 +52,37 @@ function isCompletedStatus(status?: string | null) {
   return String(status ?? "").toLowerCase().includes("complete");
 }
 
+
+function csvValue(value: unknown) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+
+  const text = String(value);
+  if (text.includes("\"") || text.includes(",") || text.includes("\n") || text.includes("\r")) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  return text;
+}
+
+function downloadCsv(fileName: string, rows: unknown[][]) {
+  const csv = rows.map((row) => row.map(csvValue).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function safeFileName(value: string) {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
+}
+
 function getRun(detail: RuntimeDashboardRunDetail | null): RuntimeDashboardRun | null {
   if (!detail) {
     return null;
@@ -89,6 +120,106 @@ export function RuntimeRunDetail() {
       setLoading(false);
       setRefreshing(false);
     }
+  }
+
+  function exportRunSummary() {
+    const run = getRun(detail);
+    if (!run) {
+      return;
+    }
+
+    downloadCsv(`${safeFileName(run.runName ?? run.runKey ?? run.runId)}-summary.csv`, [
+      ["Field", "Value"],
+      ["Run ID", run.runId],
+      ["Run key", run.runKey ?? ""],
+      ["Run name", run.runName ?? ""],
+      ["Status", run.effectiveStatus ?? run.status ?? ""],
+      ["Source", run.sourceSystem ?? ""],
+      ["Target", run.targetSystem ?? ""],
+      ["Environment", run.environmentName ?? ""],
+      ["Dry run", run.isDryRun ? "true" : "false"],
+      ["Overwrite existing", run.overwriteExisting ? "true" : "false"],
+      ["Work item count", run.workItemCount],
+      ["Queued", run.queuedWorkItemCount],
+      ["Dispatched", run.dispatchedWorkItemCount],
+      ["Running", run.runningWorkItemCount ?? 0],
+      ["Completed", run.completedWorkItemCount],
+      ["Failed", run.failedWorkItemCount],
+      ["Retryable", run.retryableWorkItemCount ?? 0],
+      ["Percent complete", detail?.progress?.percentComplete ?? run.percentComplete ?? ""],
+      ["Requested UTC", run.requestedAtUtc ?? ""],
+      ["Created UTC", run.createdAtUtc ?? ""],
+      ["Updated UTC", run.updatedAtUtc ?? ""]
+    ]);
+  }
+
+  function exportWorkItems() {
+    const run = getRun(detail);
+    const workItems = detail?.workItems ?? [];
+    if (!run) {
+      return;
+    }
+
+    downloadCsv(`${safeFileName(run.runName ?? run.runKey ?? run.runId)}-work-items.csv`, [
+      ["WorkItemId", "RunId", "Status", "WorkType", "AttemptCount", "ClaimedBy", "CreatedUtc", "UpdatedUtc", "CompletedUtc", "LastErrorMessage"],
+      ...workItems.map((item) => [
+        item.workItemId,
+        item.runId,
+        item.status ?? "",
+        item.workType ?? "",
+        item.attemptCount ?? "",
+        item.claimedBy ?? "",
+        item.createdAtUtc ?? "",
+        item.updatedAtUtc ?? "",
+        item.completedAtUtc ?? "",
+        item.lastErrorMessage ?? ""
+      ])
+    ]);
+  }
+
+  function exportFailures() {
+    const run = getRun(detail);
+    const failures = detail?.failures ?? [];
+    if (!run) {
+      return;
+    }
+
+    downloadCsv(`${safeFileName(run.runName ?? run.runKey ?? run.runId)}-failures.csv`, [
+      ["FailureId", "RunId", "WorkItemId", "ManifestRowId", "FailureType", "Message", "CreatedUtc"],
+      ...failures.map((failure) => [
+        failure.failureId ?? "",
+        failure.runId ?? "",
+        failure.workItemId ?? "",
+        failure.manifestRowId ?? "",
+        failure.failureType ?? "",
+        failure.message ?? "",
+        failure.createdAtUtc ?? ""
+      ])
+    ]);
+  }
+
+  function exportTimeline() {
+    const run = getRun(detail);
+    const events = detail?.events ?? [];
+    if (!run) {
+      return;
+    }
+
+    downloadCsv(`${safeFileName(run.runName ?? run.runKey ?? run.runId)}-timeline.csv`, [
+      ["EventId", "CreatedUtc", "EventType", "Severity", "Category", "Source", "WorkItemId", "Completed", "Total", "Message"],
+      ...events.map((event) => [
+        event.eventId ?? "",
+        event.createdAtUtc ?? "",
+        event.eventType ?? "",
+        event.severity ?? "",
+        event.category ?? "",
+        event.source ?? "",
+        event.workItemId ?? "",
+        event.completed ?? "",
+        event.total ?? "",
+        event.message ?? ""
+      ])
+    ]);
   }
 
   useEffect(() => {
@@ -129,9 +260,15 @@ export function RuntimeRunDetail() {
           <h1>{run.runName || run.runKey || run.runId}</h1>
           <p>Live SQL operational runtime detail.</p>
         </div>
-        <button type="button" onClick={() => void load(true)} disabled={refreshing}>
-          {refreshing ? "Refreshing" : "Refresh"}
-        </button>
+        <div className="actionRow">
+          <button type="button" onClick={() => void load(true)} disabled={refreshing}>
+            {refreshing ? "Refreshing" : "Refresh"}
+          </button>
+          <button type="button" onClick={exportRunSummary}>Export Summary</button>
+          <button type="button" onClick={exportWorkItems}>Export Work Items</button>
+          <button type="button" onClick={exportFailures}>Export Failures</button>
+          <button type="button" onClick={exportTimeline}>Export Timeline</button>
+        </div>
       </div>
 
       <div className="metric-grid">

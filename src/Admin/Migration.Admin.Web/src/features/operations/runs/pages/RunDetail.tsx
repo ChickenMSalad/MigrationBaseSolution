@@ -35,6 +35,37 @@ function workItemStatus(item: RuntimeDashboardWorkItem) {
   return item.status ?? "Unknown";
 }
 
+
+function csvValue(value: unknown) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+
+  const text = String(value);
+  if (text.includes("\"") || text.includes(",") || text.includes("\n") || text.includes("\r")) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  return text;
+}
+
+function downloadCsv(fileName: string, rows: unknown[][]) {
+  const csv = rows.map((row) => row.map(csvValue).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function safeFileName(value: string) {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
+}
+
 function canDeleteRun(run: RuntimeDashboardRun) {
   const status = String(run.effectiveStatus ?? run.status ?? "").toLowerCase();
   return ![
@@ -107,6 +138,107 @@ export function RunDetail() {
     }
   }
 
+  function exportRunSummary() {
+    const run = detail?.run;
+    if (!run) {
+      return;
+    }
+
+    const fileName = `${safeFileName(run.runName ?? run.runKey ?? run.runId)}-summary.csv`;
+    downloadCsv(fileName, [
+      ["Field", "Value"],
+      ["Run ID", run.runId],
+      ["Run key", run.runKey ?? ""],
+      ["Run name", run.runName ?? ""],
+      ["Status", run.effectiveStatus ?? run.status ?? ""],
+      ["Source", run.sourceSystem ?? ""],
+      ["Target", run.targetSystem ?? ""],
+      ["Environment", run.environmentName ?? ""],
+      ["Dry run", run.isDryRun ? "true" : "false"],
+      ["Overwrite existing", run.overwriteExisting ? "true" : "false"],
+      ["Work item count", run.workItemCount],
+      ["Queued", run.queuedWorkItemCount],
+      ["Dispatched", run.dispatchedWorkItemCount],
+      ["Running", run.runningWorkItemCount ?? 0],
+      ["Completed", run.completedWorkItemCount],
+      ["Failed", run.failedWorkItemCount],
+      ["Retryable", run.retryableWorkItemCount ?? 0],
+      ["Percent complete", detail?.progress?.percentComplete ?? run.percentComplete ?? ""],
+      ["Requested UTC", run.requestedAtUtc ?? ""],
+      ["Created UTC", run.createdAtUtc ?? ""],
+      ["Updated UTC", run.updatedAtUtc ?? ""]
+    ]);
+  }
+
+  function exportWorkItems() {
+    const run = detail?.run;
+    const workItems = detail?.workItems ?? [];
+    if (!run) {
+      return;
+    }
+
+    downloadCsv(`${safeFileName(run.runName ?? run.runKey ?? run.runId)}-work-items.csv`, [
+      ["WorkItemId", "RunId", "Status", "WorkType", "AttemptCount", "ClaimedBy", "CreatedUtc", "UpdatedUtc", "CompletedUtc", "LastErrorMessage"],
+      ...workItems.map((item) => [
+        item.workItemId,
+        item.runId,
+        item.status ?? "",
+        item.workType ?? "",
+        item.attemptCount ?? "",
+        item.claimedBy ?? "",
+        item.createdAtUtc ?? "",
+        item.updatedAtUtc ?? "",
+        item.completedAtUtc ?? "",
+        item.lastErrorMessage ?? ""
+      ])
+    ]);
+  }
+
+  function exportFailures() {
+    const run = detail?.run;
+    const failures = detail?.failures ?? [];
+    if (!run) {
+      return;
+    }
+
+    downloadCsv(`${safeFileName(run.runName ?? run.runKey ?? run.runId)}-failures.csv`, [
+      ["FailureId", "RunId", "WorkItemId", "ManifestRowId", "FailureType", "Message", "CreatedUtc"],
+      ...failures.map((failure) => [
+        failure.failureId ?? "",
+        failure.runId ?? "",
+        failure.workItemId ?? "",
+        failure.manifestRowId ?? "",
+        failure.failureType ?? "",
+        failure.message ?? "",
+        failure.createdAtUtc ?? ""
+      ])
+    ]);
+  }
+
+  function exportTimeline() {
+    const run = detail?.run;
+    const events = detail?.events ?? [];
+    if (!run) {
+      return;
+    }
+
+    downloadCsv(`${safeFileName(run.runName ?? run.runKey ?? run.runId)}-timeline.csv`, [
+      ["EventId", "CreatedUtc", "EventType", "Severity", "Category", "Source", "WorkItemId", "Completed", "Total", "Message"],
+      ...events.map((event) => [
+        event.eventId ?? "",
+        event.createdAtUtc ?? "",
+        event.eventType ?? "",
+        event.severity ?? "",
+        event.category ?? "",
+        event.source ?? "",
+        event.workItemId ?? "",
+        event.completed ?? "",
+        event.total ?? "",
+        event.message ?? ""
+      ])
+    ]);
+  }
+
   useEffect(() => {
     void load();
     const timer = window.setInterval(load, 5000);
@@ -129,6 +261,10 @@ export function RunDetail() {
         action={
           <div className="actionRow">
             <button onClick={() => void load()}>Refresh</button>
+            {run && <button type="button" onClick={exportRunSummary}>Export Summary</button>}
+            {run && <button type="button" onClick={exportWorkItems}>Export Work Items</button>}
+            {run && <button type="button" onClick={exportFailures}>Export Failures</button>}
+            {run && <button type="button" onClick={exportTimeline}>Export Timeline</button>}
             {run && (
               <button
                 type="button"
