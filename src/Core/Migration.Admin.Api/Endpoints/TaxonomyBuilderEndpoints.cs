@@ -3,6 +3,10 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Migration.Connectors.Targets.Bynder.Clients;
+using RestSharp;
 using Migration.Connectors.Targets.Aprimo.Workbooks;
 using Migration.ControlPlane.Artifacts;
 using Migration.ControlPlane.Models;
@@ -25,6 +29,7 @@ public static class TaxonomyBuilderEndpoints
             ICredentialSetStore credentialStore,
             IArtifactStore artifactStore,
             ILoggerFactory loggerFactory,
+            IConfiguration configuration,
             CancellationToken cancellationToken) =>
         {
             var validation = await ValidateAsync(request, credentialStore, cancellationToken).ConfigureAwait(false);
@@ -45,7 +50,7 @@ public static class TaxonomyBuilderEndpoints
 
                 var snapshot = targetKind switch
                 {
-                    "bynder" => await ReadBynderTaxonomyAsync(credential, request, cancellationToken).ConfigureAwait(false),
+                    "bynder" => await ReadBynderTaxonomyAsync(credential, request, configuration, cancellationToken).ConfigureAwait(false),
                     "cloudinary" => await ReadCloudinaryTaxonomyAsync(credential, request, cancellationToken).ConfigureAwait(false),
                     _ => throw new InvalidOperationException($"Unsupported taxonomy target '{request.TargetType}'.")
                 };
@@ -87,6 +92,7 @@ public static class TaxonomyBuilderEndpoints
             ICredentialSetStore credentialStore,
             IArtifactStore artifactStore,
             ILoggerFactory loggerFactory,
+            IConfiguration configuration,
             CancellationToken cancellationToken) =>
         {
             var validation = await ValidateAsync(request, credentialStore, cancellationToken).ConfigureAwait(false);
@@ -107,7 +113,7 @@ public static class TaxonomyBuilderEndpoints
 
                 var snapshot = targetKind switch
                 {
-                    "bynder" => await ReadBynderTaxonomyAsync(credential, request, cancellationToken).ConfigureAwait(false),
+                    "bynder" => await ReadBynderTaxonomyAsync(credential, request, configuration, cancellationToken).ConfigureAwait(false),
                     "cloudinary" => await ReadCloudinaryTaxonomyAsync(credential, request, cancellationToken).ConfigureAwait(false),
                     _ => throw new InvalidOperationException($"Unsupported taxonomy target '{request.TargetType}'.")
                 };
@@ -298,43 +304,263 @@ public static class TaxonomyBuilderEndpoints
         return new AprimoConfigurationWorkbookCredentials(subDomain, clientId, clientSecret, string.IsNullOrWhiteSpace(baseUrl) ? null : baseUrl);
     }
 
-    private static async Task<TaxonomySnapshot> ReadBynderTaxonomyAsync(CredentialSetRecord credential, BuildTaxonomyArtifactRequest request, CancellationToken cancellationToken)
+    private static async Task<TaxonomySnapshot> ReadBynderTaxonomyAsync(
+        CredentialSetRecord credential,
+        BuildTaxonomyArtifactRequest request,
+        IConfiguration configuration,
+        CancellationToken cancellationToken)
     {
-        var baseUrl = FirstValue(credential.Values, "baseUrl", "url", "domain", "bynderDomain");
-        var token = FirstValue(credential.Values, "accessToken", "apiToken", "token", "bearerToken");
-        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(token))
+        var baseUrl = await ResolveCredentialValueAsync(
+            credential.Values,
+            configuration,
+            cancellationToken,
+            "BaseUrl",
+            "baseUrl",
+            "BynderBaseUrl",
+            "bynderBaseUrl",
+            "url",
+            "Url",
+            "domain",
+            "Domain",
+            "bynderDomain",
+            "BynderDomain").ConfigureAwait(false);
+
+        var clientId = await ResolveCredentialValueAsync(
+            credential.Values,
+            configuration,
+            cancellationToken,
+            "ClientId",
+            "clientId",
+            "BynderClientId",
+            "bynderClientId").ConfigureAwait(false);
+
+        var clientSecret = await ResolveCredentialValueAsync(
+            credential.Values,
+            configuration,
+            cancellationToken,
+            "ClientSecret",
+            "clientSecret",
+            "BynderClientSecret",
+            "bynderClientSecret").ConfigureAwait(false);
+
+        var scopes = await ResolveCredentialValueAsync(
+            credential.Values,
+            configuration,
+            cancellationToken,
+            "Scopes",
+            "scopes",
+            "BynderScopes",
+            "bynderScopes").ConfigureAwait(false);
+
+        var missing = new List<string>();
+        if (string.IsNullOrWhiteSpace(baseUrl)) missing.Add("BaseUrl");
+        if (string.IsNullOrWhiteSpace(clientId)) missing.Add("ClientId");
+        if (string.IsNullOrWhiteSpace(clientSecret)) missing.Add("ClientSecret");
+        if (string.IsNullOrWhiteSpace(scopes)) missing.Add("Scopes");
+
+        if (missing.Count > 0)
         {
-            throw new InvalidOperationException("Bynder credentials require baseUrl and accessToken/apiToken.");
+            throw new InvalidOperationException(
+                "Bynder taxonomy generation requires OAuth credential value(s): " +
+                string.Join(", ", missing) +
+                ". Expected BaseUrl, ClientId, ClientSecret, and Scopes from the selected Bynder target credential set.");
         }
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Get, CombineUrl(baseUrl, "/api/v4/metaproperties/"));
-        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        using var response = await Http.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
-        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        var bynderClient = new BynderRestClient(baseUrl!, clientId!, clientSecret!, scopes!);
+        var apiClient = await bynderClient.GetAuthenticatedClientAsync().ConfigureAwait(false);
+        var response = await apiClient.ExecuteAsync(
+            new RestRequest("api/v4/metaproperties/", Method.Get),
+            cancellationToken).ConfigureAwait(false);
+
+        var json = response.Content ?? string.Empty;
+        if (!response.IsSuccessful || string.IsNullOrWhiteSpace(json))
         {
-            throw new HttpRequestException($"Bynder metaproperties request failed: {(int)response.StatusCode} {response.ReasonPhrase}.{Environment.NewLine}{json}");
+            throw new HttpRequestException($"Bynder metaproperties request failed: {(int)response.StatusCode} {response.StatusDescription}.{Environment.NewLine}{json}");
         }
 
         var root = JsonNode.Parse(json) ?? new JsonArray();
         var fields = new List<TaxonomyField>();
         var options = new List<TaxonomyOption>();
 
-        foreach (var item in AsArray(root).OfType<JsonObject>())
+        foreach (var item in BynderMetapropertyObjects(root))
         {
-            var id = Text(item, "id", "uuid", "name", "propertyId");
+            var fieldId = Text(item, "id", "uuid", "name", "propertyId");
+            var fieldName = Text(item, "name", "propertyName", "technicalName", "id");
+
             fields.Add(new TaxonomyField(
-                id,
-                Text(item, "name", "propertyName", "technicalName", "id"),
+                fieldId,
+                fieldName,
                 Text(item, "label", "displayName", "name", "propertyName"),
                 Text(item, "type", "inputType", "fieldType"),
                 Bool(item, "required", "isRequired", "mandatory"),
-                Bool(item, "isMultiselect", "multiSelect", "multiselect", "multiple"),
+                Bool(item, "isMultiselect", "isMultiSelect", "multiSelect", "multiselect", "multiple"),
                 Text(item, "description", "helpText"),
                 item.ToJsonString(JsonOptions)));
+
+            foreach (var option in BynderMetapropertyOptions(item, fieldId, fieldName))
+            {
+                options.Add(option);
+            }
         }
 
         return new TaxonomySnapshot("Bynder", fields, options, json);
+    }
+
+    private static IEnumerable<JsonObject> BynderMetapropertyObjects(JsonNode root)
+    {
+        if (root is JsonArray directArray)
+        {
+            foreach (var item in directArray.OfType<JsonObject>())
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
+        if (root is not JsonObject rootObject)
+        {
+            yield break;
+        }
+
+        foreach (var arrayName in new[] { "metaproperties", "metadata", "fields", "data", "items" })
+        {
+            if (rootObject[arrayName] is JsonArray array)
+            {
+                foreach (var item in array.OfType<JsonObject>())
+                {
+                    yield return item;
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<TaxonomyOption> BynderMetapropertyOptions(JsonObject item, string fieldId, string fieldName)
+    {
+        foreach (var optionArrayName in new[] { "options", "values", "items" })
+        {
+            if (item[optionArrayName] is not JsonArray optionArray)
+            {
+                continue;
+            }
+
+            foreach (var optionObject in optionArray.OfType<JsonObject>())
+            {
+                var optionId = Text(optionObject, "id", "uuid", "name", "value", "label");
+                var label = Text(optionObject, "label", "displayName", "name", "value", "id");
+                if (!string.IsNullOrWhiteSpace(optionId) || !string.IsNullOrWhiteSpace(label))
+                {
+                    yield return new TaxonomyOption(
+                        fieldId,
+                        optionId,
+                        fieldName,
+                        label,
+                        true,
+                        optionObject.ToJsonString(JsonOptions));
+                }
+            }
+        }
+    }
+
+    private static async Task<string?> ResolveCredentialValueAsync(
+        IReadOnlyDictionary<string, string> values,
+        IConfiguration configuration,
+        CancellationToken cancellationToken,
+        params string[] keys)
+    {
+        var value = FirstValue(values, keys);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        value = value.Trim();
+
+        if (value.StartsWith("env://", StringComparison.OrdinalIgnoreCase))
+        {
+            var variableName = value.Substring("env://".Length).Trim();
+            return string.IsNullOrWhiteSpace(variableName)
+                ? value
+                : Environment.GetEnvironmentVariable(variableName) ?? value;
+        }
+
+        if (value.StartsWith("kv://", StringComparison.OrdinalIgnoreCase))
+        {
+            var secretName = value.Substring("kv://".Length).Trim('/');
+            return await ReadKeyVaultSecretByNameAsync(configuration, secretName, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (value.StartsWith("keyvault://", StringComparison.OrdinalIgnoreCase))
+        {
+            var secretName = value.Substring("keyvault://".Length).Trim('/');
+            return await ReadKeyVaultSecretByNameAsync(configuration, secretName, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (Uri.TryCreate(value, UriKind.Absolute, out var secretUri)
+            && secretUri.Host.EndsWith(".vault.azure.net", StringComparison.OrdinalIgnoreCase)
+            && secretUri.AbsolutePath.Contains("/secrets/", StringComparison.OrdinalIgnoreCase))
+        {
+            return await ReadKeyVaultSecretByUriAsync(secretUri, cancellationToken).ConfigureAwait(false);
+        }
+
+        return value;
+    }
+
+    private static async Task<string> ReadKeyVaultSecretByNameAsync(
+        IConfiguration configuration,
+        string secretName,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(secretName))
+        {
+            throw new InvalidOperationException("Credential secret reference did not include a Key Vault secret name.");
+        }
+
+        var vaultUri = GetConfiguredKeyVaultUri(configuration);
+        if (vaultUri is null)
+        {
+            throw new InvalidOperationException(
+                "Credential value is a Key Vault reference, but no Key Vault URI is configured. Expected CredentialVault:KeyVaultUri, AzureKeyVault:VaultUri, or KeyVault:VaultUri.");
+        }
+
+        var client = new SecretClient(vaultUri, new DefaultAzureCredential());
+        var response = await client.GetSecretAsync(secretName, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return response.Value.Value;
+    }
+
+    private static async Task<string> ReadKeyVaultSecretByUriAsync(Uri secretUri, CancellationToken cancellationToken)
+    {
+        var pathParts = secretUri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var secretIndex = Array.FindIndex(pathParts, x => string.Equals(x, "secrets", StringComparison.OrdinalIgnoreCase));
+        if (secretIndex < 0 || secretIndex + 1 >= pathParts.Length)
+        {
+            throw new InvalidOperationException($"Key Vault secret URI '{secretUri}' does not contain a secret name.");
+        }
+
+        var vaultBase = new Uri($"{secretUri.Scheme}://{secretUri.Host}/");
+        var secretName = pathParts[secretIndex + 1];
+        var version = secretIndex + 2 < pathParts.Length ? pathParts[secretIndex + 2] : null;
+        var client = new SecretClient(vaultBase, new DefaultAzureCredential());
+        var response = string.IsNullOrWhiteSpace(version)
+            ? await client.GetSecretAsync(secretName, cancellationToken: cancellationToken).ConfigureAwait(false)
+            : await client.GetSecretAsync(secretName, version, cancellationToken).ConfigureAwait(false);
+        return response.Value.Value;
+    }
+
+    private static Uri? GetConfiguredKeyVaultUri(IConfiguration configuration)
+    {
+        var value = configuration["CredentialVault:KeyVaultUri"]
+            ?? configuration["AzureKeyVault:VaultUri"]
+            ?? configuration["KeyVault:VaultUri"];
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return Uri.TryCreate(value.TrimEnd('/'), UriKind.Absolute, out var uri)
+            ? uri
+            : throw new InvalidOperationException($"Configured Key Vault URI '{value}' is not a valid absolute URI.");
     }
 
     private static async Task<TaxonomySnapshot> ReadCloudinaryTaxonomyAsync(CredentialSetRecord credential, BuildTaxonomyArtifactRequest request, CancellationToken cancellationToken)

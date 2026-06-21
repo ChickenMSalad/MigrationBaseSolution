@@ -8,7 +8,7 @@
 
 export function LoadingError({ loading, title, error, message, onRetry }: LoadingErrorProps) {
   if (loading) {
-    return <p className="muted">Loadingâ€¦</p>;
+    return <p className="muted">Loading...</p>;
   }
 
   const text = error ?? message;

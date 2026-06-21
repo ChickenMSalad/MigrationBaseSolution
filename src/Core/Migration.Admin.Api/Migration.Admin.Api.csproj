@@ -10,6 +10,7 @@
     <ProjectReference Include="..\Migration.GenericRuntime\Migration.GenericRuntime.csproj" />
     <ProjectReference Include="..\Migration.Orchestration\Migration.Orchestration.csproj" />
     <ProjectReference Include="..\Migration.Application\Migration.Application.csproj" />
+    <ProjectReference Include="..\..\Connectors\Targets\Migration.Connectors.Targets.Bynder\Migration.Connectors.Targets.Bynder.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />

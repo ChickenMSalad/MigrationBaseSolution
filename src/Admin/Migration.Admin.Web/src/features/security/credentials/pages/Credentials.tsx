@@ -67,7 +67,7 @@ const bynderTargetCredentialFields: CredentialField[] = [
     label: "Client ID",
     description: "OAuth client id from Bynder.",
     required: true,
-    secret: true,
+    secret: false,
     configurationKey: "Bynder:Client:ClientId"
   },
   {
@@ -264,6 +264,20 @@ function inputTypeForField(field: CredentialField) {
 function shouldUseTextarea(field: CredentialField, value: string) {
   const key = field.key.toLowerCase();
   return key.includes("scope") || key.includes("json") || key.includes("certificate") || value.length > 120;
+}
+
+
+function displayCredentialRows(item: CredentialSetSummary) {
+  const hiddenKeys = new Set((item.secretKeys ?? []).map(key => key.toLowerCase()));
+  return Object.entries(item.values ?? {})
+    .filter(([key]) => !hiddenKeys.has(key.toLowerCase()))
+    .filter(([, value]) => String(value ?? '').trim().length > 0)
+    .map(([key, value]) => ({ key, value: String(value) }));
+}
+
+function formatCredentialValue(value: string) {
+  if (value.length <= 96) return value;
+  return value.slice(0, 93) + '...';
 }
 
 export function Credentials() {
@@ -636,7 +650,17 @@ export function Credentials() {
                     <td>{item.connectorRole}</td>
                     <td>{new Date(item.updatedUtc).toLocaleString()}</td>
                     <td>
-                      <JsonBlock value={item.values} />
+                      {displayCredentialRows(item).length > 0 ? (
+                        <div className="credentialsValueList">
+                          {displayCredentialRows(item).map(row => (
+                            <div key={row.key} className="credentialsValueRow">
+                              <strong>{row.key}</strong>: <code>{formatCredentialValue(row.value)}</code>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="muted">No non-secret values</span>
+                      )}
                     </td>
                     <td>
                       {item.secretKeys?.length > 0 ? item.secretKeys.map(key => <code key={key}>{key} </code>) : <span className="muted">None</span>}

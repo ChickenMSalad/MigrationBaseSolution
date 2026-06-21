@@ -271,7 +271,7 @@ export function TaxonomyBuilder() {
 
       {loading ? (
         <Card>
-          <p>Loading taxonomy builder inputsâ€¦</p>
+          <p>Loading taxonomy builder inputs...</p>
         </Card>
       ) : targets.length === 0 ? (
         <Card title="No supported target connectors">
@@ -330,7 +330,7 @@ export function TaxonomyBuilder() {
                 <option value="">Do not bind to a project</option>
                 {projects.map(project => (
                   <option key={project.projectId} value={project.projectId}>
-                    {project.displayName} ({project.sourceType} â†’ {project.targetType})
+                        {project.displayName} ({project.sourceType} {"->"} {project.targetType})
                   </option>
                 ))}
               </select>
@@ -367,7 +367,7 @@ export function TaxonomyBuilder() {
               onClick={() => void buildArtifact()}
               disabled={!canBuild}
             >
-              {building ? "Buildingâ€¦" : "Build Excel Taxonomy Artifact"}
+              {building ? "Building..." : "Build Excel Taxonomy Artifact"}
             </button>
 
             <button
@@ -376,7 +376,7 @@ export function TaxonomyBuilder() {
               onClick={() => void buildBlankMetadataTemplate()}
               disabled={!canBuild}
             >
-              {building ? "Buildingâ€¦" : "Build Blank Metadata Template"}
+              {building ? "Building..." : "Build Blank Metadata Template"}
             </button>
           </div>
         </Card>

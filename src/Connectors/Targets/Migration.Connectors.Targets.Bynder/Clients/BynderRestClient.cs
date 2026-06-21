@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -24,7 +24,7 @@ namespace Migration.Connectors.Targets.Bynder.Clients
 
         public BynderRestClient(global::Bynder.Sdk.Settings.Configuration configuration)
         {
-            _baseUrl = configuration.BaseUrl.ToString();
+            _baseUrl = NormalizeBaseUrl(configuration.BaseUrl.ToString());
             _clientId = configuration.ClientId.ToString();
             _clientSecret = configuration.ClientSecret.ToString();
             _scopes = configuration.Scopes.ToString();
@@ -32,10 +32,27 @@ namespace Migration.Connectors.Targets.Bynder.Clients
 
         public BynderRestClient(string baseUrl, string clientId, string clientSecret, string scopes)
         {
-            _baseUrl = baseUrl;
+            _baseUrl = NormalizeBaseUrl(baseUrl);
             _clientId = clientId;
             _clientSecret = clientSecret;
             _scopes = scopes;
+        }
+
+        private static string NormalizeBaseUrl(string baseUrl)
+        {
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                throw new ArgumentException("Bynder base URL is required.", nameof(baseUrl));
+            }
+
+            var value = baseUrl.Trim();
+            if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                && !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                value = "https://" + value;
+            }
+
+            return value.TrimEnd('/') + "/";
         }
 
         public async Task<string?> GetAccessTokenAsync()
@@ -84,6 +101,12 @@ namespace Migration.Connectors.Targets.Bynder.Clients
             {
                 request.AddParameter("scope", _scopes);
             }
+
+
+            Console.WriteLine(
+                $"Bynder auth debug. BaseUrl={_baseUrl + _tokenUrl}, " +
+                $"ClientIdLength={_clientId?.Length}, " +
+                $"ClientSecretLength={_clientSecret?.Length}, ");
 
             var response = await client.ExecuteAsync<OAuthToken>(request);
 

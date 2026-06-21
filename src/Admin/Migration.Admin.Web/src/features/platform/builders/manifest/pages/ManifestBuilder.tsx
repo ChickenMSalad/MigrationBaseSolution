@@ -134,7 +134,7 @@ export function ManifestBuilder() {
         </p>
 
         {loading ? (
-          <p>Loading manifest sourcesâ€¦</p>
+          <p>Loading manifest sources...</p>
         ) : sources.length === 0 ? (
           <p>No manifest builder services are registered.</p>
         ) : (
@@ -202,7 +202,7 @@ export function ManifestBuilder() {
                     onClick={() => void buildManifest()}
                     disabled={building || !sourceType || !serviceName}
                 >
-                    {building ? "Buildingâ€¦" : "Build Manifest"}
+                    {building ? "Building..." : "Build Manifest"}
                 </button>
           </div>
           </>
