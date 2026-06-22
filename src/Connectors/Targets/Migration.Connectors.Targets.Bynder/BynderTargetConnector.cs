@@ -88,20 +88,23 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
             var metapropertyOptionBuilderFactory = new MetapropertyOptionBuilderFactory(bynderClient, _memoryCache);
 
             var fileName = ResolveFileName(item);
+            var binary = item.TargetPayload?.Binary ?? item.SourceAsset?.Binary;
             var source = ResolveSourceLocation(item);
 
-            if (string.IsNullOrWhiteSpace(source))
+            if (binary?.OpenReadAsync is null && string.IsNullOrWhiteSpace(source))
             {
                 return Failure(
                     item,
-                    "No source binary location was available. Expected TargetPayload.Binary.SourceUri, SourceAsset.Binary.SourceUri, Manifest.SourcePath, or a mapped sourceUri/downloadUrl/filePath/url field.");
+                    "No source binary location was available. Expected SourceAsset.Binary stream/SourceUri, TargetPayload.Binary stream/SourceUri, Manifest.SourcePath, or a mapped sourceUri/downloadUrl/filePath/url field.");
             }
 
-            await using var stream = await OpenSeekableStreamAsync(source, cancellationToken).ConfigureAwait(false);
+            await using var uploadStream = await OpenUploadStreamAsync(binary, source, cancellationToken).ConfigureAwait(false);
+            var stream = uploadStream.Stream;
+            var streamLength = TryGetLength(stream) ?? binary?.Length;
 
-            if (stream.Length <= 0)
+            if (streamLength is <= 0)
             {
-                return Failure(item, $"Resolved source '{source}' opened as an empty stream.");
+                return Failure(item, $"Resolved source '{uploadStream.SourceDescription}' opened as an empty stream.");
             }
 
             var uploadQuery = await BuildUploadQueryAsync(item, fileName, runtimeOptions, metapropertyOptionBuilderFactory).ConfigureAwait(false);
@@ -110,8 +113,8 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
                 "Uploading work item {WorkItemId} to Bynder. File={FileName}; Bytes={Length}; Source={Source}; MetaPropertyCount={MetaPropertyCount}; TagCount={TagCount}",
                 item.WorkItemId,
                 fileName,
-                stream.Length,
-                source,
+                streamLength,
+                uploadStream.SourceDescription,
                 uploadQuery.MetapropertyOptions?.Count ?? 0,
                 uploadQuery.Tags?.Count ?? 0);
 
@@ -423,20 +426,39 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
             ?? item.Manifest.SourceAssetId;
     }
 
-    private static async Task<MemoryStream> OpenSeekableStreamAsync(
-        string source,
+    private static async Task<UploadStreamLease> OpenUploadStreamAsync(
+        AssetBinary? binary,
+        string? source,
         CancellationToken cancellationToken)
     {
-        var destination = new MemoryStream();
+        if (binary?.OpenReadAsync is not null)
+        {
+            var stream = await binary.OpenReadAsync(cancellationToken).ConfigureAwait(false);
+            if (stream.CanSeek)
+            {
+                stream.Position = 0;
+                return new UploadStreamLease(stream, source ?? binary.SourceUri ?? binary.FileName ?? "connector stream");
+            }
+
+            return await CopyToTemporarySeekableFileAsync(stream, source ?? binary.SourceUri ?? binary.FileName ?? "connector stream", cancellationToken).ConfigureAwait(false);
+        }
+
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            throw new InvalidOperationException("No binary stream opener or source path/url was available.");
+        }
 
         if (Uri.TryCreate(source, UriKind.Absolute, out var uri)
             && (uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
                 || uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
         {
-            await using var remote = await HttpClient.GetStreamAsync(uri, cancellationToken).ConfigureAwait(false);
-            await remote.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
-            destination.Position = 0;
-            return destination;
+            var remote = await HttpClient.GetStreamAsync(uri, cancellationToken).ConfigureAwait(false);
+            if (remote.CanSeek)
+            {
+                return new UploadStreamLease(remote, source);
+            }
+
+            return await CopyToTemporarySeekableFileAsync(remote, source, cancellationToken).ConfigureAwait(false);
         }
 
         var localPath = source;
@@ -452,10 +474,66 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
             throw new FileNotFoundException($"Source file was not found: {localPath}", localPath);
         }
 
-        await using var file = File.OpenRead(localPath);
-        await file.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
-        destination.Position = 0;
-        return destination;
+        var file = new FileStream(localPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1024 * 128, options: FileOptions.Asynchronous | FileOptions.SequentialScan);
+        return new UploadStreamLease(file, localPath);
+    }
+
+    private static async Task<UploadStreamLease> CopyToTemporarySeekableFileAsync(
+        Stream sourceStream,
+        string sourceDescription,
+        CancellationToken cancellationToken)
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), "migration-bynder-upload-" + Guid.NewGuid().ToString("N") + ".bin");
+        var destination = new FileStream(tempPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, bufferSize: 1024 * 128, options: FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.DeleteOnClose);
+
+        try
+        {
+            await using (sourceStream.ConfigureAwait(false))
+            {
+                await sourceStream.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+            }
+
+            destination.Position = 0;
+            return new UploadStreamLease(destination, sourceDescription + " (temporary seekable file)");
+        }
+        catch
+        {
+            await destination.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    private static long? TryGetLength(Stream stream)
+    {
+        try
+        {
+            return stream.CanSeek ? stream.Length : null;
+        }
+        catch (NotSupportedException)
+        {
+            return null;
+        }
+        catch (ObjectDisposedException)
+        {
+            return null;
+        }
+    }
+
+    private sealed class UploadStreamLease : IAsyncDisposable
+    {
+        public UploadStreamLease(Stream stream, string sourceDescription)
+        {
+            Stream = stream;
+            SourceDescription = sourceDescription;
+        }
+
+        public Stream Stream { get; }
+        public string SourceDescription { get; }
+
+        public async ValueTask DisposeAsync()
+        {
+            await Stream.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     private static string? ExtractTargetAssetId(object? response)

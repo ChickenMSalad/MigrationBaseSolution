@@ -9,4 +9,7 @@
     <ProjectReference Include="..\..\..\Core\Migration.Application\Migration.Application.csproj" />
     <ProjectReference Include="..\..\..\Core\Migration.Shared\Migration.Shared.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
+  </ItemGroup>
 </Project>

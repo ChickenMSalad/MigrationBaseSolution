@@ -123,11 +123,29 @@ public sealed class ProjectCredentialJobSettingsHydrator
 
         if (connectorType.Equals("AzureBlob", StringComparison.OrdinalIgnoreCase))
         {
-            Alias(settings, "TargetCredential_ConnectionString", "AzureBlobTargetConnectionString");
-            Alias(settings, "TargetCredential_ContainerName", "AzureBlobTargetContainer");
-            Alias(settings, "TargetCredential_Container", "AzureBlobTargetContainer");
-            Alias(settings, "TargetCredential_RootFolderPath", "AzureBlobTargetRootFolder");
-            Alias(settings, "TargetCredential_FolderPath", "AzureBlobTargetRootFolder");
+            if (role.Equals("Source", StringComparison.OrdinalIgnoreCase))
+            {
+                Alias(settings, "SourceCredential_ConnectionString", "AzureBlobSourceConnectionString");
+                Alias(settings, "SourceCredential_ConnectionString", "AzureBlobConnectionString");
+                Alias(settings, "SourceCredential_ContainerName", "AzureBlobSourceContainer");
+                Alias(settings, "SourceCredential_ContainerName", "AzureBlobContainer");
+                Alias(settings, "SourceCredential_Container", "AzureBlobSourceContainer");
+                Alias(settings, "SourceCredential_Container", "AzureBlobContainer");
+                Alias(settings, "SourceCredential_RootFolderPath", "AzureBlobSourceRootFolder");
+                Alias(settings, "SourceCredential_FolderPath", "AzureBlobSourceRootFolder");
+            }
+
+            if (role.Equals("Target", StringComparison.OrdinalIgnoreCase))
+            {
+                Alias(settings, "TargetCredential_ConnectionString", "AzureBlobTargetConnectionString");
+                Alias(settings, "TargetCredential_ConnectionString", "AzureBlobConnectionString");
+                Alias(settings, "TargetCredential_ContainerName", "AzureBlobTargetContainer");
+                Alias(settings, "TargetCredential_ContainerName", "AzureBlobContainer");
+                Alias(settings, "TargetCredential_Container", "AzureBlobTargetContainer");
+                Alias(settings, "TargetCredential_Container", "AzureBlobContainer");
+                Alias(settings, "TargetCredential_RootFolderPath", "AzureBlobTargetRootFolder");
+                Alias(settings, "TargetCredential_FolderPath", "AzureBlobTargetRootFolder");
+            }
         }
     }
 
