@@ -1,4 +1,4 @@
-﻿import { apiPost } from './core/adminApiClient';
+import { apiPost } from './core/adminApiClient';
 import type { PreflightResult } from '../types/api';
 
 export type RunProjectPreflightRequest = {
@@ -15,7 +15,7 @@ export async function runProjectPreflight(
   request: RunProjectPreflightRequest,
 ): Promise<PreflightResult> {
   return apiPost<RunProjectPreflightRequest, PreflightResult>(
-    `/api/projects/${encodeURIComponent(projectId)}/preflight`,
+    `/api/projects/${encodeURIComponent(projectId)}/preflight/run`,
     request,
   );
 }

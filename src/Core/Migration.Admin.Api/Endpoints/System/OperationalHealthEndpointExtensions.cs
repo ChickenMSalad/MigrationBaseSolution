@@ -30,6 +30,30 @@ public static class OperationalHealthEndpointExtensions
             .WithSummary("Readiness probe for local runtime dependencies.")
             .Produces<OperationalHealthDescriptor>(StatusCodes.Status200OK);
 
+        // Admin UI compatibility aliases. The React preflight page calls API-prefixed
+        // operational health paths, while the platform probe endpoints remain at /health/*.
+        app.MapGet("/api/operational/health/live", () =>
+            Results.Ok(new
+            {
+                status = OperationalHealthStatuses.Healthy,
+                checkedUtc = DateTimeOffset.UtcNow
+            }))
+            .WithName("OperationalHealthLive")
+            .WithTags("Health")
+            .WithSummary("API-prefixed liveness probe used by the Admin UI.");
+
+        app.MapGet("/api/operational/health/ready", (
+                IConfiguration configuration,
+                IWebHostEnvironment environment) =>
+            {
+                var health = BuildHealth(configuration, environment, includeCloudChecks: false);
+                return Results.Ok(health);
+            })
+            .WithName("OperationalHealthReady")
+            .WithTags("Health")
+            .WithSummary("API-prefixed readiness probe used by the Admin UI.")
+            .Produces<OperationalHealthDescriptor>(StatusCodes.Status200OK);
+
         app.MapGet("/health/cloud", (
                 IConfiguration configuration,
                 IWebHostEnvironment environment) =>

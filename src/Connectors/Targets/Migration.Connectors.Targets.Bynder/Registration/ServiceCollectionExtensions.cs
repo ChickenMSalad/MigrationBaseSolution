@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Migration.Application.Abstractions;
 using Migration.Connectors.Targets.Bynder.Configuration;
+using Migration.Connectors.Targets.Bynder.Taxonomy;
 
 namespace Migration.Connectors.Targets.Bynder.Registration;
 
@@ -14,6 +15,7 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<BynderOptions>(configuration.GetSection(BynderOptions.SectionName));
         services.AddMemoryCache();
+        services.TryAddSingleton<BynderTaxonomyWorkbookBuilder>();
 
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAssetSourceConnector, BynderSourceConnector>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAssetTargetConnector, BynderTargetConnector>());
@@ -27,6 +29,7 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<BynderOptions>(configuration.GetSection(BynderOptions.SectionName));
         services.AddMemoryCache();
+        services.TryAddSingleton<BynderTaxonomyWorkbookBuilder>();
 
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAssetSourceConnector, BynderSourceConnector>());
 
@@ -39,6 +42,7 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<BynderOptions>(configuration.GetSection(BynderOptions.SectionName));
         services.AddMemoryCache();
+        services.TryAddSingleton<BynderTaxonomyWorkbookBuilder>();
 
         // Register the runtime connector even when appsettings has no global Bynder:Client section.
         // Control-plane queued runs hydrate BaseUrl, ClientId, ClientSecret, Scopes, and BrandStoreId

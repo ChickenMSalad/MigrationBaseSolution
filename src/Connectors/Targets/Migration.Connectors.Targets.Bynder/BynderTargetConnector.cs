@@ -407,9 +407,20 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
     {
         return item.TargetPayload?.Binary?.SourceUri
             ?? item.SourceAsset?.Binary?.SourceUri
-            ?? ReadString(item.TargetPayload?.Fields, "sourceUri", "SourceUri", "downloadUrl", "DownloadUrl", "url", "Url", "filePath", "FilePath", "filepath", "Path", "path")
+            ?? ReadString(item.TargetPayload?.Fields,
+                "sourceUri", "SourceUri", "sourceUrl", "SourceUrl", "downloadUrl", "DownloadUrl", "url", "Url",
+                "blobUri", "BlobUri", "blobUrl", "BlobUrl", "blobName", "BlobName", "sourceBlobName", "SourceBlobName",
+                "filePath", "FilePath", "filepath", "Path", "path", "relativePath", "RelativePath", "fullPath", "FullPath", "key", "Key", "objectKey", "ObjectKey")
             ?? item.Manifest.SourcePath
-            ?? ReadString(item.Manifest.Columns, "sourceUri", "SourceUri", "downloadUrl", "DownloadUrl", "url", "Url", "filePath", "FilePath", "filepath", "Path", "path");
+            ?? ReadString(item.Manifest.Columns,
+                "SourceUri", "sourceUri", "source_uri", "SourceUrl", "sourceUrl", "source_url",
+                "DownloadUrl", "downloadUrl", "download_url", "Url", "url", "URL",
+                "BlobUri", "blobUri", "blob_uri", "BlobUrl", "blobUrl", "blob_url",
+                "BlobName", "blobName", "blob_name", "SourceBlobName", "sourceBlobName", "source_blob_name",
+                "FilePath", "filePath", "file_path", "filepath", "Path", "path",
+                "RelativePath", "relativePath", "relative_path", "FullPath", "fullPath", "full_path",
+                "Key", "key", "ObjectKey", "objectKey", "object_key")
+            ?? item.Manifest.SourceAssetId;
     }
 
     private static async Task<MemoryStream> OpenSeekableStreamAsync(
@@ -478,12 +489,15 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
             return null;
         }
 
-        if (Uri.TryCreate(pathOrUri, UriKind.Absolute, out var uri))
+        var value = pathOrUri.Trim();
+        if (Uri.TryCreate(value, UriKind.Absolute, out var uri))
         {
-            return Path.GetFileName(uri.LocalPath);
+            value = uri.IsFile ? uri.LocalPath : uri.AbsolutePath;
         }
 
-        return Path.GetFileName(pathOrUri);
+        value = value.Replace('\\', '/');
+        var last = value.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+        return string.IsNullOrWhiteSpace(last) ? null : Uri.UnescapeDataString(last);
     }
 
     private static string? ReadString(

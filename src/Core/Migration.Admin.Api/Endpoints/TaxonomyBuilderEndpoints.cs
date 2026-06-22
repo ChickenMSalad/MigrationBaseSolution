@@ -5,8 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using Migration.Connectors.Targets.Bynder.Clients;
-using RestSharp;
+using Migration.Connectors.Targets.Bynder.Taxonomy;
 using Migration.Connectors.Targets.Aprimo.Workbooks;
 using Migration.ControlPlane.Artifacts;
 using Migration.ControlPlane.Models;
@@ -30,6 +29,7 @@ public static class TaxonomyBuilderEndpoints
             IArtifactStore artifactStore,
             ILoggerFactory loggerFactory,
             IConfiguration configuration,
+            BynderTaxonomyWorkbookBuilder bynderTaxonomyWorkbookBuilder,
             CancellationToken cancellationToken) =>
         {
             var validation = await ValidateAsync(request, credentialStore, cancellationToken).ConfigureAwait(false);
@@ -48,9 +48,19 @@ public static class TaxonomyBuilderEndpoints
                     return await BuildAprimoConfigurationWorkbookAsync(request, credential, artifactStore, loggerFactory, cancellationToken).ConfigureAwait(false);
                 }
 
+                if (targetKind == "bynder")
+                {
+                    return await BuildBynderMetadataPropertiesWorkbookAsync(
+                        request,
+                        credential,
+                        artifactStore,
+                        configuration,
+                        bynderTaxonomyWorkbookBuilder,
+                        cancellationToken).ConfigureAwait(false);
+                }
+
                 var snapshot = targetKind switch
                 {
-                    "bynder" => await ReadBynderTaxonomyAsync(credential, request, configuration, cancellationToken).ConfigureAwait(false),
                     "cloudinary" => await ReadCloudinaryTaxonomyAsync(credential, request, cancellationToken).ConfigureAwait(false),
                     _ => throw new InvalidOperationException($"Unsupported taxonomy target '{request.TargetType}'.")
                 };
@@ -93,6 +103,7 @@ public static class TaxonomyBuilderEndpoints
             IArtifactStore artifactStore,
             ILoggerFactory loggerFactory,
             IConfiguration configuration,
+            BynderTaxonomyWorkbookBuilder bynderTaxonomyWorkbookBuilder,
             CancellationToken cancellationToken) =>
         {
             var validation = await ValidateAsync(request, credentialStore, cancellationToken).ConfigureAwait(false);
@@ -111,9 +122,19 @@ public static class TaxonomyBuilderEndpoints
                     return await BuildAprimoBlankMetadataTemplateAsync(request, credential, artifactStore, loggerFactory, cancellationToken).ConfigureAwait(false);
                 }
 
+                if (targetKind == "bynder")
+                {
+                    return await BuildBynderBlankMetadataTemplateAsync(
+                        request,
+                        credential,
+                        artifactStore,
+                        configuration,
+                        bynderTaxonomyWorkbookBuilder,
+                        cancellationToken).ConfigureAwait(false);
+                }
+
                 var snapshot = targetKind switch
                 {
-                    "bynder" => await ReadBynderTaxonomyAsync(credential, request, configuration, cancellationToken).ConfigureAwait(false),
                     "cloudinary" => await ReadCloudinaryTaxonomyAsync(credential, request, cancellationToken).ConfigureAwait(false),
                     _ => throw new InvalidOperationException($"Unsupported taxonomy target '{request.TargetType}'.")
                 };
@@ -304,53 +325,101 @@ public static class TaxonomyBuilderEndpoints
         return new AprimoConfigurationWorkbookCredentials(subDomain, clientId, clientSecret, string.IsNullOrWhiteSpace(baseUrl) ? null : baseUrl);
     }
 
-    private static async Task<TaxonomySnapshot> ReadBynderTaxonomyAsync(
-        CredentialSetRecord credential,
+    private static async Task<IResult> BuildBynderMetadataPropertiesWorkbookAsync(
         BuildTaxonomyArtifactRequest request,
+        CredentialSetRecord credential,
+        IArtifactStore artifactStore,
+        IConfiguration configuration,
+        BynderTaxonomyWorkbookBuilder bynderTaxonomyWorkbookBuilder,
+        CancellationToken cancellationToken)
+    {
+        var credentials = await BuildBynderOAuthCredentialsAsync(credential, configuration, cancellationToken).ConfigureAwait(false);
+        var result = await bynderTaxonomyWorkbookBuilder.BuildMetadataPropertiesWorkbookAsync(
+            credentials.BaseUrl,
+            credentials.ClientId,
+            credentials.ClientSecret,
+            credentials.Scopes,
+            cancellationToken).ConfigureAwait(false);
+
+        await using var stream = result.Stream;
+        var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName)
+            ? $"bynder-metadata-properties-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xlsx"
+            : request.FileName.Trim());
+        if (!fileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName = Path.ChangeExtension(fileName, ".xlsx");
+        }
+
+        var artifact = await artifactStore.SaveAsync(
+            stream,
+            fileName,
+            BynderTaxonomyWorkbookBuilder.MetadataPropertiesContentType,
+            ArtifactKind.Taxonomy,
+            request.ProjectId,
+            string.IsNullOrWhiteSpace(request.Description)
+                ? "Generated by Taxonomy Builder from Bynder connector metadata properties workbook builder"
+                : request.Description,
+            MetadataFor(request, credential, "Bynder", result.FieldCount, result.OptionCount, result.WorkbookKind),
+            cancellationToken).ConfigureAwait(false);
+
+        return Results.Created($"/api/artifacts/{artifact.ArtifactId}",
+            new BuildTaxonomyArtifactResponse(artifact, "Bynder", result.FieldCount, result.OptionCount, artifact.FileName));
+    }
+
+    private static async Task<IResult> BuildBynderBlankMetadataTemplateAsync(
+        BuildTaxonomyArtifactRequest request,
+        CredentialSetRecord credential,
+        IArtifactStore artifactStore,
+        IConfiguration configuration,
+        BynderTaxonomyWorkbookBuilder bynderTaxonomyWorkbookBuilder,
+        CancellationToken cancellationToken)
+    {
+        var credentials = await BuildBynderOAuthCredentialsAsync(credential, configuration, cancellationToken).ConfigureAwait(false);
+        var result = await bynderTaxonomyWorkbookBuilder.BuildBlankMetadataTemplateWorkbookAsync(
+            credentials.BaseUrl,
+            credentials.ClientId,
+            credentials.ClientSecret,
+            credentials.Scopes,
+            cancellationToken).ConfigureAwait(false);
+
+        await using var stream = result.Stream;
+        var fileName = MakeSafeFileName(string.IsNullOrWhiteSpace(request.FileName)
+            ? $"bynder-blank-metadata-template-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.xlsx"
+            : request.FileName.Trim());
+        if (!fileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName = Path.ChangeExtension(fileName, ".xlsx");
+        }
+
+        var artifact = await artifactStore.SaveAsync(
+            stream,
+            fileName,
+            BynderTaxonomyWorkbookBuilder.MetadataPropertiesContentType,
+            ArtifactKind.Taxonomy,
+            request.ProjectId,
+            string.IsNullOrWhiteSpace(request.Description)
+                ? "Generated blank metadata template from Bynder connector metadata properties workbook builder"
+                : request.Description,
+            MetadataFor(request, credential, "Bynder", result.FieldCount, result.OptionCount, result.WorkbookKind),
+            cancellationToken).ConfigureAwait(false);
+
+        return Results.Created($"/api/artifacts/{artifact.ArtifactId}",
+            new BuildTaxonomyArtifactResponse(artifact, "Bynder", result.FieldCount, result.OptionCount, artifact.FileName));
+    }
+
+    private static async Task<BynderOAuthCredentials> BuildBynderOAuthCredentialsAsync(
+        CredentialSetRecord credential,
         IConfiguration configuration,
         CancellationToken cancellationToken)
     {
-        var baseUrl = await ResolveCredentialValueAsync(
-            credential.Values,
-            configuration,
-            cancellationToken,
-            "BaseUrl",
-            "baseUrl",
-            "BynderBaseUrl",
-            "bynderBaseUrl",
-            "url",
-            "Url",
-            "domain",
-            "Domain",
-            "bynderDomain",
-            "BynderDomain").ConfigureAwait(false);
-
-        var clientId = await ResolveCredentialValueAsync(
-            credential.Values,
-            configuration,
-            cancellationToken,
-            "ClientId",
-            "clientId",
-            "BynderClientId",
-            "bynderClientId").ConfigureAwait(false);
-
-        var clientSecret = await ResolveCredentialValueAsync(
-            credential.Values,
-            configuration,
-            cancellationToken,
-            "ClientSecret",
-            "clientSecret",
-            "BynderClientSecret",
-            "bynderClientSecret").ConfigureAwait(false);
-
-        var scopes = await ResolveCredentialValueAsync(
-            credential.Values,
-            configuration,
-            cancellationToken,
-            "Scopes",
-            "scopes",
-            "BynderScopes",
-            "bynderScopes").ConfigureAwait(false);
+        var baseUrl = await ResolveCredentialValueAsync(credential.Values, configuration, cancellationToken,
+            "BaseUrl", "baseUrl", "BynderBaseUrl", "bynderBaseUrl", "url", "Url", "domain", "Domain", "bynderDomain", "BynderDomain").ConfigureAwait(false);
+        var clientId = await ResolveCredentialValueAsync(credential.Values, configuration, cancellationToken,
+            "ClientId", "clientId", "BynderClientId", "bynderClientId").ConfigureAwait(false);
+        var clientSecret = await ResolveCredentialValueAsync(credential.Values, configuration, cancellationToken,
+            "ClientSecret", "clientSecret", "BynderClientSecret", "bynderClientSecret").ConfigureAwait(false);
+        var scopes = await ResolveCredentialValueAsync(credential.Values, configuration, cancellationToken,
+            "Scopes", "scopes", "BynderScopes", "bynderScopes").ConfigureAwait(false);
 
         var missing = new List<string>();
         if (string.IsNullOrWhiteSpace(baseUrl)) missing.Add("BaseUrl");
@@ -366,100 +435,7 @@ public static class TaxonomyBuilderEndpoints
                 ". Expected BaseUrl, ClientId, ClientSecret, and Scopes from the selected Bynder target credential set.");
         }
 
-        var bynderClient = new BynderRestClient(baseUrl!, clientId!, clientSecret!, scopes!);
-        var apiClient = await bynderClient.GetAuthenticatedClientAsync().ConfigureAwait(false);
-        var response = await apiClient.ExecuteAsync(
-            new RestRequest("api/v4/metaproperties/", Method.Get),
-            cancellationToken).ConfigureAwait(false);
-
-        var json = response.Content ?? string.Empty;
-        if (!response.IsSuccessful || string.IsNullOrWhiteSpace(json))
-        {
-            throw new HttpRequestException($"Bynder metaproperties request failed: {(int)response.StatusCode} {response.StatusDescription}.{Environment.NewLine}{json}");
-        }
-
-        var root = JsonNode.Parse(json) ?? new JsonArray();
-        var fields = new List<TaxonomyField>();
-        var options = new List<TaxonomyOption>();
-
-        foreach (var item in BynderMetapropertyObjects(root))
-        {
-            var fieldId = Text(item, "id", "uuid", "name", "propertyId");
-            var fieldName = Text(item, "name", "propertyName", "technicalName", "id");
-
-            fields.Add(new TaxonomyField(
-                fieldId,
-                fieldName,
-                Text(item, "label", "displayName", "name", "propertyName"),
-                Text(item, "type", "inputType", "fieldType"),
-                Bool(item, "required", "isRequired", "mandatory"),
-                Bool(item, "isMultiselect", "isMultiSelect", "multiSelect", "multiselect", "multiple"),
-                Text(item, "description", "helpText"),
-                item.ToJsonString(JsonOptions)));
-
-            foreach (var option in BynderMetapropertyOptions(item, fieldId, fieldName))
-            {
-                options.Add(option);
-            }
-        }
-
-        return new TaxonomySnapshot("Bynder", fields, options, json);
-    }
-
-    private static IEnumerable<JsonObject> BynderMetapropertyObjects(JsonNode root)
-    {
-        if (root is JsonArray directArray)
-        {
-            foreach (var item in directArray.OfType<JsonObject>())
-            {
-                yield return item;
-            }
-
-            yield break;
-        }
-
-        if (root is not JsonObject rootObject)
-        {
-            yield break;
-        }
-
-        foreach (var arrayName in new[] { "metaproperties", "metadata", "fields", "data", "items" })
-        {
-            if (rootObject[arrayName] is JsonArray array)
-            {
-                foreach (var item in array.OfType<JsonObject>())
-                {
-                    yield return item;
-                }
-            }
-        }
-    }
-
-    private static IEnumerable<TaxonomyOption> BynderMetapropertyOptions(JsonObject item, string fieldId, string fieldName)
-    {
-        foreach (var optionArrayName in new[] { "options", "values", "items" })
-        {
-            if (item[optionArrayName] is not JsonArray optionArray)
-            {
-                continue;
-            }
-
-            foreach (var optionObject in optionArray.OfType<JsonObject>())
-            {
-                var optionId = Text(optionObject, "id", "uuid", "name", "value", "label");
-                var label = Text(optionObject, "label", "displayName", "name", "value", "id");
-                if (!string.IsNullOrWhiteSpace(optionId) || !string.IsNullOrWhiteSpace(label))
-                {
-                    yield return new TaxonomyOption(
-                        fieldId,
-                        optionId,
-                        fieldName,
-                        label,
-                        true,
-                        optionObject.ToJsonString(JsonOptions));
-                }
-            }
-        }
+        return new BynderOAuthCredentials(baseUrl!, clientId!, clientSecret!, scopes!);
     }
 
     private static async Task<string?> ResolveCredentialValueAsync(
@@ -772,6 +748,7 @@ public sealed record BuildTaxonomyArtifactResponse(
     int OptionCount,
     string FileName);
 
+internal sealed record BynderOAuthCredentials(string BaseUrl, string ClientId, string ClientSecret, string Scopes);
 internal sealed record TaxonomySnapshot(string TargetType, List<TaxonomyField> Fields, List<TaxonomyOption> Options, string RawJson);
 internal sealed record TaxonomyField(string FieldId, string Name, string Label, string Type, bool Required, bool MultiValue, string Description, string RawJson);
 internal sealed record TaxonomyOption(string FieldId, string OptionId, string Name, string Label, bool Active, string RawJson);

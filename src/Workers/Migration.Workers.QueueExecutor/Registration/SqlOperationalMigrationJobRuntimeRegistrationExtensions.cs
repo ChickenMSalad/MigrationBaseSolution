@@ -15,16 +15,46 @@ public static class SqlOperationalMigrationJobRuntimeRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        services.AddMigrationControlPlane(configuration);
+        var runtimeConfiguration = BuildOperationalRuntimeConfiguration(configuration);
+
+        services.AddMigrationControlPlane(runtimeConfiguration);
 
         // Generic runtime is the single composition point for manifest providers,
         // source connectors, target connectors, mapping, validation, and orchestration.
         // Do not call AddMigrationConnectorModules here; that bypasses GenericMigrationRuntime
         // filters and can register duplicate or partially composed connectors.
-        services.AddGenericMigrationRuntime(configuration);
+        services.AddGenericMigrationRuntime(runtimeConfiguration);
 
         services.AddSingleton<ProjectCredentialJobSettingsHydrator>();
 
         return services;
+    }
+
+    private static IConfiguration BuildOperationalRuntimeConfiguration(IConfiguration configuration)
+    {
+        var defaults = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["GenericMigrationRuntime:RegisterAllWhenEmpty"] = "false",
+            ["GenericMigrationRuntime:EnabledSources:0"] = "AzureBlob",
+            ["GenericMigrationRuntime:EnabledSources:1"] = "WebDam",
+            ["GenericMigrationRuntime:EnabledSources:2"] = "LocalStorage",
+            ["GenericMigrationRuntime:EnabledSources:3"] = "S3",
+            ["GenericMigrationRuntime:EnabledSources:4"] = "SharePoint",
+            ["GenericMigrationRuntime:EnabledSources:5"] = "Bynder",
+            ["GenericMigrationRuntime:EnabledTargets:0"] = "Bynder",
+            ["GenericMigrationRuntime:EnabledTargets:1"] = "AzureBlob",
+            ["GenericMigrationRuntime:EnabledTargets:2"] = "LocalStorage",
+            ["GenericMigrationRuntime:EnabledTargets:3"] = "Aprimo",
+            ["GenericMigrationRuntime:EnabledTargets:4"] = "Cloudinary",
+            ["GenericMigrationRuntime:EnabledManifests:0"] = "Csv",
+            ["GenericMigrationRuntime:EnabledManifests:1"] = "Excel",
+            ["GenericMigrationRuntime:EnabledManifests:2"] = "Sql",
+            ["GenericMigrationRuntime:EnabledManifests:3"] = "Sqlite"
+        };
+
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(defaults)
+            .AddConfiguration(configuration)
+            .Build();
     }
 }

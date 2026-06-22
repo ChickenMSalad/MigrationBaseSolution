@@ -196,7 +196,7 @@ export function Preflight() {
 
       <Card
         title="Operational readiness"
-        subtitle="Checks the API, runtime readiness, and SQL runtime backbone before running project preflight."
+        subtitle="Checks the API, runtime readiness, and SQL runtime backbone. Readiness is advisory and does not block preflight or migration execution."
         action={
           <button type="button" onClick={() => void refreshReadiness()} disabled={readinessLoading}>
             {readinessLoading ? "Refreshing..." : "Refresh readiness"}
@@ -290,10 +290,10 @@ export function Preflight() {
         </div>
 
         <div className="actions-row">
-          <button type="button" onClick={() => void runPreflight()} disabled={running || readinessStatus === "fail"}>
+          <button type="button" onClick={() => void runPreflight()} disabled={running}>
             {running ? "Running..." : "Run Preflight"}
           </button>
-          {readinessStatus === "fail" && <span className="muted">Fix failed readiness checks before running preflight.</span>}
+          {readinessStatus === "fail" && <span className="muted">Readiness has failures, but preflight remains available.</span>}
         </div>
       </Card>
 

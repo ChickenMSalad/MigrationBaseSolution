@@ -62,6 +62,7 @@ public sealed class MigrationPreflightService : IMigrationPreflightService
         {
             var job = request.Job;
             var manifestProvider = ResolveSingle(_manifestProviders, x => x.Type, job.ManifestType, "manifest provider");
+            ValidateRuntimeConnectorComposition(job, issues);
             var profile = await _mappingProfileLoader.LoadAsync(job.MappingProfilePath, cancellationToken).ConfigureAwait(false);
             var rows = await manifestProvider.ReadAsync(job, cancellationToken).ConfigureAwait(false);
 
@@ -118,6 +119,31 @@ public sealed class MigrationPreflightService : IMigrationPreflightService
         }
     }
 
+
+    private void ValidateRuntimeConnectorComposition(MigrationJobDefinition job, List<PreflightIssue> issues)
+    {
+        var sourceConnector = _serviceProvider
+            .GetServices<IAssetSourceConnector>()
+            .SingleOrDefault(x => x.Type.Equals(job.SourceType, StringComparison.OrdinalIgnoreCase));
+
+        if (sourceConnector is null)
+        {
+            issues.Add(Error(
+                "runtime.sourceConnector.missing",
+                $"No source connector is registered for type '{job.SourceType}'. The worker/API runtime composition must include GenericMigrationRuntime:EnabledSources '{job.SourceType}'."));
+        }
+
+        var targetConnector = _serviceProvider
+            .GetServices<IAssetTargetConnector>()
+            .SingleOrDefault(x => x.Type.Equals(job.TargetType, StringComparison.OrdinalIgnoreCase));
+
+        if (targetConnector is null)
+        {
+            issues.Add(Error(
+                "runtime.targetConnector.missing",
+                $"No target connector is registered for type '{job.TargetType}'. The worker/API runtime composition must include GenericMigrationRuntime:EnabledTargets '{job.TargetType}'."));
+        }
+    }
     private void ValidateProfileCompatibility(MigrationJobDefinition job, MappingProfile profile, List<PreflightIssue> issues)
     {
         if (!profile.SourceType.Equals(job.SourceType, StringComparison.OrdinalIgnoreCase))

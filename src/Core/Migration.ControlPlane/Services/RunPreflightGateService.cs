@@ -23,6 +23,11 @@ public sealed class RunPreflightGateService
 
         var settings = MergeSettings(project.Settings, request.Settings);
 
+        if (!GetBoolean(settings, "RequirePreflightGate", defaultValue: false))
+        {
+            return RunPreflightGateResult.Allowed("Preflight gate is advisory by default; migration runs are allowed without a completed preflight.");
+        }
+
         if (GetBoolean(settings, "SkipPreflightGate", defaultValue: false))
         {
             return RunPreflightGateResult.Allowed("Preflight gate bypassed by explicit SkipPreflightGate setting.");
@@ -48,9 +53,9 @@ public sealed class RunPreflightGateService
         }
 
         return RunPreflightGateResult.Blocked(
-            "A successful preflight is required before starting a non-dry-run migration. " +
-            "Run project preflight first, wait for it to complete, then start the migration run. " +
-            "For controlled local testing only, pass Settings.SkipPreflightGate=true.");
+            "This project explicitly requires a successful preflight before starting a non-dry-run migration. " +
+            "Run project preflight first, wait for it to complete, then start the migration run, " +
+            "or remove Settings.RequirePreflightGate=true from the project/run settings.");
     }
 
     private static bool IsMatchingCompletedPreflight(
