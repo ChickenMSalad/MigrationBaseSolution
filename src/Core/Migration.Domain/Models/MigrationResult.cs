@@ -7,4 +7,5 @@ public sealed class MigrationResult
     public string? TargetAssetId { get; init; }
     public string? Message { get; init; }
     public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
+    public IReadOnlyDictionary<string, string?> TargetFields { get; init; } = new Dictionary<string, string?>();
 }

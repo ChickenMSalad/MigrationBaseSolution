@@ -107,7 +107,8 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
                 return Failure(item, $"Resolved source '{uploadStream.SourceDescription}' opened as an empty stream.");
             }
 
-            var uploadQuery = await BuildUploadQueryAsync(item, fileName, runtimeOptions, metapropertyOptionBuilderFactory).ConfigureAwait(false);
+            var uploadPreparation = await BuildUploadQueryAsync(item, fileName, runtimeOptions, metapropertyOptionBuilderFactory).ConfigureAwait(false);
+            var uploadQuery = uploadPreparation.Query;
 
             _logger.LogInformation(
                 "Uploading work item {WorkItemId} to Bynder. File={FileName}; Bytes={Length}; Source={Source}; MetaPropertyCount={MetaPropertyCount}; TagCount={TagCount}",
@@ -136,7 +137,8 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
                 WorkItemId = item.WorkItemId,
                 Success = true,
                 TargetAssetId = targetAssetId,
-                Message = $"Bynder asset uploaded. TargetAssetId={targetAssetId}; MetadataFields={uploadQuery.MetapropertyOptions?.Count ?? 0}; Tags={uploadQuery.Tags?.Count ?? 0}"
+                Message = $"Bynder asset uploaded. TargetAssetId={targetAssetId}; MetadataFields={uploadQuery.MetapropertyOptions?.Count ?? 0}; Tags={uploadQuery.Tags?.Count ?? 0}",
+                TargetFields = uploadPreparation.StampedFields
             };
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -152,7 +154,7 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
         }
     }
 
-    private async Task<UploadQuery> BuildUploadQueryAsync(
+    private async Task<BynderUploadPreparation> BuildUploadQueryAsync(
         AssetWorkItem item,
         string fileName,
         BynderOptions runtimeOptions,
@@ -168,10 +170,18 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
         var mediaId = ReadString(fields, "mediaId", "MediaId", "id", "Id")
             ?? ReadString(item.Manifest.Columns, "Id", "id", "MediaId", "mediaId");
 
-        var metapropertyOptions = await ResolveMetapropertyOptionsAsync(fields, metapropertyOptionBuilderFactory).ConfigureAwait(false);
+        var metapropertyPreparation = await ResolveMetapropertyOptionsAsync(fields, metapropertyOptionBuilderFactory).ConfigureAwait(false);
         var tags = ResolveTags(fields, item.Manifest.Columns);
 
-        LogMappedMetadata(item, fields, metapropertyOptions);
+        LogMappedMetadata(item, fields, metapropertyPreparation.MetapropertyOptions);
+
+        var stampedFields = new Dictionary<string, string?>(metapropertyPreparation.StampedFields, StringComparer.OrdinalIgnoreCase)
+        {
+            ["Id"] = mediaId,
+            ["Origin_Id"] = item.Manifest.SourceAssetId ?? item.SourceAsset?.SourceAssetId ?? item.WorkItemId,
+            ["Name"] = item.TargetPayload?.Name ?? ReadString(fields, "name", "Name") ?? fileName,
+            ["Filename"] = fileName
+        };
 
         var query = new UploadQuery
         {
@@ -181,7 +191,7 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
             Description = description,
             BrandId = runtimeOptions.BrandStoreId,
             Tags = tags,
-            MetapropertyOptions = metapropertyOptions
+            MetapropertyOptions = metapropertyPreparation.MetapropertyOptions
         };
 
         if (!string.IsNullOrWhiteSpace(mediaId))
@@ -189,7 +199,7 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
             query.MediaId = mediaId;
         }
 
-        return query;
+        return new BynderUploadPreparation(query, stampedFields);
     }
 
     /// <summary>
@@ -200,11 +210,13 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
     /// 2. Explicit style: target = meta:Exact Bynder metaproperty display name.
     /// 3. Pre-shaped style: target = metapropertyOptions/metadata dictionary.
     /// </summary>
-    private async Task<IDictionary<string, IList<string>>> ResolveMetapropertyOptionsAsync(
+    private async Task<BynderMetapropertyPreparation> ResolveMetapropertyOptionsAsync(
         IReadOnlyDictionary<string, object?> fields,
         MetapropertyOptionBuilderFactory metapropertyOptionBuilderFactory)
     {
         var builder = await metapropertyOptionBuilderFactory.CreateBuilder().ConfigureAwait(false);
+        var stampedFields = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        var failures = new List<string>();
 
         AddPreShapedMetaproperties(builder, ReadObject(fields, "metapropertyOptions", "MetapropertyOptions", "metadata", "Metadata"));
 
@@ -232,21 +244,22 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
             try
             {
                 builder[targetName] = values;
+                stampedFields[targetName] = string.Join(";", values);
             }
-            catch (BynderException)
+            catch (BynderException ex)
             {
-                // The field is not a Bynder metaproperty. That is okay for reserved/control fields,
-                // but useful to log for migration mapping troubleshooting.
-                if (!ReservedFieldNames.Contains(field.Key) && !field.Key.StartsWith("_", StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogWarning(
-                        "Mapped field '{FieldName}' could not be resolved as a Bynder metaproperty. It will not be stamped.",
-                        field.Key);
-                }
+                failures.Add($"{field.Key}: {ex.Message}");
             }
         }
 
-        return builder.ToMetapropertyOptions();
+        if (failures.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Bynder metadata mapping failed. No asset was created because one or more mapped target fields could not be resolved as Bynder metaproperty database names: "
+                + string.Join("; ", failures));
+        }
+
+        return new BynderMetapropertyPreparation(builder.ToMetapropertyOptions(), stampedFields);
     }
 
     private void AddPreShapedMetaproperties(IMetapropertyOptionBuilder builder, object? value)
@@ -681,6 +694,13 @@ public sealed class BynderTargetConnector : IAssetTargetConnector
 
         return null;
     }
+
+
+    private sealed record BynderUploadPreparation(UploadQuery Query, IReadOnlyDictionary<string, string?> StampedFields);
+
+    private sealed record BynderMetapropertyPreparation(
+        IDictionary<string, IList<string>> MetapropertyOptions,
+        IReadOnlyDictionary<string, string?> StampedFields);
 
     private static MigrationResult Failure(AssetWorkItem item, string message)
     {

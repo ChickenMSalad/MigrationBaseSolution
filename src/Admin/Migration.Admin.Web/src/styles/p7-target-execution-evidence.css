@@ -1,0 +1,54 @@
+.groupedNav {
+  align-content: start;
+  gap: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.navGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.navGroupTitle {
+  margin: 0 0 2px;
+  padding: 0 8px;
+  color: var(--color-sidebar-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.navGroupItems {
+  display: grid;
+  gap: 6px;
+}
+
+.tableScroll {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+}
+
+.tableScroll table {
+  margin: 0;
+}
+
+.tableScrollTall {
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.tableScroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+}
+
+.evidenceFilters {
+  margin-top: 18px;
+}

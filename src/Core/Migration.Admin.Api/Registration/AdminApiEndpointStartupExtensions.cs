@@ -1,4 +1,4 @@
-using Migration.Admin.Api.Endpoints;
+﻿using Migration.Admin.Api.Endpoints;
 
 namespace Migration.Admin.Api.Registration;
 
@@ -100,6 +100,7 @@ public static class AdminApiEndpointStartupExtensions
         api.MapPreflightEndpoints();
         api.MapProjectEndpoints();
         api.MapRunEndpoints();
+        api.MapTargetExecutionEvidenceEndpoints();
         api.MapRunExecutionPolicyEndpoints();
 
         AdminApiCloudStartupExtensions.MapMigrationAdminApiCloudEndpoints(api);
@@ -144,5 +145,6 @@ public static class AdminApiEndpointStartupExtensions
         app.MapTaxonomyBuilderEndpoints();
     }
 }
+
 
 

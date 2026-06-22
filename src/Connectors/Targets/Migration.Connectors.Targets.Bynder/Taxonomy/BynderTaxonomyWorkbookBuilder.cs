@@ -102,7 +102,7 @@ public sealed class BynderTaxonomyWorkbookBuilder
 
         return new global::Bynder.Sdk.Settings.Configuration
         {
-            BaseUrl = new Uri(baseUrl.Trim()),
+            BaseUrl = new Uri(baseUrl.Trim(), UriKind.Absolute),
             ClientId = clientId.Trim(),
             ClientSecret = clientSecret.Trim(),
             Scopes = scopes.Trim()
@@ -179,7 +179,7 @@ public sealed class BynderTaxonomyWorkbookBuilder
 
         foreach (var metaProperty in metaProperties.Values.OrderBy(x => x.ZIndex).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
         {
-            var columnName = string.IsNullOrWhiteSpace(metaProperty.Label) ? metaProperty.Name : metaProperty.Label;
+            var columnName = metaProperty.Name;
             if (!string.IsNullOrWhiteSpace(columnName) && !dataTable.Columns.Contains(columnName))
             {
                 dataTable.Columns.Add(columnName);

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+﻿import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Artifacts } from './features/platform/artifacts/pages/Artifacts';
 import { Connectors } from './features/connectors/catalog/pages/Connectors';
@@ -16,6 +16,7 @@ import { ProjectDetail } from './features/platform/projects/pages/ProjectDetail'
 import { Projects } from './features/platform/projects/pages/Projects';
 import { RunDetail } from './features/operations/runs/pages/RunDetail';
 import { Runs } from './features/operations/runs/pages/Runs';
+import { TargetExecutionEvidence } from './features/operations/targetEvidence/pages/TargetExecutionEvidence';
 import { TaxonomyBuilder } from './features/platform/builders/taxonomy/pages/TaxonomyBuilder';
 import { ExecutionWorkerTelemetry } from "./features/operations/executionWorkerTelemetry/pages/ExecutionWorkerTelemetry";
 import { NotificationRouting } from "./features/governance/notificationRouting/pages/NotificationRouting";
@@ -34,6 +35,8 @@ export default function App() {
         <Route path="projects/:projectId/preflight" element={<Preflight />} />
         <Route path="runs" element={<Runs />} />
         <Route path="runs/:runId" element={<RunDetail />} />
+        <Route path="runs/:runId/target-evidence" element={<TargetExecutionEvidence />} />
+        <Route path="target-evidence" element={<TargetExecutionEvidence />} />
         <Route path="runtime-dashboard" element={<RuntimeDashboard />} />
         <Route path="runtime-dashboard/:runId" element={<RuntimeRunDetail />} />
         <Route path="runtime-runs/:runId" element={<RuntimeRunDetail />} />
@@ -57,3 +60,4 @@ export default function App() {
     </Routes>
   );
 }
+

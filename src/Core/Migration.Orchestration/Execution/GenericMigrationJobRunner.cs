@@ -503,7 +503,7 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
                     CompletedUtc = DateTimeOffset.UtcNow,
                     Message = message,
                     LastError = message,
-                    Properties = CreateStateProperties(job, row, manifestFingerprint, executionMode)
+                    Properties = CreateCompletionStateProperties(job, row, manifestFingerprint, executionMode, item, result, warnings)
                 }, cancellationToken).ConfigureAwait(false);
 
                 return new RowProcessResult(result, false, true);
@@ -532,7 +532,8 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
                 {
                     WorkItemId = workItemId,
                     Success = false,
-                    Message = "Target connector reported success but returned no TargetAssetId. Refusing false success."
+                    Message = "Target connector reported success but returned no TargetAssetId. Refusing false success.",
+                    TargetFields = migrationResult.TargetFields
                 };
             }
 
@@ -551,7 +552,7 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
                 CompletedUtc = DateTimeOffset.UtcNow,
                 Message = migrationResult.Message,
                 LastError = migrationResult.Success ? null : migrationResult.Message,
-                Properties = CreateStateProperties(job, row, manifestFingerprint, executionMode)
+                Properties = CreateCompletionStateProperties(job, row, manifestFingerprint, executionMode, item, migrationResult, warnings)
             }, cancellationToken).ConfigureAwait(false);
 
             return new RowProcessResult(migrationResult, false, false);
@@ -693,6 +694,44 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
         ["ManifestPath"] = job.ManifestPath ?? string.Empty,
         ["ManifestRowId"] = row.RowId
     };
+    private static Dictionary<string, string?> CreateCompletionStateProperties(
+        MigrationJobDefinition job,
+        ManifestRow row,
+        string manifestFingerprint,
+        string executionMode,
+        AssetWorkItem? item,
+        MigrationResult? result,
+        IReadOnlyList<string>? warnings)
+    {
+        var properties = CreateStateProperties(job, row, manifestFingerprint, executionMode)
+            .ToDictionary(pair => pair.Key, pair => (string?)pair.Value, StringComparer.OrdinalIgnoreCase);
+
+        var originId = row.SourceAssetId ?? item?.SourceAsset?.SourceAssetId ?? result?.WorkItemId;
+        properties["Origin_Id"] = originId;
+        properties["SourceAssetId"] = originId;
+        properties["Id"] = result?.TargetAssetId;
+        properties["TargetAssetId"] = result?.TargetAssetId;
+        properties["TargetStatus"] = result?.Success == true ? "Succeeded" : "Failed";
+        properties["TargetMessage"] = result?.Message;
+
+        if (item?.TargetPayload?.Fields?.Count > 0)
+        {
+            properties["TargetPayloadFieldsJson"] = JsonSerializer.Serialize(item.TargetPayload.Fields);
+        }
+
+        if (result?.TargetFields?.Count > 0)
+        {
+            properties["StampedFieldsJson"] = JsonSerializer.Serialize(result.TargetFields);
+        }
+
+        if (warnings is not null && warnings.Count > 0)
+        {
+            properties["WarningsJson"] = JsonSerializer.Serialize(warnings);
+        }
+
+        return properties;
+    }
+
 
     private Task ReportAsync(string runId, MigrationJobDefinition job, string eventName, string? workItemId, int? completed, int? total, string? message, CancellationToken cancellationToken)
     {
@@ -762,7 +801,8 @@ public sealed class GenericMigrationJobRunner : IMigrationJobRunner
             Success = result.Success,
             TargetAssetId = result.TargetAssetId,
             Message = result.Message,
-            Warnings = combinedWarnings
+            Warnings = combinedWarnings,
+            TargetFields = result.TargetFields
         };
     }
 

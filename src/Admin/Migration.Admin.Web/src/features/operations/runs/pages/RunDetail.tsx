@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Card, EmptyState, StatusPill } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
@@ -265,6 +265,7 @@ export function RunDetail() {
             {run && <button type="button" onClick={exportWorkItems}>Export Work Items</button>}
             {run && <button type="button" onClick={exportFailures}>Export Failures</button>}
             {run && <button type="button" onClick={exportTimeline}>Export Timeline</button>}
+            {run && <Link className="secondaryButton" to={`/runs/${encodeURIComponent(run.runId)}/target-evidence`}>Target Evidence</Link>}
             {run && (
               <button
                 type="button"
@@ -423,3 +424,4 @@ export function RunDetail() {
     </>
   );
 }
+
