@@ -7,6 +7,9 @@ public sealed record TargetExecutionEvidenceResponse(
     int SuccessCount,
     int FailedCount,
     int RetryCount,
+    int Skip,
+    int Take,
+    int ReturnedCount,
     IReadOnlyList<TargetExecutionEvidenceRow> Rows);
 
 public sealed record TargetExecutionEvidenceRow(

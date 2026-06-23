@@ -14,36 +14,6 @@ function formatDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
-function csvValue(value: unknown) {
-  if (value === undefined || value === null) {
-    return "";
-  }
-
-  const text = String(value);
-  if (text.includes("\"") || text.includes(",") || text.includes("\n") || text.includes("\r")) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-
-  return text;
-}
-
-function downloadCsv(fileName: string, rows: unknown[][]) {
-  const csv = rows.map((row) => row.map(csvValue).join(",")).join("\r\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-function safeFileName(value: string) {
-  return value.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
-}
-
 function fieldValue(row: TargetExecutionEvidenceRow, field: string) {
   return row.stampedFields?.[field] ?? row.targetPayloadFields?.[field] ?? "";
 }
@@ -58,11 +28,18 @@ function rowIsFailed(row: TargetExecutionEvidenceRow) {
   return status.includes("fail") || Boolean(row.error);
 }
 
+function safeCount(value?: number | null) {
+  return value === undefined || value === null ? 0 : value;
+}
+
 export function TargetExecutionEvidence() {
   const { runId } = useParams();
   const [evidence, setEvidence] = useState<TargetExecutionEvidenceResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [searchText, setSearchText] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [take, setTake] = useState(500);
+  const [skip, setSkip] = useState(0);
   const [expandedWorkItemId, setExpandedWorkItemId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +55,7 @@ export function TargetExecutionEvidence() {
     setError(null);
 
     try {
-      setEvidence(await targetEvidenceApi.getRunEvidence(runId, statusFilter, take));
+      setEvidence(await targetEvidenceApi.getRunEvidence(runId, statusFilter, take, skip, appliedSearch));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -89,9 +66,14 @@ export function TargetExecutionEvidence() {
   useEffect(() => {
     setLoading(true);
     void load();
-  }, [runId, statusFilter, take]);
+  }, [runId, statusFilter, take, skip, appliedSearch]);
 
   const rows = evidence?.rows ?? [];
+  const totalCount = safeCount(evidence?.totalCount);
+  const pageStart = totalCount === 0 ? 0 : skip + 1;
+  const pageEnd = Math.min(skip + rows.length, totalCount);
+  const canPageBack = skip > 0;
+  const canPageForward = skip + rows.length < totalCount;
 
   const stampedColumns = useMemo(() => {
     const fields = new Set<string>();
@@ -103,6 +85,24 @@ export function TargetExecutionEvidence() {
   }, [rows]);
 
   const expandedRow = rows.find((row) => row.workItemId === expandedWorkItemId) ?? null;
+
+  function applySearch() {
+    setSkip(0);
+    setAppliedSearch(searchText.trim());
+  }
+
+  function resetPagingForFilter(nextStatus: string) {
+    setStatusFilter(nextStatus);
+    setSkip(0);
+    setExpandedWorkItemId(null);
+  }
+
+  function changeTake(nextTake: number) {
+    setTake(nextTake);
+    setSkip(0);
+    setExpandedWorkItemId(null);
+  }
+
   if (!runId) {
     return (
       <Card
@@ -115,40 +115,6 @@ export function TargetExecutionEvidence() {
     );
   }
 
-
-  function exportRows(kind: "all" | "success" | "retry") {
-    if (!evidence) {
-      return;
-    }
-
-    const exportRows = rows.filter((row) => {
-      if (kind === "success") {
-        return rowIsSuccess(row);
-      }
-      if (kind === "retry") {
-        return rowIsFailed(row);
-      }
-      return true;
-    });
-
-    const fileName = `${safeFileName(evidence.jobName)}-${kind === "retry" ? "retry" : kind}-target-evidence.csv`;
-    downloadCsv(fileName, [
-      ["Status", "Origin_Id", "Id", "TargetAssetId", "WorkItemId", "FileName", "Message", "Error", "UpdatedUtc", ...stampedColumns],
-      ...exportRows.map((row) => [
-        row.status,
-        row.originId ?? "",
-        row.id ?? "",
-        row.targetAssetId ?? "",
-        row.workItemId,
-        row.fileName ?? "",
-        row.message ?? "",
-        row.error ?? "",
-        row.updatedUtc ?? "",
-        ...stampedColumns.map((field) => fieldValue(row, field))
-      ])
-    ]);
-  }
-
   return (
     <>
       <p><Link to={runId ? `/runs/${encodeURIComponent(runId)}` : "/runs"}>Back to Run</Link></p>
@@ -157,11 +123,11 @@ export function TargetExecutionEvidence() {
         title="Target execution evidence"
         subtitle="Success/retry view of target upsert results. This is the row-level bridge between source Origin_Id and target Id."
         action={
-          <div className="actionRow">
+          <div className="actionRow wrapActions">
             <button type="button" onClick={() => void load()}>Refresh</button>
-            <button type="button" onClick={() => exportRows("all")} disabled={rows.length === 0}>Export All</button>
-            <button type="button" onClick={() => exportRows("success")} disabled={rows.length === 0}>Export Success</button>
-            <button type="button" onClick={() => exportRows("retry")} disabled={rows.length === 0}>Export Retry</button>
+            <a className="secondaryButton" href={targetEvidenceApi.exportUrl(runId, "all", appliedSearch)}>Export All</a>
+            <a className="secondaryButton" href={targetEvidenceApi.exportUrl(runId, "success", appliedSearch)}>Export Success</a>
+            <a className="secondaryButton" href={targetEvidenceApi.exportUrl(runId, "retry", appliedSearch)}>Export Retry</a>
           </div>
         }
       >
@@ -170,7 +136,7 @@ export function TargetExecutionEvidence() {
         {evidence && (
           <>
             <div className="metricGrid compact">
-              <div className="metric"><span>Total rows</span><strong>{evidence.totalCount.toLocaleString()}</strong></div>
+              <div className="metric"><span>Filtered rows</span><strong>{evidence.totalCount.toLocaleString()}</strong></div>
               <div className="metric"><span>Success</span><strong>{evidence.successCount.toLocaleString()}</strong></div>
               <div className="metric"><span>Failed</span><strong>{evidence.failedCount.toLocaleString()}</strong></div>
               <div className="metric"><span>Retry</span><strong>{evidence.retryCount.toLocaleString()}</strong></div>
@@ -179,15 +145,32 @@ export function TargetExecutionEvidence() {
             <div className="formGrid compact evidenceFilters">
               <label>
                 Status
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <select value={statusFilter} onChange={(event) => resetPagingForFilter(event.target.value)}>
                   <option value="all">All</option>
                   <option value="success">Success</option>
                   <option value="failed">Failed / retry</option>
                 </select>
               </label>
               <label>
-                Max rows
-                <select value={take} onChange={(event) => setTake(Number(event.target.value))}>
+                Search
+                <span className="inlineInputAction">
+                  <input
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        applySearch();
+                      }
+                    }}
+                    placeholder="Origin_Id, target Id, file, error, stamped value"
+                  />
+                  <button type="button" onClick={applySearch}>Search</button>
+                </span>
+              </label>
+              <label>
+                Page size
+                <select value={take} onChange={(event) => changeTake(Number(event.target.value))}>
                   <option value={100}>100</option>
                   <option value={500}>500</option>
                   <option value={1000}>1,000</option>
@@ -195,19 +178,27 @@ export function TargetExecutionEvidence() {
                 </select>
               </label>
             </div>
+
+            <div className="paginationBar">
+              <span>Showing {pageStart.toLocaleString()}-{pageEnd.toLocaleString()} of {totalCount.toLocaleString()}</span>
+              <div className="actionRow">
+                <button type="button" disabled={!canPageBack} onClick={() => setSkip(Math.max(skip - take, 0))}>Previous</button>
+                <button type="button" disabled={!canPageForward} onClick={() => setSkip(skip + take)}>Next</button>
+              </div>
+            </div>
           </>
         )}
       </Card>
 
       {evidence && rows.length === 0 && (
         <Card>
-          <EmptyState title="No evidence rows" message="No row-level target evidence has been recorded for this run yet." />
+          <EmptyState title="No evidence rows" message="No row-level target evidence matched this run/filter." />
         </Card>
       )}
 
       {evidence && rows.length > 0 && (
         <Card title="Upload rows" subtitle="Scroll inside the table to review large run result sets without expanding the page indefinitely.">
-          <div className="tableScroll tableScrollTall">
+          <div className="tableScroll tableScrollTall evidenceTableScroll">
             <table>
               <thead>
                 <tr>
@@ -223,7 +214,7 @@ export function TargetExecutionEvidence() {
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.workItemId}>
+                  <tr key={row.workItemId} className={rowIsSuccess(row) ? "successEvidenceRow" : rowIsFailed(row) ? "failedEvidenceRow" : undefined}>
                     <td><StatusPill status={row.status} /></td>
                     <td>{row.originId ?? "-"}</td>
                     <td>{row.id ?? row.targetAssetId ?? "-"}</td>
@@ -259,6 +250,23 @@ export function TargetExecutionEvidence() {
           <JsonBlock value={expandedRow.targetPayloadFields} />
           <h3>Warnings</h3>
           <JsonBlock value={expandedRow.warnings} />
+          {stampedColumns.length > 0 && (
+            <>
+              <h3>Flat stamped row</h3>
+              <div className="tableScroll evidenceDetailScroll">
+                <table>
+                  <tbody>
+                    {stampedColumns.map((field) => (
+                      <tr key={field}>
+                        <th>{field}</th>
+                        <td>{fieldValue(expandedRow, field) || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </Card>
       )}
     </>

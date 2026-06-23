@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Card, EmptyState, StatusPill } from "../../../../components/Card";
 import { LoadingError } from "../../../../components/LoadingError";
@@ -335,32 +335,34 @@ export function RunDetail() {
           {detail?.workItems.length === 0 ? (
             <EmptyState title="No work items" message="No work items were found for this operational run." />
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Status</th>
-                  <th>Type</th>
-                  <th>Attempts</th>
-                  <th>Claimed by</th>
-                  <th>Updated</th>
-                  <th>Error</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(detail?.workItems ?? []).map((item) => (
-                  <tr key={item.workItemId}>
-                    <td>{item.workItemId}</td>
-                    <td><StatusPill status={workItemStatus(item)} /></td>
-                    <td>{item.workType ?? "-"}</td>
-                    <td>{formatNumber(item.attemptCount)}</td>
-                    <td>{item.claimedBy ?? "-"}</td>
-                    <td>{formatDate(item.updatedAtUtc ?? item.completedAtUtc ?? item.createdAtUtc)}</td>
-                    <td>{item.lastErrorMessage ?? "-"}</td>
+            <div className="tableScroll tableScrollMedium">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Status</th>
+                    <th>Type</th>
+                    <th>Attempts</th>
+                    <th>Claimed by</th>
+                    <th>Updated</th>
+                    <th>Error</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {(detail?.workItems ?? []).map((item) => (
+                    <tr key={item.workItemId}>
+                      <td>{item.workItemId}</td>
+                      <td><StatusPill status={workItemStatus(item)} /></td>
+                      <td>{item.workType ?? "-"}</td>
+                      <td>{formatNumber(item.attemptCount)}</td>
+                      <td>{item.claimedBy ?? "-"}</td>
+                      <td>{formatDate(item.updatedAtUtc ?? item.completedAtUtc ?? item.createdAtUtc)}</td>
+                      <td>{item.lastErrorMessage ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
       )}
@@ -371,54 +373,58 @@ export function RunDetail() {
           {events.length === 0 ? (
             <EmptyState title="No run events" message="No operational events were recorded for this run yet." />
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Type</th>
-                  <th>Severity</th>
-                  <th>Progress</th>
-                  <th>Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((event, index) => (
-                  <tr key={event.eventId ?? `${event.createdAtUtc ?? "event"}-${index}`}>
-                    <td>{formatDate(event.createdAtUtc)}</td>
-                    <td>{event.eventType ?? "-"}</td>
-                    <td>{event.severity ?? "-"}</td>
-                    <td>{formatProgress(event.completed, event.total)}</td>
-                    <td>{event.message ?? "-"}</td>
+            <div className="tableScroll tableScrollMedium">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Type</th>
+                    <th>Severity</th>
+                    <th>Progress</th>
+                    <th>Message</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {events.map((event, index) => (
+                    <tr key={event.eventId ?? `${event.createdAtUtc ?? "event"}-${index}`}>
+                      <td>{formatDate(event.createdAtUtc)}</td>
+                      <td>{event.eventType ?? "-"}</td>
+                      <td>{event.severity ?? "-"}</td>
+                      <td>{formatProgress(event.completed, event.total)}</td>
+                      <td>{event.message ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
       )}
 
       {run && detail && detail.failures.length > 0 && (
         <Card title="Failures" subtitle="Failure rows associated with this operational run.">
-          <table>
-            <thead>
-              <tr>
-                <th>Work item</th>
-                <th>Type</th>
-                <th>Message</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {detail.failures.map((failure, index) => (
-                <tr key={`${failure.workItemId ?? "failure"}-${index}`}>
-                  <td>{failure.workItemId ?? "-"}</td>
-                  <td>{failure.failureType ?? "-"}</td>
-                  <td>{failure.message ?? "-"}</td>
-                  <td>{formatDate(failure.createdAtUtc)}</td>
+          <div className="tableScroll tableScrollMedium">
+            <table>
+              <thead>
+                <tr>
+                  <th>Work item</th>
+                  <th>Type</th>
+                  <th>Message</th>
+                  <th>Created</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {detail.failures.map((failure, index) => (
+                  <tr key={`${failure.workItemId ?? "failure"}-${index}`}>
+                    <td>{failure.workItemId ?? "-"}</td>
+                    <td>{failure.failureType ?? "-"}</td>
+                    <td>{failure.message ?? "-"}</td>
+                    <td>{formatDate(failure.createdAtUtc)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Card>
       )}
     </>

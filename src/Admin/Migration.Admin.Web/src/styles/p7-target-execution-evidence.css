@@ -52,3 +52,91 @@
 .evidenceFilters {
   margin-top: 18px;
 }
+
+
+/* P7 target execution evidence v2: bounded navigation and large-table ergonomics. */
+.sidebar {
+  box-sizing: border-box;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.groupedNav {
+  flex: 1 1 auto;
+  max-height: calc(100vh - 172px);
+  overscroll-behavior: contain;
+}
+
+.navGroupItems .navItem {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.tableScrollMedium {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.evidenceTableScroll {
+  max-height: 620px;
+}
+
+.evidenceDetailScroll {
+  max-height: 360px;
+}
+
+.wrapActions {
+  flex-wrap: wrap;
+}
+
+.inlineInputAction {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inlineInputAction input {
+  min-width: 260px;
+}
+
+.paginationBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  color: var(--color-muted);
+}
+
+.successEvidenceRow td:first-child {
+  border-left: 4px solid #16a34a;
+}
+
+.failedEvidenceRow td:first-child {
+  border-left: 4px solid #dc2626;
+}
+
+@media (max-width: 960px) {
+  .sidebar {
+    height: auto;
+    overflow: visible;
+  }
+
+  .groupedNav {
+    max-height: none;
+  }
+
+  .inlineInputAction {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inlineInputAction input {
+    min-width: 0;
+  }
+
+  .paginationBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

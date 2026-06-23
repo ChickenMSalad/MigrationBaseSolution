@@ -23,5 +23,8 @@ export type TargetExecutionEvidenceResponse = {
   successCount: number;
   failedCount: number;
   retryCount: number;
+  skip: number;
+  take: number;
+  returnedCount: number;
   rows: TargetExecutionEvidenceRow[];
 };
